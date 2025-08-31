@@ -8,16 +8,6 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn read_char(&mut self) {
-        if self.read_position >= self.input.len() {
-            self.ch = None;
-        } else {
-            self.ch = self.input.chars().nth(self.read_position);
-        }
-        self.position = self.read_position;
-        self.read_position += 1;
-    }
-
     pub fn next_token(&mut self) -> token::Token {
         self.skip_whitespace();
 
@@ -86,14 +76,14 @@ impl Lexer {
         tok
     }
 
-    pub fn skip_whitespace(&mut self) {
-        while self.ch == Some(' ')
-            || self.ch == Some('\t')
-            || self.ch == Some('\n')
-            || self.ch == Some('\r')
-        {
-            self.read_char();
+    pub fn read_char(&mut self) {
+        if self.read_position >= self.input.len() {
+            self.ch = None;
+        } else {
+            self.ch = self.input.chars().nth(self.read_position);
         }
+        self.position = self.read_position;
+        self.read_position += 1;
     }
 
     pub fn peek_char(&mut self) -> Option<char> {
@@ -101,6 +91,16 @@ impl Lexer {
             None
         } else {
             self.input.chars().nth(self.read_position)
+        }
+    }
+
+    pub fn skip_whitespace(&mut self) {
+        while self.ch == Some(' ')
+            || self.ch == Some('\t')
+            || self.ch == Some('\n')
+            || self.ch == Some('\r')
+        {
+            self.read_char();
         }
     }
 
