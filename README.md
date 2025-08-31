@@ -1,9 +1,11 @@
 # rust-monkey
 
-Under the construction
+Rust implementation of the Monkey programming language.
+
+This project is under construction.
 
 ## TODO
-- [ ] Lexer
+- [x] Lexer
 - [ ] Parser
 - [ ] Evaluator
 - [ ] REPL
