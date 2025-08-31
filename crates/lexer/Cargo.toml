@@ -1,9 +1,8 @@
 [package]
-name = "repl"
+name = "lexer"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
 
 [dependencies]
 token = { path = "../token" }
-lexer = { path = "../lexer" }
