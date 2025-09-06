@@ -8,10 +8,9 @@ pub trait Node {
 
 pub trait Statement
 where
-    Self: Node,
+    Self: Node + AsAny,
 {
     fn statement_node(&self);
-    fn as_any(&self) -> &dyn Any;
 }
 
 pub trait Expression
@@ -19,6 +18,10 @@ where
     Self: Node,
 {
     fn expression_node(&self);
+}
+
+pub trait AsAny {
+    fn as_any(&self) -> &dyn Any;
 }
 
 pub struct Program {
@@ -49,6 +52,9 @@ impl Node for LetStatement {
 
 impl Statement for LetStatement {
     fn statement_node(&self) {}
+}
+
+impl AsAny for LetStatement {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -67,6 +73,9 @@ impl Node for ReturnStatement {
 
 impl Statement for ReturnStatement {
     fn statement_node(&self) {}
+}
+
+impl AsAny for ReturnStatement {
     fn as_any(&self) -> &dyn Any {
         self
     }

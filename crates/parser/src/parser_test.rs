@@ -1,5 +1,4 @@
-use ::ast::ast::Node;
-use ast::ast;
+use ::ast::ast::{LetStatement, Node, ReturnStatement, Statement};
 use lexer::lexer::new;
 
 use crate::parser::Parser;
@@ -50,33 +49,30 @@ fn test_let_statements() {
         }
     }
 
-    fn test_let_statement(stmt: &Box<dyn ast::Statement>, ident: &str) -> bool {
+    fn test_let_statement(stmt: &Box<dyn Statement>, ident: &str) -> bool {
         if stmt.token_literal() != "let" {
             panic!("stmt.token_literal not 'let'. got={}", stmt.token_literal());
         }
 
-        let let_stmt = stmt.as_ref().as_any().downcast_ref::<ast::LetStatement>();
-        if let_stmt.is_none() {
-            panic!("stmt is not ast::LetStatement.");
-        }
+        let let_stmt = stmt.as_any().downcast_ref::<LetStatement>();
 
-        let let_stmt = let_stmt.unwrap();
+        let let_stmt = let_stmt.unwrap_or_else(|| {
+            panic!("stmt is not LetStatement.");
+        });
 
-        let name = let_stmt.name.clone();
-
-        if name.as_ref().unwrap().value != ident {
+        if let_stmt.name.as_ref().unwrap().value != ident {
             panic!(
                 "let_stmt.name.value not '{}'. got={}",
                 ident,
-                name.as_ref().unwrap().value
+                let_stmt.name.as_ref().unwrap().value
             );
         }
 
-        if name.as_ref().unwrap().token_literal() != *ident {
+        if let_stmt.name.as_ref().unwrap().token_literal() != *ident {
             panic!(
                 "let_stmt.name.token_literal() not '{}'. got={}",
                 ident,
-                name.as_ref().unwrap().token_literal()
+                let_stmt.name.as_ref().unwrap().token_literal()
             );
         }
 
@@ -111,15 +107,12 @@ fn test_return_statements() {
     }
 
     for stmt in p.statements.iter() {
-        let return_stmt = stmt
-            .as_ref()
-            .as_any()
-            .downcast_ref::<ast::ReturnStatement>();
-        if return_stmt.is_none() {
-            panic!("stmt is not ast::ReturnStatement.");
-        }
+        let return_stmt = stmt.as_any().downcast_ref::<ReturnStatement>();
 
-        let return_stmt = return_stmt.unwrap();
+        let return_stmt = return_stmt.unwrap_or_else(|| {
+            panic!("stmt is not ReturnStatement.");
+        });
+
         if return_stmt.token_literal() != "return" {
             panic!(
                 "return_stmt.token_literal() not 'return'. got={}",
