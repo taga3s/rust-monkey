@@ -1,0 +1,8 @@
+[package]
+name = "ast"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+token = { path = "../token" }

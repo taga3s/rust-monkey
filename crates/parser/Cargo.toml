@@ -1,0 +1,10 @@
+[package]
+name = "parser"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+token = { path = "../token" }
+lexer = { path = "../lexer" }
+ast = { path = "../ast" }
