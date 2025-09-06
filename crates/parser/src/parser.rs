@@ -58,6 +58,7 @@ impl Parser {
     pub fn parse_statement(&mut self) -> Option<Box<dyn ast::Statement>> {
         match self.cur_token.type_ {
             token::LET => self.parse_let_statement(),
+            token::RETURN => self.parse_return_statement(),
             _ => None,
         }
     }
@@ -83,6 +84,22 @@ impl Parser {
         }
 
         while self.cur_token_is(token::SEMICOLON) {
+            self.next_token();
+        }
+
+        Some(Box::new(stmt))
+    }
+
+    pub fn parse_return_statement(&mut self) -> Option<Box<dyn ast::Statement>> {
+        let stmt = ast::ReturnStatement {
+            token: self.cur_token.clone(),
+            return_value: None,
+        };
+
+        self.next_token();
+
+        //FIXME: implement parsing of return value
+        while !self.cur_token_is(token::SEMICOLON) {
             self.next_token();
         }
 

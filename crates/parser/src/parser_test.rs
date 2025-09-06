@@ -1,3 +1,4 @@
+use ::ast::ast::Node;
 use ast::ast;
 use lexer::lexer::new;
 
@@ -80,5 +81,50 @@ fn test_let_statements() {
         }
 
         true
+    }
+}
+
+#[test]
+fn test_return_statements() {
+    let input = r#"
+      return 5;
+      return 10;
+      return 838383;
+    "#;
+
+    let lexer = new(input.to_string());
+    let mut parser = Parser::new(lexer);
+
+    let program = parser.parse_program();
+    check_parser_errors(&parser);
+
+    if program.is_none() {
+        panic!("parse_program() returned None");
+    }
+    let p = program.unwrap();
+
+    if p.statements.len() != 3 {
+        panic!(
+            "program.statements does not contain 3 statements. got={}",
+            p.statements.len()
+        );
+    }
+
+    for stmt in p.statements.iter() {
+        let return_stmt = stmt
+            .as_ref()
+            .as_any()
+            .downcast_ref::<ast::ReturnStatement>();
+        if return_stmt.is_none() {
+            panic!("stmt is not ast::ReturnStatement.");
+        }
+
+        let return_stmt = return_stmt.unwrap();
+        if return_stmt.token_literal() != "return" {
+            panic!(
+                "return_stmt.token_literal() not 'return'. got={}",
+                return_stmt.token_literal()
+            );
+        }
     }
 }
