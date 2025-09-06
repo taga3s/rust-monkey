@@ -18,49 +18,49 @@ impl Token {
     }
 }
 
-pub static ILLEGAL: &str = "ILLEGAL";
-pub static EOF: &str = "EOF";
+pub const ILLEGAL: &str = "ILLEGAL";
+pub const EOF: &str = "EOF";
 
-pub static IDENT: &str = "IDENT";
-pub static INT: &str = "INT";
-pub static STRING: &str = "STRING";
+pub const IDENT: &str = "IDENT";
+pub const INT: &str = "INT";
+pub const STRING: &str = "STRING";
 
 // operators
-pub static ASSIGN: &str = "=";
-pub static PLUS: &str = "+";
-pub static MINUS: &str = "-";
-pub static BANG: &str = "!";
-pub static ASTERISK: &str = "*";
-pub static SLASH: &str = "/";
-pub static LT: &str = "<";
-pub static GT: &str = ">";
-pub static EQ: &str = "==";
-pub static NOTEQ: &str = "!=";
+pub const ASSIGN: &str = "=";
+pub const PLUS: &str = "+";
+pub const MINUS: &str = "-";
+pub const BANG: &str = "!";
+pub const ASTERISK: &str = "*";
+pub const SLASH: &str = "/";
+pub const LT: &str = "<";
+pub const GT: &str = ">";
+pub const EQ: &str = "==";
+pub const NOTEQ: &str = "!=";
 
 // delimiters
-pub static COMMA: &str = ",";
-pub static SEMICOLON: &str = ";";
-pub static COLON: &str = ":";
+pub const COMMA: &str = ",";
+pub const SEMICOLON: &str = ";";
+pub const COLON: &str = ":";
 
-pub static LPAREN: &str = "(";
-pub static RPAREN: &str = ")";
-pub static LBRACE: &str = "{";
-pub static RBRACE: &str = "}";
-pub static LBRACKET: &str = "[";
-pub static RBRACKET: &str = "]";
+pub const LPAREN: &str = "(";
+pub const RPAREN: &str = ")";
+pub const LBRACE: &str = "{";
+pub const RBRACE: &str = "}";
+pub const LBRACKET: &str = "[";
+pub const RBRACKET: &str = "]";
 
 // keywords
-pub static FUNCTION: &str = "FUNCTION";
-pub static LET: &str = "LET";
-pub static TRUE: &str = "TRUE";
-pub static FALSE: &str = "FALSE";
-pub static IF: &str = "IF";
-pub static ELSE: &str = "ELSE";
-pub static RETURN: &str = "RETURN";
+pub const FUNCTION: &str = "FUNCTION";
+pub const LET: &str = "LET";
+pub const TRUE: &str = "TRUE";
+pub const FALSE: &str = "FALSE";
+pub const IF: &str = "IF";
+pub const ELSE: &str = "ELSE";
+pub const RETURN: &str = "RETURN";
 
-pub static MACRO: &str = "MACRO";
+pub const MACRO: &str = "MACRO";
 
-static KEYWORDS: LazyLock<HashMap<&'static str, TokenType>> = LazyLock::new(|| {
+const KEYWORDS: LazyLock<HashMap<&'static str, TokenType>> = LazyLock::new(|| {
     HashMap::from([
         ("fn", FUNCTION),
         ("let", LET),
