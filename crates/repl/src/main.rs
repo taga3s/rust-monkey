@@ -10,14 +10,16 @@ fn start() -> io::Result<()> {
         input.clear();
 
         print!(">> ");
-        io::stdout().flush()?; // To ensure that the prompt is printed immediately
+        io::stdout().flush()?;
         io::stdin().read_line(&mut input)?;
 
-        if input == "/exit" {
+        let trimmed = input.trim();
+
+        if trimmed == "/exit" {
             break;
         }
 
-        let mut lexer = lexer::new(input.clone());
+        let mut lexer = lexer::new(trimmed.to_string());
 
         loop {
             let tok = lexer.next_token();

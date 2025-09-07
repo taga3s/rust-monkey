@@ -7,8 +7,8 @@
     echo ""
     just --list
 
-run PACKAGE_NAME:
-    cargo run -p {{PACKAGE_NAME}}
+run-repl:
+    cargo run -p repl
 
 test PACKAGE_NAME:
     cargo test -p {{PACKAGE_NAME}}
