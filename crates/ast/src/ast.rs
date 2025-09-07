@@ -4,6 +4,7 @@ use token::token;
 
 pub trait Node {
     fn token_literal(&self) -> String;
+    fn to_string(&self) -> String;
 }
 
 pub trait Statement
@@ -36,6 +37,34 @@ impl Program {
             "".to_string()
         }
     }
+
+    pub fn to_string(&self) -> String {
+        self.statements
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>()
+            .join("")
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Identifier {
+    pub token: token::Token,
+    pub value: String,
+}
+
+impl Node for Identifier {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        self.value.clone()
+    }
+}
+
+impl Expression for Identifier {
+    fn expression_node(&self) {}
 }
 
 pub struct LetStatement {
@@ -47,6 +76,21 @@ pub struct LetStatement {
 impl Node for LetStatement {
     fn token_literal(&self) -> String {
         self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        let mut out = String::new();
+        out.push_str(&self.token_literal());
+        out.push(' ');
+        if let Some(name) = &self.name {
+            out.push_str(&name.to_string());
+        }
+        out.push_str(" = ");
+        if let Some(value) = &self.value {
+            out.push_str(&value.to_string());
+        }
+        out.push(';');
+        out
     }
 }
 
@@ -69,6 +113,18 @@ impl Node for ReturnStatement {
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
+
+    fn to_string(&self) -> String {
+        let mut out = String::new();
+        out.push_str(&self.token_literal());
+        out.push(' ');
+
+        if let Some(value) = &self.return_value {
+            out.push_str(&value.to_string());
+        }
+        out.push(';');
+        out
+    }
 }
 
 impl Statement for ReturnStatement {
@@ -81,16 +137,34 @@ impl AsAny for ReturnStatement {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Identifier {
+pub struct ExpressionStatement {
     pub token: token::Token,
-    pub value: String,
+    pub expression: Option<Box<dyn Expression>>,
 }
 
-impl Identifier {
-    pub fn expression_node(&self) {}
+impl Statement for ExpressionStatement {
+    fn statement_node(&self) {}
+}
 
-    pub fn token_literal(&self) -> String {
+impl Node for ExpressionStatement {
+    fn token_literal(&self) -> String {
         self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        let mut out = String::new();
+        out.push_str(&self.token_literal());
+        out.push(' ');
+        if let Some(expr) = &self.expression {
+            out.push_str(&expr.to_string());
+        }
+        out.push(';');
+        out
+    }
+}
+
+impl AsAny for ExpressionStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }

@@ -1,4 +1,4 @@
-use ::ast::ast::{LetStatement, Node, ReturnStatement, Statement};
+use ast::ast::{LetStatement, Node, ReturnStatement, Statement};
 use lexer::lexer::new;
 
 use crate::parser::Parser;
