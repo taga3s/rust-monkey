@@ -16,7 +16,7 @@ where
 
 pub trait Expression
 where
-    Self: Node,
+    Self: Node + AsAny,
 {
     fn expression_node(&self);
 }
@@ -53,6 +53,10 @@ pub struct Identifier {
     pub value: String,
 }
 
+impl Expression for Identifier {
+    fn expression_node(&self) {}
+}
+
 impl Node for Identifier {
     fn token_literal(&self) -> String {
         self.token.literal.clone()
@@ -63,14 +67,20 @@ impl Node for Identifier {
     }
 }
 
-impl Expression for Identifier {
-    fn expression_node(&self) {}
+impl AsAny for Identifier {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 pub struct LetStatement {
     pub token: token::Token,
     pub name: Option<Identifier>,
     pub value: Option<Box<dyn Expression>>,
+}
+
+impl Statement for LetStatement {
+    fn statement_node(&self) {}
 }
 
 impl Node for LetStatement {
@@ -94,10 +104,6 @@ impl Node for LetStatement {
     }
 }
 
-impl Statement for LetStatement {
-    fn statement_node(&self) {}
-}
-
 impl AsAny for LetStatement {
     fn as_any(&self) -> &dyn Any {
         self
@@ -107,6 +113,10 @@ impl AsAny for LetStatement {
 pub struct ReturnStatement {
     pub token: token::Token,
     pub return_value: Option<Box<dyn Expression>>,
+}
+
+impl Statement for ReturnStatement {
+    fn statement_node(&self) {}
 }
 
 impl Node for ReturnStatement {
@@ -125,10 +135,6 @@ impl Node for ReturnStatement {
         out.push(';');
         out
     }
-}
-
-impl Statement for ReturnStatement {
-    fn statement_node(&self) {}
 }
 
 impl AsAny for ReturnStatement {
@@ -164,6 +170,31 @@ impl Node for ExpressionStatement {
 }
 
 impl AsAny for ExpressionStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct IntegerLiteral {
+    pub token: token::Token,
+    pub value: i64,
+}
+
+impl Expression for IntegerLiteral {
+    fn expression_node(&self) {}
+}
+
+impl Node for IntegerLiteral {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        self.value.to_string()
+    }
+}
+
+impl AsAny for IntegerLiteral {
     fn as_any(&self) -> &dyn Any {
         self
     }

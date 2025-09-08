@@ -1,4 +1,6 @@
-use ast::ast::{LetStatement, Node, ReturnStatement, Statement};
+use ast::ast::{
+    ExpressionStatement, Identifier, IntegerLiteral, LetStatement, Node, ReturnStatement, Statement,
+};
 use lexer::lexer::new;
 
 use crate::parser::Parser;
@@ -119,5 +121,111 @@ fn test_return_statements() {
                 return_stmt.token_literal()
             );
         }
+    }
+}
+
+#[test]
+fn test_identifier_expression() {
+    let input = "foobar;";
+
+    let lexer = new(input.to_string());
+    let mut parser = Parser::new(lexer);
+
+    let program = parser.parse_program();
+    check_parser_errors(&parser);
+
+    if program.is_none() {
+        panic!("parse_program() returned None");
+    }
+    let p = program.unwrap();
+
+    if p.statements.len() != 1 {
+        panic!(
+            "program.statements does not contain 1 statement. got={}",
+            p.statements.len()
+        );
+    }
+
+    let stmt = match p.statements[0]
+        .as_any()
+        .downcast_ref::<ExpressionStatement>()
+    {
+        Some(stmt) => stmt,
+        None => panic!("stmt is not ExpressionStatement."),
+    };
+
+    let ident = match stmt
+        .expression
+        .as_ref()
+        .unwrap()
+        .as_any()
+        .downcast_ref::<Identifier>()
+    {
+        Some(ident) => ident,
+        None => panic!("stmt.expression is not Identifier."),
+    };
+
+    if ident.value != "foobar" {
+        panic!("ident.value is not 'foobar'. got={}", ident.value);
+    }
+
+    if ident.token_literal() != "foobar" {
+        panic!(
+            "ident.token_literal() is not 'foobar'. got={}",
+            ident.token_literal()
+        );
+    }
+}
+
+#[test]
+fn test_integer_literal_expression() {
+    let input = "5;";
+
+    let lexer = new(input.to_string());
+    let mut parser = Parser::new(lexer);
+
+    let program = parser.parse_program();
+    check_parser_errors(&parser);
+
+    if program.is_none() {
+        panic!("parse_program() returned None");
+    }
+    let p = program.unwrap();
+
+    if p.statements.len() != 1 {
+        panic!(
+            "program.statements does not contain 1 statement. got={}",
+            p.statements.len()
+        );
+    }
+
+    let stmt = p.statements[0]
+        .as_any()
+        .downcast_ref::<ExpressionStatement>();
+    let stmt = stmt.unwrap_or_else(|| {
+        panic!("p.statements[0] is not ExpressionStatement.");
+    });
+
+    let literal = match stmt
+        .expression
+        .as_ref()
+        .unwrap()
+        .as_any()
+        .downcast_ref::<IntegerLiteral>()
+    {
+        Some(literal) => literal,
+        None => panic!("stmt.expression is not IntegerLiteral."),
+    };
+
+    if literal.value != 5 {
+        panic!("literal.value is not 5. got={}", literal.value);
+    }
+
+    if literal.token_literal() != "5" {
+        panic!(
+            "literal.token_literal() is not {}. got={}",
+            5,
+            literal.token_literal()
+        );
     }
 }
