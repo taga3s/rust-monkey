@@ -9,8 +9,7 @@ use lexer::lexer;
 use token::token;
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
-// type InfixParseFn =
-//     fn(&mut Parser, left: Box<dyn Expression>) -> Option<Box<dyn Expression>>;
+type InfixParseFn = fn(&mut Parser, left: Box<dyn Expression>) -> Option<Box<dyn Expression>>;
 
 pub enum Precedence {
     LOWEST,
@@ -30,7 +29,7 @@ pub struct Parser {
     peek_token: token::Token,
 
     prefix_parse_fns: HashMap<token::TokenType, PrefixParseFn>,
-    // infix_parse_fns: HashMap<token::TokenType, InfixParseFn>,
+    infix_parse_fns: HashMap<token::TokenType, InfixParseFn>,
 }
 
 impl Parser {
@@ -41,7 +40,7 @@ impl Parser {
             cur_token: token::Token::new(),
             peek_token: token::Token::new(),
             prefix_parse_fns: HashMap::new(),
-            // infix_parse_fns: HashMap::new(),
+            infix_parse_fns: HashMap::new(),
         };
 
         parser.register_prefix(token::IDENT, Self::parse_identifier);
@@ -232,7 +231,7 @@ impl Parser {
         self.errors.push(msg);
     }
 
-    // fn register_infix(&mut self, tok: token::TokenType, fn_: InfixParseFn) {
-    //     self.infix_parse_fns.insert(tok, fn_);
-    // }
+    fn register_infix(&mut self, tok: token::TokenType, fn_: InfixParseFn) {
+        self.infix_parse_fns.insert(tok, fn_);
+    }
 }

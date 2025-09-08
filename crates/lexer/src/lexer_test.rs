@@ -1,4 +1,4 @@
-use crate::lexer::new;
+use crate::lexer::Lexer;
 use token::token;
 
 #[test]
@@ -17,7 +17,7 @@ fn test_next_token() {
         (token::EOF, ""),
     ];
 
-    let mut lexer = new(input.to_string());
+    let mut lexer = Lexer::new(input.to_string());
 
     for (i, case) in tests.iter().enumerate() {
         let tok = lexer.next_token();
@@ -167,7 +167,7 @@ fn test_next_token2() {
         (token::EOF, ""),
     ];
 
-    let mut lexer = new(input.to_string());
+    let mut lexer = Lexer::new(input.to_string());
 
     for (i, case) in tests.iter().enumerate() {
         let tok = lexer.next_token();

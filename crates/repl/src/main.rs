@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use lexer::lexer;
+use ::lexer::lexer::Lexer;
 use token::token;
 
 fn start() -> io::Result<()> {
@@ -19,7 +19,7 @@ fn start() -> io::Result<()> {
             break;
         }
 
-        let mut lexer = lexer::new(trimmed.to_string());
+        let mut lexer = Lexer::new(trimmed.to_string());
 
         loop {
             let tok = lexer.next_token();

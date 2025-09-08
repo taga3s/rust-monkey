@@ -10,6 +10,17 @@ pub struct Lexer {
 }
 
 impl Lexer {
+    pub fn new(input: String) -> Lexer {
+        let mut lexer = Lexer {
+            input,
+            position: 0,
+            read_position: 0,
+            ch: None,
+        };
+        lexer.read_char();
+        lexer
+    }
+
     pub fn next_token(&mut self) -> token::Token {
         self.skip_whitespace();
 
@@ -23,18 +34,18 @@ impl Lexer {
                     tok.type_ = token::EQ;
                     tok.literal = format!("{}{}", ch, self.ch.unwrap());
                 } else {
-                    tok = new_token(token::ASSIGN, self.ch.unwrap());
+                    tok = self.new_token(token::ASSIGN, self.ch.unwrap());
                 }
             }
-            Some(';') => tok = new_token(token::SEMICOLON, self.ch.unwrap()),
-            Some(':') => tok = new_token(token::COLON, self.ch.unwrap()),
-            Some('(') => tok = new_token(token::LPAREN, self.ch.unwrap()),
-            Some(')') => tok = new_token(token::RPAREN, self.ch.unwrap()),
-            Some('[') => tok = new_token(token::LBRACKET, self.ch.unwrap()),
-            Some(']') => tok = new_token(token::RBRACKET, self.ch.unwrap()),
-            Some(',') => tok = new_token(token::COMMA, self.ch.unwrap()),
-            Some('+') => tok = new_token(token::PLUS, self.ch.unwrap()),
-            Some('-') => tok = new_token(token::MINUS, self.ch.unwrap()),
+            Some(';') => tok = self.new_token(token::SEMICOLON, self.ch.unwrap()),
+            Some(':') => tok = self.new_token(token::COLON, self.ch.unwrap()),
+            Some('(') => tok = self.new_token(token::LPAREN, self.ch.unwrap()),
+            Some(')') => tok = self.new_token(token::RPAREN, self.ch.unwrap()),
+            Some('[') => tok = self.new_token(token::LBRACKET, self.ch.unwrap()),
+            Some(']') => tok = self.new_token(token::RBRACKET, self.ch.unwrap()),
+            Some(',') => tok = self.new_token(token::COMMA, self.ch.unwrap()),
+            Some('+') => tok = self.new_token(token::PLUS, self.ch.unwrap()),
+            Some('-') => tok = self.new_token(token::MINUS, self.ch.unwrap()),
             Some('!') => {
                 if self.peek_char() == Some('=') {
                     let ch = self.ch.unwrap();
@@ -42,15 +53,15 @@ impl Lexer {
                     tok.type_ = token::NOTEQ;
                     tok.literal = format!("{}{}", ch, self.ch.unwrap());
                 } else {
-                    tok = new_token(token::BANG, self.ch.unwrap());
+                    tok = self.new_token(token::BANG, self.ch.unwrap());
                 }
             }
-            Some('*') => tok = new_token(token::ASTERISK, self.ch.unwrap()),
-            Some('<') => tok = new_token(token::LT, self.ch.unwrap()),
-            Some('>') => tok = new_token(token::GT, self.ch.unwrap()),
-            Some('/') => tok = new_token(token::SLASH, self.ch.unwrap()),
-            Some('{') => tok = new_token(token::LBRACE, self.ch.unwrap()),
-            Some('}') => tok = new_token(token::RBRACE, self.ch.unwrap()),
+            Some('*') => tok = self.new_token(token::ASTERISK, self.ch.unwrap()),
+            Some('<') => tok = self.new_token(token::LT, self.ch.unwrap()),
+            Some('>') => tok = self.new_token(token::GT, self.ch.unwrap()),
+            Some('/') => tok = self.new_token(token::SLASH, self.ch.unwrap()),
+            Some('{') => tok = self.new_token(token::LBRACE, self.ch.unwrap()),
+            Some('}') => tok = self.new_token(token::RBRACE, self.ch.unwrap()),
             Some('"') => {
                 tok.type_ = token::STRING;
                 tok.literal = self.read_string();
@@ -61,16 +72,16 @@ impl Lexer {
                 tok.type_ = token::EOF;
             }
             _ => {
-                if is_letter(self.ch.unwrap()) {
+                if self.is_letter(self.ch.unwrap()) {
                     tok.literal = self.read_identifier();
                     tok.type_ = token::lookup_ident(&tok.literal);
                     return tok;
-                } else if is_digit(self.ch.unwrap()) {
+                } else if self.is_digit(self.ch.unwrap()) {
                     tok.type_ = token::INT;
                     tok.literal = self.read_number();
                     return tok;
                 }
-                tok = new_token(token::ILLEGAL, self.ch.unwrap());
+                tok = self.new_token(token::ILLEGAL, self.ch.unwrap());
             }
         };
 
@@ -108,7 +119,7 @@ impl Lexer {
 
     pub fn read_identifier(&mut self) -> String {
         let position = self.position;
-        while is_letter(self.ch.unwrap()) {
+        while self.is_letter(self.ch.unwrap()) {
             self.read_char();
         }
         self.input[position..self.position].to_string()
@@ -116,7 +127,7 @@ impl Lexer {
 
     pub fn read_number(&mut self) -> String {
         let position = self.position;
-        while is_digit(self.ch.unwrap()) {
+        while self.is_digit(self.ch.unwrap()) {
             self.read_char();
         }
         self.input[position..self.position].to_string()
@@ -132,34 +143,23 @@ impl Lexer {
         }
         self.input[position..self.position].to_string()
     }
-}
 
-fn new_token(token_type: token::TokenType, ch: char) -> token::Token {
-    token::Token {
-        type_: token_type,
-        literal: if ch.to_string() == " " {
-            "".to_string()
-        } else {
-            ch.to_string()
-        },
+    fn new_token(&self, token_type: token::TokenType, ch: char) -> token::Token {
+        token::Token {
+            type_: token_type,
+            literal: if ch.to_string() == " " {
+                "".to_string()
+            } else {
+                ch.to_string()
+            },
+        }
     }
-}
 
-fn is_letter(ch: char) -> bool {
-    ch.is_alphabetic() || ch == '_'
-}
+    fn is_letter(&self, ch: char) -> bool {
+        ch.is_alphabetic() || ch == '_'
+    }
 
-fn is_digit(ch: char) -> bool {
-    ch.is_digit(10)
-}
-
-pub fn new(input: String) -> Lexer {
-    let mut lexer = Lexer {
-        input,
-        position: 0,
-        read_position: 0,
-        ch: None,
-    };
-    lexer.read_char();
-    lexer
+    fn is_digit(&self, ch: char) -> bool {
+        ch.is_digit(10)
+    }
 }

@@ -2,7 +2,7 @@ use ast::ast::{
     Expression, ExpressionStatement, Identifier, IntegerLiteral, LetStatement, Node,
     PrefixExpression, ReturnStatement, Statement,
 };
-use lexer::lexer::new;
+use lexer::lexer::Lexer;
 
 use crate::parser::Parser;
 
@@ -26,7 +26,7 @@ fn test_let_statements() {
       let foobar = 838383;
     "#;
 
-    let lexer = new(input.to_string());
+    let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
     let program = match parser.parse_program() {
@@ -93,7 +93,7 @@ fn test_return_statements() {
       return 838383;
     "#;
 
-    let lexer = new(input.to_string());
+    let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
     let program = match parser.parse_program() {
@@ -132,7 +132,7 @@ fn test_return_statements() {
 fn test_identifier_expression() {
     let input = "foobar;";
 
-    let lexer = new(input.to_string());
+    let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
     let program = match parser.parse_program() {
@@ -185,7 +185,7 @@ fn test_identifier_expression() {
 fn test_integer_literal_expression() {
     let input = "5;";
 
-    let lexer = new(input.to_string());
+    let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
     let program = match parser.parse_program() {
@@ -242,7 +242,7 @@ fn test_parsing_prefix_expressions() {
     for test in prefix_tests {
         let (input, operator, integer_value) = test;
 
-        let lexer = new(input.to_string());
+        let lexer = Lexer::new(input.to_string());
         let mut parser = Parser::new(lexer);
 
         let program = match parser.parse_program() {
