@@ -28,24 +28,25 @@ fn test_let_statements() {
     let lexer = new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = parser.parse_program();
+    let program = match parser.parse_program() {
+        Some(p) => p,
+        None => {
+            panic!("parse_program() returned None");
+        }
+    };
     check_parser_errors(&parser);
 
-    if program.is_none() {
-        panic!("parse_program() returned None");
-    }
-    let p = program.unwrap();
-    if p.statements.len() != 3 {
+    if program.statements.len() != 3 {
         panic!(
             "program.statements does not contain 3 statements. got={}",
-            p.statements.len()
+            program.statements.len()
         );
     }
 
     let tests = vec!["x", "y", "foobar"];
 
     for (i, ident) in tests.iter().enumerate() {
-        let stmt = &p.statements[i];
+        let stmt = &program.statements[i];
         if !test_let_statement(stmt, ident) {
             return;
         }
@@ -56,11 +57,12 @@ fn test_let_statements() {
             panic!("stmt.token_literal not 'let'. got={}", stmt.token_literal());
         }
 
-        let let_stmt = stmt.as_any().downcast_ref::<LetStatement>();
-
-        let let_stmt = let_stmt.unwrap_or_else(|| {
-            panic!("stmt is not LetStatement.");
-        });
+        let let_stmt = match stmt.as_any().downcast_ref::<LetStatement>() {
+            Some(let_stmt) => let_stmt,
+            None => {
+                panic!("stmt is not LetStatement.");
+            }
+        };
 
         if let_stmt.name.as_ref().unwrap().value != ident {
             panic!(
@@ -93,27 +95,28 @@ fn test_return_statements() {
     let lexer = new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = parser.parse_program();
+    let program = match parser.parse_program() {
+        Some(p) => p,
+        None => {
+            panic!("parse_program() returned None");
+        }
+    };
     check_parser_errors(&parser);
 
-    if program.is_none() {
-        panic!("parse_program() returned None");
-    }
-    let p = program.unwrap();
-
-    if p.statements.len() != 3 {
+    if program.statements.len() != 3 {
         panic!(
             "program.statements does not contain 3 statements. got={}",
-            p.statements.len()
+            program.statements.len()
         );
     }
 
-    for stmt in p.statements.iter() {
-        let return_stmt = stmt.as_any().downcast_ref::<ReturnStatement>();
-
-        let return_stmt = return_stmt.unwrap_or_else(|| {
-            panic!("stmt is not ReturnStatement.");
-        });
+    for stmt in program.statements.iter() {
+        let return_stmt = match stmt.as_any().downcast_ref::<ReturnStatement>() {
+            Some(return_stmt) => return_stmt,
+            None => {
+                panic!("stmt is not ReturnStatement.");
+            }
+        };
 
         if return_stmt.token_literal() != "return" {
             panic!(
@@ -131,22 +134,22 @@ fn test_identifier_expression() {
     let lexer = new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = parser.parse_program();
+    let program = match parser.parse_program() {
+        Some(p) => p,
+        None => {
+            panic!("parse_program() returned None");
+        }
+    };
     check_parser_errors(&parser);
 
-    if program.is_none() {
-        panic!("parse_program() returned None");
-    }
-    let p = program.unwrap();
-
-    if p.statements.len() != 1 {
+    if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
-            p.statements.len()
+            program.statements.len()
         );
     }
 
-    let stmt = match p.statements[0]
+    let stmt = match program.statements[0]
         .as_any()
         .downcast_ref::<ExpressionStatement>()
     {
@@ -184,27 +187,28 @@ fn test_integer_literal_expression() {
     let lexer = new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = parser.parse_program();
+    let program = match parser.parse_program() {
+        Some(p) => p,
+        None => {
+            panic!("parse_program() returned None");
+        }
+    };
     check_parser_errors(&parser);
 
-    if program.is_none() {
-        panic!("parse_program() returned None");
-    }
-    let p = program.unwrap();
-
-    if p.statements.len() != 1 {
+    if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
-            p.statements.len()
+            program.statements.len()
         );
     }
 
-    let stmt = p.statements[0]
+    let stmt = match program.statements[0]
         .as_any()
-        .downcast_ref::<ExpressionStatement>();
-    let stmt = stmt.unwrap_or_else(|| {
-        panic!("p.statements[0] is not ExpressionStatement.");
-    });
+        .downcast_ref::<ExpressionStatement>()
+    {
+        Some(stmt) => stmt,
+        None => panic!("program.statements[0] is not ExpressionStatement."),
+    };
 
     let literal = match stmt
         .expression
