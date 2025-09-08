@@ -47,7 +47,6 @@ impl Program {
     }
 }
 
-#[derive(Debug, Clone)]
 pub struct Identifier {
     pub token: token::Token,
     pub value: String,
@@ -195,6 +194,39 @@ impl Node for IntegerLiteral {
 }
 
 impl AsAny for IntegerLiteral {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct PrefixExpression {
+    pub token: token::Token,
+    pub operator: String,
+    pub right: Option<Box<dyn Expression>>,
+}
+
+impl Expression for PrefixExpression {
+    fn expression_node(&self) {}
+}
+
+impl Node for PrefixExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        let mut out = String::new();
+        out.push('(');
+        out.push_str(&self.operator);
+        if let Some(right) = &self.right {
+            out.push_str(&right.to_string());
+        }
+        out.push(')');
+        out
+    }
+}
+
+impl AsAny for PrefixExpression {
     fn as_any(&self) -> &dyn Any {
         self
     }

@@ -1,5 +1,6 @@
 use ast::ast::{
-    ExpressionStatement, Identifier, IntegerLiteral, LetStatement, Node, ReturnStatement, Statement,
+    Expression, ExpressionStatement, Identifier, IntegerLiteral, LetStatement, Node,
+    PrefixExpression, ReturnStatement, Statement,
 };
 use lexer::lexer::new;
 
@@ -31,7 +32,7 @@ fn test_let_statements() {
     let program = match parser.parse_program() {
         Some(p) => p,
         None => {
-            panic!("parse_program() returned None");
+            panic!("parser.parse_program() returned None");
         }
     };
     check_parser_errors(&parser);
@@ -98,7 +99,7 @@ fn test_return_statements() {
     let program = match parser.parse_program() {
         Some(p) => p,
         None => {
-            panic!("parse_program() returned None");
+            panic!("parser.parse_program() returned None");
         }
     };
     check_parser_errors(&parser);
@@ -137,7 +138,7 @@ fn test_identifier_expression() {
     let program = match parser.parse_program() {
         Some(p) => p,
         None => {
-            panic!("parse_program() returned None");
+            panic!("parser.parse_program() returned None");
         }
     };
     check_parser_errors(&parser);
@@ -190,7 +191,7 @@ fn test_integer_literal_expression() {
     let program = match parser.parse_program() {
         Some(p) => p,
         None => {
-            panic!("parse_program() returned None");
+            panic!("parser.parse_program() returned None");
         }
     };
     check_parser_errors(&parser);
@@ -231,5 +232,87 @@ fn test_integer_literal_expression() {
             5,
             literal.token_literal()
         );
+    }
+}
+
+#[test]
+fn test_parsing_prefix_expressions() {
+    let prefix_tests = vec![("!5;", "!", 5), ("-15;", "-", 15)];
+
+    for test in prefix_tests {
+        let (input, operator, integer_value) = test;
+
+        let lexer = new(input.to_string());
+        let mut parser = Parser::new(lexer);
+
+        let program = match parser.parse_program() {
+            Some(p) => p,
+            None => {
+                panic!("parser.parse_program() returned None");
+            }
+        };
+        check_parser_errors(&parser);
+
+        if program.statements.len() != 1 {
+            panic!(
+                "program.statements does not contain {} statement. got={}",
+                1,
+                program.statements.len()
+            );
+        }
+
+        let stmt = match program.statements[0]
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+        {
+            Some(stmt) => stmt,
+            None => panic!("program.statements[0] is not ExpressionStatement."),
+        };
+
+        let expression = match stmt
+            .expression
+            .as_ref()
+            .unwrap()
+            .as_any()
+            .downcast_ref::<PrefixExpression>()
+        {
+            Some(expression) => expression,
+            None => panic!("stmt.expression is not PrefixExpression."),
+        };
+
+        if expression.operator != operator {
+            panic!(
+                "expression.operator is not '{}'. got={}",
+                operator, expression.operator
+            );
+        }
+
+        let il = &expression.right.as_ref().unwrap();
+        if !test_integer_literal(il, integer_value) {
+            return;
+        }
+    }
+
+    fn test_integer_literal(il: &Box<dyn Expression>, value: i64) -> bool {
+        let integ = match il.as_any().downcast_ref::<IntegerLiteral>() {
+            Some(il) => il,
+            None => {
+                panic!("il is not IntegerLiteral.");
+            }
+        };
+
+        if integ.value != value {
+            panic!("integ.value is not {}. got={}", value, integ.value);
+        }
+
+        if integ.token_literal() != value.to_string() {
+            panic!(
+                "integ.token_literal() is not {}. got={}",
+                value,
+                integ.token_literal()
+            );
+        }
+
+        true
     }
 }
