@@ -1,13 +1,16 @@
 use std::collections::HashMap;
 
+use ::ast::ast::{
+    Expression, ExpressionStatement, Identifier, IntegerLiteral, LetStatement, PrefixExpression,
+    Program, ReturnStatement, Statement,
+};
 use ::lexer::lexer::Lexer;
-use ast::ast;
 use lexer::lexer;
 use token::token;
 
-type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn ast::Expression>>;
+type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
 // type InfixParseFn =
-//     fn(&mut Parser, left: Box<dyn ast::Expression>) -> Option<Box<dyn ast::Expression>>;
+//     fn(&mut Parser, left: Box<dyn Expression>) -> Option<Box<dyn Expression>>;
 
 pub enum Precedence {
     LOWEST,
@@ -69,8 +72,8 @@ impl Parser {
         self.peek_token = self.lexer.next_token();
     }
 
-    pub fn parse_program(&mut self) -> Option<ast::Program> {
-        let mut program = ast::Program { statements: vec![] };
+    pub fn parse_program(&mut self) -> Option<Program> {
+        let mut program = Program { statements: vec![] };
 
         while self.cur_token.type_ != token::EOF {
             let stmt = self.parse_statement();
@@ -82,7 +85,7 @@ impl Parser {
         Some(program)
     }
 
-    pub fn parse_statement(&mut self) -> Option<Box<dyn ast::Statement>> {
+    pub fn parse_statement(&mut self) -> Option<Box<dyn Statement>> {
         match self.cur_token.type_ {
             token::LET => self.parse_let_statement(),
             token::RETURN => self.parse_return_statement(),
@@ -90,8 +93,8 @@ impl Parser {
         }
     }
 
-    pub fn parse_let_statement(&mut self) -> Option<Box<dyn ast::Statement>> {
-        let mut stmt = ast::LetStatement {
+    pub fn parse_let_statement(&mut self) -> Option<Box<dyn Statement>> {
+        let mut stmt = LetStatement {
             token: self.cur_token.clone(),
             name: None,
             value: None,
@@ -101,7 +104,7 @@ impl Parser {
             return None;
         }
 
-        stmt.name = Some(ast::Identifier {
+        stmt.name = Some(Identifier {
             token: self.cur_token.clone(),
             value: self.cur_token.literal.clone(),
         });
@@ -117,8 +120,8 @@ impl Parser {
         Some(Box::new(stmt))
     }
 
-    pub fn parse_return_statement(&mut self) -> Option<Box<dyn ast::Statement>> {
-        let stmt = ast::ReturnStatement {
+    pub fn parse_return_statement(&mut self) -> Option<Box<dyn Statement>> {
+        let stmt = ReturnStatement {
             token: self.cur_token.clone(),
             return_value: None,
         };
@@ -133,9 +136,9 @@ impl Parser {
         Some(Box::new(stmt))
     }
 
-    // TODO: ast::Statementを返すのは正しいのか検証する
-    pub fn parse_expression_statement(&mut self) -> Option<Box<dyn ast::Statement>> {
-        let mut stmt = ast::ExpressionStatement {
+    // TODO: Statementを返すのは正しいのか検証する
+    pub fn parse_expression_statement(&mut self) -> Option<Box<dyn Statement>> {
+        let mut stmt = ExpressionStatement {
             token: self.cur_token.clone(),
             expression: None,
         };
@@ -149,7 +152,7 @@ impl Parser {
         Some(Box::new(stmt))
     }
 
-    pub fn parse_expression(&mut self, precedence: Precedence) -> Option<Box<dyn ast::Expression>> {
+    pub fn parse_expression(&mut self, precedence: Precedence) -> Option<Box<dyn Expression>> {
         let prefix = match self.prefix_parse_fns.get(&self.cur_token.type_) {
             Some(p) => p,
             None => {
@@ -162,15 +165,15 @@ impl Parser {
         left_exp
     }
 
-    pub fn parse_identifier(&mut self) -> Option<Box<dyn ast::Expression>> {
-        let ident = ast::Identifier {
+    pub fn parse_identifier(&mut self) -> Option<Box<dyn Expression>> {
+        let ident = Identifier {
             token: self.cur_token.clone(),
             value: self.cur_token.literal.clone(),
         };
         Some(Box::new(ident))
     }
 
-    pub fn parse_integer_literal(&mut self) -> Option<Box<dyn ast::Expression>> {
+    pub fn parse_integer_literal(&mut self) -> Option<Box<dyn Expression>> {
         let value = match self.cur_token.literal.parse::<i64>() {
             Ok(v) => v,
             Err(_) => {
@@ -180,7 +183,7 @@ impl Parser {
             }
         };
 
-        let ident = ast::IntegerLiteral {
+        let ident = IntegerLiteral {
             token: self.cur_token.clone(),
             value,
         };
@@ -188,8 +191,8 @@ impl Parser {
         Some(Box::new(ident))
     }
 
-    pub fn parse_prefix_expression(&mut self) -> Option<Box<dyn ast::Expression>> {
-        let mut expression = ast::PrefixExpression {
+    pub fn parse_prefix_expression(&mut self) -> Option<Box<dyn Expression>> {
+        let mut expression = PrefixExpression {
             token: self.cur_token.clone(),
             operator: self.cur_token.literal.clone(),
             right: None,
