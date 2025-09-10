@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 use ::lexer::lexer::Lexer;
-use token::token;
+use ::token::token::TokenType;
 
 fn start() -> io::Result<()> {
     let mut input = String::new();
@@ -24,7 +24,7 @@ fn start() -> io::Result<()> {
         loop {
             let tok = lexer.next_token();
 
-            if tok.type_ == token::EOF {
+            if tok.type_ == TokenType::EOF {
                 break;
             }
 

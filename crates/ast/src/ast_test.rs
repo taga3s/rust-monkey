@@ -1,4 +1,4 @@
-use token::token;
+use token::token::{Token, TokenType};
 
 use crate::ast::{Identifier, LetStatement, Program};
 
@@ -6,20 +6,20 @@ use crate::ast::{Identifier, LetStatement, Program};
 fn test_to_string() {
     let program = Program {
         statements: vec![Box::new(LetStatement {
-            token: token::Token {
-                type_: token::LET,
+            token: Token {
+                type_: TokenType::LET,
                 literal: "let".to_string(),
             },
             name: Some(Identifier {
-                token: token::Token {
-                    type_: token::IDENT,
+                token: Token {
+                    type_: TokenType::IDENT,
                     literal: "myVar".to_string(),
                 },
                 value: "myVar".to_string(),
             }),
             value: Some(Box::new(Identifier {
-                token: token::Token {
-                    type_: token::IDENT,
+                token: Token {
+                    type_: TokenType::IDENT,
                     literal: "anotherVar".to_string(),
                 },
                 value: "anotherVar".to_string(),

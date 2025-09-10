@@ -1,3 +1,5 @@
+//! Parser for the Monkey programming language
+
 use std::collections::HashMap;
 
 use ::ast::ast::{
@@ -5,8 +7,7 @@ use ::ast::ast::{
     Program, ReturnStatement, Statement,
 };
 use ::lexer::lexer::Lexer;
-use lexer::lexer;
-use token::token;
+use token::token::{Token, TokenType};
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
 type InfixParseFn = fn(&mut Parser, left: Box<dyn Expression>) -> Option<Box<dyn Expression>>;
@@ -22,14 +23,14 @@ pub enum Precedence {
 }
 
 pub struct Parser {
-    lexer: lexer::Lexer,
+    lexer: Lexer,
     errors: Vec<String>,
 
-    cur_token: token::Token,
-    peek_token: token::Token,
+    cur_token: Token,
+    peek_token: Token,
 
-    prefix_parse_fns: HashMap<token::TokenType, PrefixParseFn>,
-    infix_parse_fns: HashMap<token::TokenType, InfixParseFn>,
+    prefix_parse_fns: HashMap<TokenType, PrefixParseFn>,
+    infix_parse_fns: HashMap<TokenType, InfixParseFn>,
 }
 
 impl Parser {
@@ -37,16 +38,16 @@ impl Parser {
         let mut parser = Parser {
             lexer,
             errors: vec![],
-            cur_token: token::Token::new(),
-            peek_token: token::Token::new(),
+            cur_token: Token::new(),
+            peek_token: Token::new(),
             prefix_parse_fns: HashMap::new(),
             infix_parse_fns: HashMap::new(),
         };
 
-        parser.register_prefix(token::IDENT, Self::parse_identifier);
-        parser.register_prefix(token::INT, Self::parse_integer_literal);
-        parser.register_prefix(token::BANG, Self::parse_prefix_expression);
-        parser.register_prefix(token::MINUS, Self::parse_prefix_expression);
+        parser.register_prefix(TokenType::IDENT, Self::parse_identifier);
+        parser.register_prefix(TokenType::INT, Self::parse_integer_literal);
+        parser.register_prefix(TokenType::BANG, Self::parse_prefix_expression);
+        parser.register_prefix(TokenType::MINUS, Self::parse_prefix_expression);
 
         parser.next_token();
         parser.next_token();
@@ -58,9 +59,9 @@ impl Parser {
         &self.errors
     }
 
-    pub fn peek_error(&mut self, tok: token::TokenType) {
+    pub fn peek_error(&mut self, tok: TokenType) {
         let msg = format!(
-            "expected next token to be {}, got {} instead",
+            "expected next token to be {:?}, got {:?} instead",
             tok, self.peek_token.type_
         );
         self.errors.push(msg);
@@ -74,7 +75,7 @@ impl Parser {
     pub fn parse_program(&mut self) -> Option<Program> {
         let mut program = Program { statements: vec![] };
 
-        while self.cur_token.type_ != token::EOF {
+        while self.cur_token.type_ != TokenType::EOF {
             let stmt = self.parse_statement();
             if let Some(s) = stmt {
                 program.statements.push(s);
@@ -86,8 +87,8 @@ impl Parser {
 
     pub fn parse_statement(&mut self) -> Option<Box<dyn Statement>> {
         match self.cur_token.type_ {
-            token::LET => self.parse_let_statement(),
-            token::RETURN => self.parse_return_statement(),
+            TokenType::LET => self.parse_let_statement(),
+            TokenType::RETURN => self.parse_return_statement(),
             _ => self.parse_expression_statement(),
         }
     }
@@ -99,7 +100,7 @@ impl Parser {
             value: None,
         };
 
-        if !self.expect_peek(token::IDENT) {
+        if !self.expect_peek(TokenType::IDENT) {
             return None;
         }
 
@@ -108,11 +109,11 @@ impl Parser {
             value: self.cur_token.literal.clone(),
         });
 
-        if !self.expect_peek(token::ASSIGN) {
+        if !self.expect_peek(TokenType::ASSIGN) {
             return None;
         }
 
-        while !self.cur_token_is(token::SEMICOLON) {
+        while !self.cur_token_is(TokenType::SEMICOLON) {
             self.next_token();
         }
 
@@ -128,7 +129,7 @@ impl Parser {
         self.next_token();
 
         //FIXME: implement parsing of return value
-        while !self.cur_token_is(token::SEMICOLON) {
+        while !self.cur_token_is(TokenType::SEMICOLON) {
             self.next_token();
         }
 
@@ -144,7 +145,7 @@ impl Parser {
 
         stmt.expression = self.parse_expression(Precedence::LOWEST);
 
-        if self.peek_token_is(token::SEMICOLON) {
+        if self.peek_token_is(TokenType::SEMICOLON) {
             self.next_token();
         }
 
@@ -155,7 +156,7 @@ impl Parser {
         let prefix = match self.prefix_parse_fns.get(&self.cur_token.type_) {
             Some(p) => p,
             None => {
-                self.no_prefix_parse_fn_error(self.cur_token.type_);
+                self.no_prefix_parse_fn_error(self.cur_token.type_.clone());
                 return None;
             }
         };
@@ -204,16 +205,16 @@ impl Parser {
         Some(Box::new(expression))
     }
 
-    fn cur_token_is(&self, tok: token::TokenType) -> bool {
+    fn cur_token_is(&self, tok: TokenType) -> bool {
         self.cur_token.type_ == tok
     }
 
-    fn peek_token_is(&self, tok: token::TokenType) -> bool {
+    fn peek_token_is(&self, tok: TokenType) -> bool {
         self.peek_token.type_ == tok
     }
 
-    fn expect_peek(&mut self, tok: token::TokenType) -> bool {
-        if self.peek_token_is(tok) {
+    fn expect_peek(&mut self, tok: TokenType) -> bool {
+        if self.peek_token_is(tok.clone()) {
             self.next_token();
             true
         } else {
@@ -222,16 +223,16 @@ impl Parser {
         }
     }
 
-    fn register_prefix(&mut self, tok: token::TokenType, fn_: PrefixParseFn) {
+    fn register_prefix(&mut self, tok: TokenType, fn_: PrefixParseFn) {
         self.prefix_parse_fns.insert(tok, fn_);
     }
 
-    fn no_prefix_parse_fn_error(&mut self, tok: token::TokenType) {
-        let msg = format!("no prefix parse function for {} found", tok);
+    fn no_prefix_parse_fn_error(&mut self, tok: TokenType) {
+        let msg = format!("no prefix parse function for {:?} found", tok);
         self.errors.push(msg);
     }
 
-    fn register_infix(&mut self, tok: token::TokenType, fn_: InfixParseFn) {
+    fn register_infix(&mut self, tok: TokenType, fn_: InfixParseFn) {
         self.infix_parse_fns.insert(tok, fn_);
     }
 }
