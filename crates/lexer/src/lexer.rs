@@ -119,7 +119,7 @@ impl Lexer {
 
     pub fn read_identifier(&mut self) -> String {
         let position = self.position;
-        while self.is_letter(self.ch.unwrap()) {
+        while self.ch.is_some() && self.is_letter(self.ch.unwrap()) {
             self.read_char();
         }
         self.input[position..self.position].to_string()
@@ -127,7 +127,7 @@ impl Lexer {
 
     pub fn read_number(&mut self) -> String {
         let position = self.position;
-        while self.is_digit(self.ch.unwrap()) {
+        while self.ch.is_some() && self.is_digit(self.ch.unwrap()) {
             self.read_char();
         }
         self.input[position..self.position].to_string()

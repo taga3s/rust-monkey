@@ -24,11 +24,10 @@ fn start() -> io::Result<()> {
         loop {
             let tok = lexer.next_token();
 
-            if tok.type_ == TokenType::EOF {
-                break;
+            match tok.type_ {
+                TokenType::EOF => break,
+                _ => println!("{:?}", tok),
             }
-
-            println!("{:?}", tok);
         }
     }
 
