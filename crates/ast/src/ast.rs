@@ -1,3 +1,5 @@
+//! AST for the Monkey programming language
+
 use std::any::Any;
 
 use token::token;

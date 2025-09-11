@@ -1,4 +1,4 @@
-// pub type TokenType = &'static str;
+//! Token for the Monkey programming language
 
 #[derive(Debug, Clone)]
 pub struct Token {
