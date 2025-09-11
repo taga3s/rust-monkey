@@ -1,10 +1,33 @@
 use ast::ast::{
-    Expression, ExpressionStatement, Identifier, IntegerLiteral, LetStatement, Node,
-    PrefixExpression, ReturnStatement, Statement,
+    Expression, ExpressionStatement, Identifier, InfixExpression, IntegerLiteral, LetStatement,
+    Node, PrefixExpression, ReturnStatement, Statement,
 };
 use lexer::lexer::Lexer;
 
 use crate::parser::Parser;
+
+fn test_integer_literal(il: &Box<dyn Expression>, value: i64) -> bool {
+    let integer = match il.as_any().downcast_ref::<IntegerLiteral>() {
+        Some(integer) => integer,
+        None => {
+            panic!("il is not IntegerLiteral.");
+        }
+    };
+
+    if integer.value != value {
+        panic!("integer.value is not {}. got={}", value, integer.value);
+    }
+
+    if integer.token_literal() != value.to_string() {
+        panic!(
+            "integer.token_literal() is not {}. got={}",
+            value,
+            integer.token_literal()
+        );
+    }
+
+    true
+}
 
 fn check_parser_errors(parser: &Parser) {
     let errors = parser.errors();
@@ -287,32 +310,120 @@ fn test_parsing_prefix_expressions() {
             );
         }
 
-        let il = &expression.right.as_ref().unwrap();
-        if !test_integer_literal(il, integer_value) {
+        if !test_integer_literal(&expression.right.as_ref().unwrap(), integer_value) {
             return;
         }
     }
+}
 
-    fn test_integer_literal(il: &Box<dyn Expression>, value: i64) -> bool {
-        let integ = match il.as_any().downcast_ref::<IntegerLiteral>() {
-            Some(il) => il,
+#[test]
+fn test_parsing_infix_expressions() {
+    let infix_tests = vec![
+        ("5 + 5;", 5, "+", 5),
+        ("5 - 5;", 5, "-", 5),
+        ("5 * 5;", 5, "*", 5),
+        ("5 / 5;", 5, "/", 5),
+        ("5 > 5;", 5, ">", 5),
+        ("5 < 5;", 5, "<", 5),
+        ("5 == 5;", 5, "==", 5),
+        ("5 != 5;", 5, "!=", 5),
+    ];
+
+    for test in infix_tests {
+        let (input, left_value, operator, right_value) = test;
+
+        let lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
+
+        let program = match parser.parse_program() {
+            Some(p) => p,
             None => {
-                panic!("il is not IntegerLiteral.");
+                panic!("parser.parse_program() returned None");
             }
         };
+        check_parser_errors(&parser);
 
-        if integ.value != value {
-            panic!("integ.value is not {}. got={}", value, integ.value);
-        }
-
-        if integ.token_literal() != value.to_string() {
+        if program.statements.len() != 1 {
             panic!(
-                "integ.token_literal() is not {}. got={}",
-                value,
-                integ.token_literal()
+                "program.statements does not contain {} statement. got={}",
+                1,
+                program.statements.len()
             );
         }
 
-        true
+        let stmt = match program.statements[0]
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+        {
+            Some(stmt) => stmt,
+            None => panic!("program.statements[0] is not ExpressionStatement."),
+        };
+
+        let expression = match stmt
+            .expression
+            .as_ref()
+            .unwrap()
+            .as_any()
+            .downcast_ref::<InfixExpression>()
+        {
+            Some(expression) => expression,
+            None => panic!("stmt.expression is not InfixExpression."),
+        };
+
+        if !test_integer_literal(&expression.left.as_ref().unwrap(), left_value) {
+            return;
+        }
+
+        if expression.operator != operator {
+            panic!(
+                "expression.operator is not '{}'. got={}",
+                operator, expression.operator
+            );
+        }
+
+        if !test_integer_literal(&expression.right.as_ref().unwrap(), right_value) {
+            return;
+        }
+    }
+}
+
+#[test]
+fn test_operator_precedence_parsing() {
+    let tests = vec![
+        ("-a * b", "((-a) * b)"),
+        ("!-a", "(!(-a))"),
+        ("a + b + c", "((a + b) + c)"),
+        ("a + b - c", "((a + b) - c)"),
+        ("a * b * c", "((a * b) * c)"),
+        ("a * b / c", "((a * b) / c)"),
+        ("a + b / c", "(a + (b / c))"),
+        ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
+        ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
+        ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
+        ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
+        (
+            "3 + 4 * 5 == 3 * 1 + 4 * 5",
+            "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+        ),
+    ];
+
+    for test in tests {
+        let (input, expected) = test;
+
+        let lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
+
+        let program = match parser.parse_program() {
+            Some(p) => p,
+            None => {
+                panic!("parser.parse_program() returned None");
+            }
+        };
+        check_parser_errors(&parser);
+
+        let actual = program.to_string();
+        if actual != expected {
+            panic!("expected={}, got={}", expected, actual);
+        }
     }
 }

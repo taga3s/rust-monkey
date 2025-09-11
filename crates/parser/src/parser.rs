@@ -7,11 +7,13 @@ use ::ast::ast::{
     Program, ReturnStatement, Statement,
 };
 use ::lexer::lexer::Lexer;
+use ast::ast::InfixExpression;
 use token::token::{Token, TokenType};
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
 type InfixParseFn = fn(&mut Parser, left: Box<dyn Expression>) -> Option<Box<dyn Expression>>;
 
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Precedence {
     LOWEST,
     EQUALS,      // ==
@@ -21,6 +23,17 @@ pub enum Precedence {
     PREFIX,      // -X or !X
     CALL,        // myFunction(X)
 }
+
+const PRECEDENCES: [(TokenType, Precedence); 8] = [
+    (TokenType::EQ, Precedence::EQUALS),
+    (TokenType::NOTEQ, Precedence::EQUALS),
+    (TokenType::LT, Precedence::LESSGREATER),
+    (TokenType::GT, Precedence::LESSGREATER),
+    (TokenType::PLUS, Precedence::SUM),
+    (TokenType::MINUS, Precedence::SUM),
+    (TokenType::SLASH, Precedence::PRODUCT),
+    (TokenType::ASTERISK, Precedence::PRODUCT),
+];
 
 pub struct Parser {
     lexer: Lexer,
@@ -48,6 +61,15 @@ impl Parser {
         parser.register_prefix(TokenType::INT, Self::parse_integer_literal);
         parser.register_prefix(TokenType::BANG, Self::parse_prefix_expression);
         parser.register_prefix(TokenType::MINUS, Self::parse_prefix_expression);
+
+        parser.register_infix(TokenType::PLUS, Self::parse_infix_expression);
+        parser.register_infix(TokenType::MINUS, Self::parse_infix_expression);
+        parser.register_infix(TokenType::SLASH, Self::parse_infix_expression);
+        parser.register_infix(TokenType::ASTERISK, Self::parse_infix_expression);
+        parser.register_infix(TokenType::EQ, Self::parse_infix_expression);
+        parser.register_infix(TokenType::NOTEQ, Self::parse_infix_expression);
+        parser.register_infix(TokenType::LT, Self::parse_infix_expression);
+        parser.register_infix(TokenType::GT, Self::parse_infix_expression);
 
         parser.next_token();
         parser.next_token();
@@ -153,15 +175,27 @@ impl Parser {
     }
 
     pub fn parse_expression(&mut self, precedence: Precedence) -> Option<Box<dyn Expression>> {
-        let prefix = match self.prefix_parse_fns.get(&self.cur_token.type_) {
-            Some(p) => p,
+        let prefix_parse_fn = match self.prefix_parse_fns.get(&self.cur_token.type_) {
+            Some(p) => *p,
             None => {
                 self.no_prefix_parse_fn_error(self.cur_token.type_.clone());
                 return None;
             }
         };
 
-        let left_exp = prefix(self);
+        let mut left_exp = prefix_parse_fn(self);
+
+        while !self.peek_token_is(TokenType::SEMICOLON) && precedence < self.peek_precedence() {
+            let infix_parse_fn = match self.infix_parse_fns.get(&self.peek_token.type_) {
+                Some(i) => *i,
+                None => return left_exp,
+            };
+
+            self.next_token();
+
+            left_exp = infix_parse_fn(self, left_exp.unwrap());
+        }
+
         left_exp
     }
 
@@ -232,7 +266,39 @@ impl Parser {
         self.errors.push(msg);
     }
 
+    fn peek_precedence(&self) -> Precedence {
+        match PRECEDENCES
+            .iter()
+            .find(|(t, _)| *t == self.peek_token.type_)
+        {
+            Some((_, p)) => p.clone(),
+            None => Precedence::LOWEST,
+        }
+    }
+
+    fn cur_precedence(&self) -> Precedence {
+        match PRECEDENCES.iter().find(|(t, _)| *t == self.cur_token.type_) {
+            Some((_, p)) => p.clone(),
+            None => Precedence::LOWEST,
+        }
+    }
+
     fn register_infix(&mut self, tok: TokenType, fn_: InfixParseFn) {
         self.infix_parse_fns.insert(tok, fn_);
+    }
+
+    fn parse_infix_expression(&mut self, left: Box<dyn Expression>) -> Option<Box<dyn Expression>> {
+        let mut expression = InfixExpression {
+            token: self.cur_token.clone(),
+            left: Some(left),
+            operator: self.cur_token.literal.clone(),
+            right: None,
+        };
+
+        let precedence = self.cur_precedence();
+        self.next_token();
+        expression.right = self.parse_expression(precedence);
+
+        Some(Box::new(expression))
     }
 }

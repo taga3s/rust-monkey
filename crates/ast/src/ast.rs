@@ -157,14 +157,11 @@ impl Node for ExpressionStatement {
     }
 
     fn to_string(&self) -> String {
-        let mut out = String::new();
-        out.push_str(&self.token_literal());
-        out.push(' ');
-        if let Some(expr) = &self.expression {
-            out.push_str(&expr.to_string());
+        if let Some(expression) = &self.expression {
+            expression.to_string()
+        } else {
+            "".to_string()
         }
-        out.push(';');
-        out
     }
 }
 
@@ -227,6 +224,45 @@ impl Node for PrefixExpression {
 }
 
 impl AsAny for PrefixExpression {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct InfixExpression {
+    pub token: token::Token,
+    pub left: Option<Box<dyn Expression>>,
+    pub operator: String,
+    pub right: Option<Box<dyn Expression>>,
+}
+
+impl Expression for InfixExpression {
+    fn expression_node(&self) {}
+}
+
+impl Node for InfixExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        let mut out = String::new();
+        out.push('(');
+        if let Some(left) = &self.left {
+            out.push_str(&left.to_string());
+        }
+        out.push(' ');
+        out.push_str(&self.operator);
+        out.push(' ');
+        if let Some(right) = &self.right {
+            out.push_str(&right.to_string());
+        }
+        out.push(')');
+        out
+    }
+}
+
+impl AsAny for InfixExpression {
     fn as_any(&self) -> &dyn Any {
         self
     }
