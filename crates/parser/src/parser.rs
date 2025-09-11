@@ -94,7 +94,7 @@ impl Parser {
         self.peek_token = self.lexer.next_token();
     }
 
-    pub fn parse_program(&mut self) -> Option<Program> {
+    pub fn parse_program(&mut self) -> Program {
         let mut program = Program { statements: vec![] };
 
         while self.cur_token.type_ != TokenType::EOF {
@@ -104,7 +104,7 @@ impl Parser {
             }
             self.next_token();
         }
-        Some(program)
+        program
     }
 
     pub fn parse_statement(&mut self) -> Option<Box<dyn Statement>> {
@@ -158,7 +158,6 @@ impl Parser {
         Some(Box::new(stmt))
     }
 
-    // TODO: Statementを返すのは正しいのか検証する
     pub fn parse_expression_statement(&mut self) -> Option<Box<dyn Statement>> {
         let mut stmt = ExpressionStatement {
             token: self.cur_token.clone(),
@@ -197,6 +196,15 @@ impl Parser {
         }
 
         left_exp
+    }
+
+    fn register_prefix(&mut self, tok: TokenType, fn_: PrefixParseFn) {
+        self.prefix_parse_fns.insert(tok, fn_);
+    }
+
+    fn no_prefix_parse_fn_error(&mut self, tok: TokenType) {
+        let msg = format!("no prefix parse function for {:?} found", tok);
+        self.errors.push(msg);
     }
 
     pub fn parse_identifier(&mut self) -> Option<Box<dyn Expression>> {
@@ -239,6 +247,25 @@ impl Parser {
         Some(Box::new(expression))
     }
 
+    fn register_infix(&mut self, tok: TokenType, fn_: InfixParseFn) {
+        self.infix_parse_fns.insert(tok, fn_);
+    }
+
+    fn parse_infix_expression(&mut self, left: Box<dyn Expression>) -> Option<Box<dyn Expression>> {
+        let mut expression = InfixExpression {
+            token: self.cur_token.clone(),
+            left: Some(left),
+            operator: self.cur_token.literal.clone(),
+            right: None,
+        };
+
+        let precedence = self.cur_precedence();
+        self.next_token();
+        expression.right = self.parse_expression(precedence);
+
+        Some(Box::new(expression))
+    }
+
     fn cur_token_is(&self, tok: TokenType) -> bool {
         self.cur_token.type_ == tok
     }
@@ -257,15 +284,6 @@ impl Parser {
         }
     }
 
-    fn register_prefix(&mut self, tok: TokenType, fn_: PrefixParseFn) {
-        self.prefix_parse_fns.insert(tok, fn_);
-    }
-
-    fn no_prefix_parse_fn_error(&mut self, tok: TokenType) {
-        let msg = format!("no prefix parse function for {:?} found", tok);
-        self.errors.push(msg);
-    }
-
     fn peek_precedence(&self) -> Precedence {
         match PRECEDENCES
             .iter()
@@ -281,24 +299,5 @@ impl Parser {
             Some((_, p)) => p.clone(),
             None => Precedence::LOWEST,
         }
-    }
-
-    fn register_infix(&mut self, tok: TokenType, fn_: InfixParseFn) {
-        self.infix_parse_fns.insert(tok, fn_);
-    }
-
-    fn parse_infix_expression(&mut self, left: Box<dyn Expression>) -> Option<Box<dyn Expression>> {
-        let mut expression = InfixExpression {
-            token: self.cur_token.clone(),
-            left: Some(left),
-            operator: self.cur_token.literal.clone(),
-            right: None,
-        };
-
-        let precedence = self.cur_precedence();
-        self.next_token();
-        expression.right = self.parse_expression(precedence);
-
-        Some(Box::new(expression))
     }
 }

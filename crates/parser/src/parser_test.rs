@@ -52,12 +52,7 @@ fn test_let_statements() {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = match parser.parse_program() {
-        Some(p) => p,
-        None => {
-            panic!("parser.parse_program() returned None");
-        }
-    };
+    let program = parser.parse_program();
     check_parser_errors(&parser);
 
     if program.statements.len() != 3 {
@@ -119,12 +114,7 @@ fn test_return_statements() {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = match parser.parse_program() {
-        Some(p) => p,
-        None => {
-            panic!("parser.parse_program() returned None");
-        }
-    };
+    let program = parser.parse_program();
     check_parser_errors(&parser);
 
     if program.statements.len() != 3 {
@@ -158,12 +148,7 @@ fn test_identifier_expression() {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = match parser.parse_program() {
-        Some(p) => p,
-        None => {
-            panic!("parser.parse_program() returned None");
-        }
-    };
+    let program = parser.parse_program();
     check_parser_errors(&parser);
 
     if program.statements.len() != 1 {
@@ -211,12 +196,7 @@ fn test_integer_literal_expression() {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = match parser.parse_program() {
-        Some(p) => p,
-        None => {
-            panic!("parser.parse_program() returned None");
-        }
-    };
+    let program = parser.parse_program();
     check_parser_errors(&parser);
 
     if program.statements.len() != 1 {
@@ -268,12 +248,7 @@ fn test_parsing_prefix_expressions() {
         let lexer = Lexer::new(input.to_string());
         let mut parser = Parser::new(lexer);
 
-        let program = match parser.parse_program() {
-            Some(p) => p,
-            None => {
-                panic!("parser.parse_program() returned None");
-            }
-        };
+        let program = parser.parse_program();
         check_parser_errors(&parser);
 
         if program.statements.len() != 1 {
@@ -335,12 +310,7 @@ fn test_parsing_infix_expressions() {
         let lexer = Lexer::new(input.to_string());
         let mut parser = Parser::new(lexer);
 
-        let program = match parser.parse_program() {
-            Some(p) => p,
-            None => {
-                panic!("parser.parse_program() returned None");
-            }
-        };
+        let program = parser.parse_program();
         check_parser_errors(&parser);
 
         if program.statements.len() != 1 {
@@ -413,12 +383,7 @@ fn test_operator_precedence_parsing() {
         let lexer = Lexer::new(input.to_string());
         let mut parser = Parser::new(lexer);
 
-        let program = match parser.parse_program() {
-            Some(p) => p,
-            None => {
-                panic!("parser.parse_program() returned None");
-            }
-        };
+        let program = parser.parse_program();
         check_parser_errors(&parser);
 
         let actual = program.to_string();
