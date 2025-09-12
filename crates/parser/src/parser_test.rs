@@ -6,6 +6,7 @@ use lexer::lexer::Lexer;
 
 use crate::parser::Parser;
 
+// -- Test Helpers -- //
 fn test_integer_literal(il: &Box<dyn Expression>, value: i64) -> bool {
     let integer = match il.as_any().downcast_ref::<IntegerLiteral>() {
         Some(integer) => integer,
@@ -24,6 +25,92 @@ fn test_integer_literal(il: &Box<dyn Expression>, value: i64) -> bool {
             value,
             integer.token_literal()
         );
+    }
+
+    true
+}
+
+fn test_boolean_literal(exp: &Box<dyn Expression>, value: bool) -> bool {
+    let boolean = match exp.as_any().downcast_ref::<ast::ast::Boolean>() {
+        Some(boolean) => boolean,
+        None => {
+            panic!("exp is not Boolean.");
+        }
+    };
+
+    if boolean.value != value {
+        panic!("boolean.value is not {}. got={}", value, boolean.value);
+    }
+
+    if boolean.token_literal() != value.to_string() {
+        panic!(
+            "boolean.token_literal() is not {}. got={}",
+            value,
+            boolean.token_literal()
+        );
+    }
+
+    true
+}
+
+fn test_identifier(exp: &Box<dyn Expression>, value: &str) -> bool {
+    let ident = match exp.as_any().downcast_ref::<Identifier>() {
+        Some(ident) => ident,
+        None => {
+            panic!("exp is not Identifier.");
+        }
+    };
+
+    if ident.value != value {
+        panic!("ident.value is not {}. got={}", value, ident.value);
+    }
+
+    if ident.token_literal() != value {
+        panic!(
+            "ident.token_literal() is not {}. got={}",
+            value,
+            ident.token_literal()
+        );
+    }
+
+    true
+}
+
+fn test_literal_expression(exp: &Box<dyn Expression>, expected: TestingLiteral) -> bool {
+    match expected {
+        TestingLiteral::Int(value) => return test_integer_literal(exp, value),
+        TestingLiteral::Str(value) => return test_identifier(exp, value),
+        TestingLiteral::Bool(value) => return test_boolean_literal(exp, value),
+        // _ => {
+        //     eprintln!("type of exp not handled.");
+        //     return false;
+        // }
+    }
+}
+
+fn test_infix_expression(
+    exp: &Box<dyn Expression>,
+    left: TestingLiteral,
+    operator: &str,
+    right: TestingLiteral,
+) -> bool {
+    let op_exp = match exp.as_any().downcast_ref::<InfixExpression>() {
+        Some(op_exp) => op_exp,
+        None => {
+            panic!("exp is not InfixExpression.");
+        }
+    };
+
+    if !test_literal_expression(&op_exp.left.as_ref().unwrap(), left) {
+        return false;
+    }
+
+    if op_exp.operator != operator {
+        panic!("operator is not {}. got={}", operator, op_exp.operator);
+    }
+
+    if !test_literal_expression(&op_exp.right.as_ref().unwrap(), right) {
+        return false;
     }
 
     true
@@ -239,11 +326,74 @@ fn test_integer_literal_expression() {
 }
 
 #[test]
+fn test_boolean_expression() {
+    let tests = vec![("true;", true), ("false;", false)];
+
+    for test in tests {
+        let (input, value) = test;
+
+        let lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
+
+        let program = parser.parse_program();
+        check_parser_errors(&parser);
+
+        if program.statements.len() != 1 {
+            panic!(
+                "program.statements does not contain 1 statement. got={}",
+                program.statements.len()
+            );
+        }
+
+        let stmt = match program.statements[0]
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+        {
+            Some(stmt) => stmt,
+            None => panic!("program.statements[0] is not ExpressionStatement."),
+        };
+
+        let boolean = match stmt
+            .expression
+            .as_ref()
+            .unwrap()
+            .as_any()
+            .downcast_ref::<ast::ast::Boolean>()
+        {
+            Some(boolean) => boolean,
+            None => panic!("stmt.expression is not Boolean."),
+        };
+
+        if boolean.value != value {
+            panic!("boolean.value is not {}. got={}", value, boolean.value);
+        }
+
+        if boolean.token_literal() != value.to_string() {
+            panic!(
+                "boolean.token_literal() is not {}. got={}",
+                value.to_string(),
+                boolean.token_literal()
+            );
+        };
+    }
+}
+
+enum TestingLiteral {
+    Int(i64),
+    Str(&'static str),
+    Bool(bool),
+}
+#[test]
 fn test_parsing_prefix_expressions() {
-    let prefix_tests = vec![("!5;", "!", 5), ("-15;", "-", 15)];
+    let prefix_tests = vec![
+        ("!5;", "!", TestingLiteral::Int(5)),
+        ("-15;", "-", TestingLiteral::Int(15)),
+        ("!true;", "!", TestingLiteral::Bool(true)),
+        ("!false;", "!", TestingLiteral::Bool(false)),
+    ];
 
     for test in prefix_tests {
-        let (input, operator, integer_value) = test;
+        let (input, operator, value) = test;
 
         let lexer = Lexer::new(input.to_string());
         let mut parser = Parser::new(lexer);
@@ -285,7 +435,7 @@ fn test_parsing_prefix_expressions() {
             );
         }
 
-        if !test_integer_literal(&expression.right.as_ref().unwrap(), integer_value) {
+        if !test_literal_expression(&expression.right.as_ref().unwrap(), value) {
             return;
         }
     }
@@ -293,15 +443,73 @@ fn test_parsing_prefix_expressions() {
 
 #[test]
 fn test_parsing_infix_expressions() {
-    let infix_tests = vec![
-        ("5 + 5;", 5, "+", 5),
-        ("5 - 5;", 5, "-", 5),
-        ("5 * 5;", 5, "*", 5),
-        ("5 / 5;", 5, "/", 5),
-        ("5 > 5;", 5, ">", 5),
-        ("5 < 5;", 5, "<", 5),
-        ("5 == 5;", 5, "==", 5),
-        ("5 != 5;", 5, "!=", 5),
+    let infix_tests: Vec<(&'static str, TestingLiteral, &'static str, TestingLiteral)> = vec![
+        (
+            "5 + 5;",
+            TestingLiteral::Int(5),
+            "+",
+            TestingLiteral::Int(5),
+        ),
+        (
+            "5 - 5;",
+            TestingLiteral::Int(5),
+            "-",
+            TestingLiteral::Int(5),
+        ),
+        (
+            "5 * 5;",
+            TestingLiteral::Int(5),
+            "*",
+            TestingLiteral::Int(5),
+        ),
+        (
+            "5 / 5;",
+            TestingLiteral::Int(5),
+            "/",
+            TestingLiteral::Int(5),
+        ),
+        (
+            "5 > 5;",
+            TestingLiteral::Int(5),
+            ">",
+            TestingLiteral::Int(5),
+        ),
+        (
+            "5 < 5;",
+            TestingLiteral::Int(5),
+            "<",
+            TestingLiteral::Int(5),
+        ),
+        (
+            "5 == 5;",
+            TestingLiteral::Int(5),
+            "==",
+            TestingLiteral::Int(5),
+        ),
+        (
+            "5 != 5;",
+            TestingLiteral::Int(5),
+            "!=",
+            TestingLiteral::Int(5),
+        ),
+        (
+            "true == true",
+            TestingLiteral::Bool(true),
+            "==",
+            TestingLiteral::Bool(true),
+        ),
+        (
+            "true != false",
+            TestingLiteral::Bool(true),
+            "!=",
+            TestingLiteral::Bool(false),
+        ),
+        (
+            "false == false",
+            TestingLiteral::Bool(false),
+            "==",
+            TestingLiteral::Bool(false),
+        ),
     ];
 
     for test in infix_tests {
@@ -329,29 +537,12 @@ fn test_parsing_infix_expressions() {
             None => panic!("program.statements[0] is not ExpressionStatement."),
         };
 
-        let expression = match stmt
-            .expression
-            .as_ref()
-            .unwrap()
-            .as_any()
-            .downcast_ref::<InfixExpression>()
-        {
-            Some(expression) => expression,
-            None => panic!("stmt.expression is not InfixExpression."),
-        };
-
-        if !test_integer_literal(&expression.left.as_ref().unwrap(), left_value) {
-            return;
-        }
-
-        if expression.operator != operator {
-            panic!(
-                "expression.operator is not '{}'. got={}",
-                operator, expression.operator
-            );
-        }
-
-        if !test_integer_literal(&expression.right.as_ref().unwrap(), right_value) {
+        if !test_infix_expression(
+            stmt.expression.as_ref().unwrap(),
+            left_value,
+            operator,
+            right_value,
+        ) {
             return;
         }
     }
@@ -375,6 +566,10 @@ fn test_operator_precedence_parsing() {
             "3 + 4 * 5 == 3 * 1 + 4 * 5",
             "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
         ),
+        ("true", "true"),
+        ("false", "false"),
+        ("3 > 5 == false", "((3 > 5) == false)"),
+        ("3 < 5 == true", "((3 < 5) == true)"),
     ];
 
     for test in tests {
