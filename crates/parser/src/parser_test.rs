@@ -7,6 +7,12 @@ use lexer::lexer::Lexer;
 use crate::parser::Parser;
 
 // -- Test Helpers -- //
+enum TestingLiteral {
+    Int(i64),
+    Str(&'static str),
+    Bool(bool),
+}
+
 fn test_integer_literal(il: &Box<dyn Expression>, value: i64) -> bool {
     let integer = match il.as_any().downcast_ref::<IntegerLiteral>() {
         Some(integer) => integer,
@@ -81,10 +87,6 @@ fn test_literal_expression(exp: &Box<dyn Expression>, expected: TestingLiteral) 
         TestingLiteral::Int(value) => return test_integer_literal(exp, value),
         TestingLiteral::Str(value) => return test_identifier(exp, value),
         TestingLiteral::Bool(value) => return test_boolean_literal(exp, value),
-        // _ => {
-        //     eprintln!("type of exp not handled.");
-        //     return false;
-        // }
     }
 }
 
@@ -378,11 +380,6 @@ fn test_boolean_expression() {
     }
 }
 
-enum TestingLiteral {
-    Int(i64),
-    Str(&'static str),
-    Bool(bool),
-}
 #[test]
 fn test_parsing_prefix_expressions() {
     let prefix_tests = vec![
@@ -570,6 +567,11 @@ fn test_operator_precedence_parsing() {
         ("false", "false"),
         ("3 > 5 == false", "((3 > 5) == false)"),
         ("3 < 5 == true", "((3 < 5) == true)"),
+        ("1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"),
+        ("(5 + 5) * 2", "((5 + 5) * 2)"),
+        ("2 / (5 + 5)", "(2 / (5 + 5))"),
+        ("-(5 + 5)", "(-(5 + 5))"),
+        ("!(true == true)", "(!(true == true))"),
     ];
 
     for test in tests {
