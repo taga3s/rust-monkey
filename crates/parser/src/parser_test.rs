@@ -1,7 +1,4 @@
-use ast::ast::{
-    Expression, ExpressionStatement, Identifier, InfixExpression, IntegerLiteral, LetStatement,
-    Node, PrefixExpression, ReturnStatement, Statement,
-};
+use ast::ast::{ExpressionTypes, Node, StatementTypes};
 use lexer::lexer::Lexer;
 
 use crate::parser::Parser;
@@ -13,10 +10,10 @@ enum TestingLiteral {
     Bool(bool),
 }
 
-fn test_integer_literal(il: &Box<dyn Expression>, value: i64) -> bool {
-    let integer = match il.as_any().downcast_ref::<IntegerLiteral>() {
-        Some(integer) => integer,
-        None => {
+fn test_integer_literal(il: &Box<ExpressionTypes>, value: i64) -> bool {
+    let integer = match il.as_ref() {
+        ExpressionTypes::IntegerLiteral(integer) => integer,
+        _ => {
             panic!("il is not IntegerLiteral.");
         }
     };
@@ -36,33 +33,10 @@ fn test_integer_literal(il: &Box<dyn Expression>, value: i64) -> bool {
     true
 }
 
-fn test_boolean_literal(exp: &Box<dyn Expression>, value: bool) -> bool {
-    let boolean = match exp.as_any().downcast_ref::<ast::ast::Boolean>() {
-        Some(boolean) => boolean,
-        None => {
-            panic!("exp is not Boolean.");
-        }
-    };
-
-    if boolean.value != value {
-        panic!("boolean.value is not {}. got={}", value, boolean.value);
-    }
-
-    if boolean.token_literal() != value.to_string() {
-        panic!(
-            "boolean.token_literal() is not {}. got={}",
-            value,
-            boolean.token_literal()
-        );
-    }
-
-    true
-}
-
-fn test_identifier(exp: &Box<dyn Expression>, value: &str) -> bool {
-    let ident = match exp.as_any().downcast_ref::<Identifier>() {
-        Some(ident) => ident,
-        None => {
+fn test_identifier(exp: &Box<ExpressionTypes>, value: &str) -> bool {
+    let ident = match exp.as_ref() {
+        ExpressionTypes::Identifier(ident) => ident,
+        _ => {
             panic!("exp is not Identifier.");
         }
     };
@@ -82,7 +56,30 @@ fn test_identifier(exp: &Box<dyn Expression>, value: &str) -> bool {
     true
 }
 
-fn test_literal_expression(exp: &Box<dyn Expression>, expected: TestingLiteral) -> bool {
+fn test_boolean_literal(exp: &Box<ExpressionTypes>, value: bool) -> bool {
+    let boolean = match exp.as_ref() {
+        ExpressionTypes::Boolean(boolean) => boolean,
+        _ => {
+            panic!("exp is not Boolean.");
+        }
+    };
+
+    if boolean.value != value {
+        panic!("boolean.value is not {}. got={}", value, boolean.value);
+    }
+
+    if boolean.token_literal() != value.to_string() {
+        panic!(
+            "boolean.token_literal() is not {}. got={}",
+            value,
+            boolean.token_literal()
+        );
+    }
+
+    true
+}
+
+fn test_literal_expression(exp: &Box<ExpressionTypes>, expected: TestingLiteral) -> bool {
     match expected {
         TestingLiteral::Int(value) => return test_integer_literal(exp, value),
         TestingLiteral::Str(value) => return test_identifier(exp, value),
@@ -91,14 +88,14 @@ fn test_literal_expression(exp: &Box<dyn Expression>, expected: TestingLiteral) 
 }
 
 fn test_infix_expression(
-    exp: &Box<dyn Expression>,
+    exp: &Box<ExpressionTypes>,
     left: TestingLiteral,
     operator: &str,
     right: TestingLiteral,
 ) -> bool {
-    let op_exp = match exp.as_any().downcast_ref::<InfixExpression>() {
-        Some(op_exp) => op_exp,
-        None => {
+    let op_exp = match exp.as_ref() {
+        ExpressionTypes::InfixExpression(op_exp) => op_exp,
+        _ => {
             panic!("exp is not InfixExpression.");
         }
     };
@@ -160,14 +157,14 @@ fn test_let_statements() {
         }
     }
 
-    fn test_let_statement(stmt: &Box<dyn Statement>, ident: &str) -> bool {
-        if stmt.token_literal() != "let" {
-            panic!("stmt.token_literal not 'let'. got={}", stmt.token_literal());
+    fn test_let_statement(stmt: &StatementTypes, ident: &str) -> bool {
+        if !matches!(stmt, StatementTypes::LetStatement(_)) {
+            panic!("stmt is not LetStatement.");
         }
 
-        let let_stmt = match stmt.as_any().downcast_ref::<LetStatement>() {
-            Some(let_stmt) => let_stmt,
-            None => {
+        let let_stmt = match stmt {
+            StatementTypes::LetStatement(s) => s,
+            _ => {
                 panic!("stmt is not LetStatement.");
             }
         };
@@ -214,9 +211,9 @@ fn test_return_statements() {
     }
 
     for stmt in program.statements.iter() {
-        let return_stmt = match stmt.as_any().downcast_ref::<ReturnStatement>() {
-            Some(return_stmt) => return_stmt,
-            None => {
+        let return_stmt = match stmt {
+            StatementTypes::ReturnStatement(s) => s,
+            _ => {
                 panic!("stmt is not ReturnStatement.");
             }
         };
@@ -247,23 +244,14 @@ fn test_identifier_expression() {
         );
     }
 
-    let stmt = match program.statements[0]
-        .as_any()
-        .downcast_ref::<ExpressionStatement>()
-    {
-        Some(stmt) => stmt,
-        None => panic!("stmt is not ExpressionStatement."),
+    let stmt = match &program.statements[0] {
+        StatementTypes::ExpressionStatement(stmt) => stmt,
+        _ => panic!("program.statements[0] is not ExpressionStatement."),
     };
 
-    let ident = match stmt
-        .expression
-        .as_ref()
-        .unwrap()
-        .as_any()
-        .downcast_ref::<Identifier>()
-    {
-        Some(ident) => ident,
-        None => panic!("stmt.expression is not Identifier."),
+    let ident = match stmt.expression.as_ref().unwrap().as_ref() {
+        ExpressionTypes::Identifier(ident) => ident,
+        _ => panic!("stmt.expression is not Identifier."),
     };
 
     if ident.value != "foobar" {
@@ -295,23 +283,14 @@ fn test_integer_literal_expression() {
         );
     }
 
-    let stmt = match program.statements[0]
-        .as_any()
-        .downcast_ref::<ExpressionStatement>()
-    {
-        Some(stmt) => stmt,
-        None => panic!("program.statements[0] is not ExpressionStatement."),
+    let stmt = match &program.statements[0] {
+        StatementTypes::ExpressionStatement(stmt) => stmt,
+        _ => panic!("program.statements[0] is not ExpressionStatement."),
     };
 
-    let literal = match stmt
-        .expression
-        .as_ref()
-        .unwrap()
-        .as_any()
-        .downcast_ref::<IntegerLiteral>()
-    {
-        Some(literal) => literal,
-        None => panic!("stmt.expression is not IntegerLiteral."),
+    let literal = match stmt.expression.as_ref().unwrap().as_ref() {
+        ExpressionTypes::IntegerLiteral(literal) => literal,
+        _ => panic!("stmt.expression is not IntegerLiteral."),
     };
 
     if literal.value != 5 {
@@ -347,23 +326,14 @@ fn test_boolean_expression() {
             );
         }
 
-        let stmt = match program.statements[0]
-            .as_any()
-            .downcast_ref::<ExpressionStatement>()
-        {
-            Some(stmt) => stmt,
-            None => panic!("program.statements[0] is not ExpressionStatement."),
+        let stmt = match &program.statements[0] {
+            StatementTypes::ExpressionStatement(stmt) => stmt,
+            _ => panic!("program.statements[0] is not ExpressionStatement."),
         };
 
-        let boolean = match stmt
-            .expression
-            .as_ref()
-            .unwrap()
-            .as_any()
-            .downcast_ref::<ast::ast::Boolean>()
-        {
-            Some(boolean) => boolean,
-            None => panic!("stmt.expression is not Boolean."),
+        let boolean = match stmt.expression.as_ref().unwrap().as_ref() {
+            ExpressionTypes::Boolean(boolean) => boolean,
+            _ => panic!("stmt.expression is not Boolean."),
         };
 
         if boolean.value != value {
@@ -406,23 +376,14 @@ fn test_parsing_prefix_expressions() {
             );
         }
 
-        let stmt = match program.statements[0]
-            .as_any()
-            .downcast_ref::<ExpressionStatement>()
-        {
-            Some(stmt) => stmt,
-            None => panic!("program.statements[0] is not ExpressionStatement."),
+        let stmt = match &program.statements[0] {
+            StatementTypes::ExpressionStatement(stmt) => stmt,
+            _ => panic!("program.statements[0] is not ExpressionStatement."),
         };
 
-        let expression = match stmt
-            .expression
-            .as_ref()
-            .unwrap()
-            .as_any()
-            .downcast_ref::<PrefixExpression>()
-        {
-            Some(expression) => expression,
-            None => panic!("stmt.expression is not PrefixExpression."),
+        let expression = match stmt.expression.as_ref().unwrap().as_ref() {
+            ExpressionTypes::PrefixExpression(expression) => expression,
+            _ => panic!("stmt.expression is not PrefixExpression."),
         };
 
         if expression.operator != operator {
@@ -526,12 +487,9 @@ fn test_parsing_infix_expressions() {
             );
         }
 
-        let stmt = match program.statements[0]
-            .as_any()
-            .downcast_ref::<ExpressionStatement>()
-        {
-            Some(stmt) => stmt,
-            None => panic!("program.statements[0] is not ExpressionStatement."),
+        let stmt = match &program.statements[0] {
+            StatementTypes::ExpressionStatement(stmt) => stmt,
+            _ => panic!("program.statements[0] is not ExpressionStatement."),
         };
 
         if !test_infix_expression(

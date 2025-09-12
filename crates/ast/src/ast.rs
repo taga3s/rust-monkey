@@ -1,8 +1,19 @@
 //! AST for the Monkey programming language
-
-use std::any::Any;
-
 use token::token;
+
+pub enum StatementTypes {
+    LetStatement(LetStatement),
+    ReturnStatement(ReturnStatement),
+    ExpressionStatement(ExpressionStatement),
+}
+
+pub enum ExpressionTypes {
+    Identifier(Identifier),
+    IntegerLiteral(IntegerLiteral),
+    PrefixExpression(PrefixExpression),
+    InfixExpression(InfixExpression),
+    Boolean(Boolean),
+}
 
 pub trait Node {
     fn token_literal(&self) -> String;
@@ -11,30 +22,30 @@ pub trait Node {
 
 pub trait Statement
 where
-    Self: Node + AsAny,
+    Self: Node,
 {
     fn statement_node(&self);
 }
 
 pub trait Expression
 where
-    Self: Node + AsAny,
+    Self: Node,
 {
     fn expression_node(&self);
 }
 
-pub trait AsAny {
-    fn as_any(&self) -> &dyn Any;
-}
-
 pub struct Program {
-    pub statements: Vec<Box<dyn Statement>>,
+    pub statements: Vec<StatementTypes>,
 }
 
 impl Program {
     pub fn token_literal(&self) -> String {
         if self.statements.len() > 0 {
-            self.statements[0].token_literal()
+            match &self.statements[0] {
+                StatementTypes::LetStatement(s) => s.token_literal(),
+                StatementTypes::ReturnStatement(s) => s.token_literal(),
+                StatementTypes::ExpressionStatement(s) => s.token_literal(),
+            }
         } else {
             "".to_string()
         }
@@ -43,7 +54,11 @@ impl Program {
     pub fn to_string(&self) -> String {
         self.statements
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| match s {
+                StatementTypes::LetStatement(stmt) => stmt.to_string(),
+                StatementTypes::ReturnStatement(stmt) => stmt.to_string(),
+                StatementTypes::ExpressionStatement(stmt) => stmt.to_string(),
+            })
             .collect::<Vec<String>>()
             .join("")
     }
@@ -65,12 +80,6 @@ impl Node for Identifier {
 
     fn to_string(&self) -> String {
         self.value.clone()
-    }
-}
-
-impl AsAny for Identifier {
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
 
@@ -105,12 +114,6 @@ impl Node for LetStatement {
     }
 }
 
-impl AsAny for LetStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
 pub struct ReturnStatement {
     pub token: token::Token,
     pub return_value: Option<Box<dyn Expression>>,
@@ -138,15 +141,9 @@ impl Node for ReturnStatement {
     }
 }
 
-impl AsAny for ReturnStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
 pub struct ExpressionStatement {
     pub token: token::Token,
-    pub expression: Option<Box<dyn Expression>>,
+    pub expression: Option<Box<ExpressionTypes>>,
 }
 
 impl Statement for ExpressionStatement {
@@ -160,16 +157,16 @@ impl Node for ExpressionStatement {
 
     fn to_string(&self) -> String {
         if let Some(expression) = &self.expression {
-            expression.to_string()
+            match expression.as_ref() {
+                ExpressionTypes::Identifier(expr) => expr.to_string(),
+                ExpressionTypes::IntegerLiteral(expr) => expr.to_string(),
+                ExpressionTypes::PrefixExpression(expr) => expr.to_string(),
+                ExpressionTypes::InfixExpression(expr) => expr.to_string(),
+                ExpressionTypes::Boolean(expr) => expr.to_string(),
+            }
         } else {
             "".to_string()
         }
-    }
-}
-
-impl AsAny for ExpressionStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
 
@@ -192,16 +189,10 @@ impl Node for IntegerLiteral {
     }
 }
 
-impl AsAny for IntegerLiteral {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
 pub struct PrefixExpression {
     pub token: token::Token,
     pub operator: String,
-    pub right: Option<Box<dyn Expression>>,
+    pub right: Option<Box<ExpressionTypes>>,
 }
 
 impl Expression for PrefixExpression {
@@ -218,24 +209,24 @@ impl Node for PrefixExpression {
         out.push('(');
         out.push_str(&self.operator);
         if let Some(right) = &self.right {
-            out.push_str(&right.to_string());
+            match right.as_ref() {
+                ExpressionTypes::Identifier(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::IntegerLiteral(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::PrefixExpression(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::InfixExpression(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::Boolean(expr) => out.push_str(&expr.to_string()),
+            }
         }
         out.push(')');
         out
     }
 }
 
-impl AsAny for PrefixExpression {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
 pub struct InfixExpression {
     pub token: token::Token,
-    pub left: Option<Box<dyn Expression>>,
+    pub left: Option<Box<ExpressionTypes>>,
     pub operator: String,
-    pub right: Option<Box<dyn Expression>>,
+    pub right: Option<Box<ExpressionTypes>>,
 }
 
 impl Expression for InfixExpression {
@@ -251,22 +242,28 @@ impl Node for InfixExpression {
         let mut out = String::new();
         out.push('(');
         if let Some(left) = &self.left {
-            out.push_str(&left.to_string());
+            match left.as_ref() {
+                ExpressionTypes::Identifier(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::IntegerLiteral(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::PrefixExpression(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::InfixExpression(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::Boolean(expr) => out.push_str(&expr.to_string()),
+            }
         }
         out.push(' ');
         out.push_str(&self.operator);
         out.push(' ');
         if let Some(right) = &self.right {
-            out.push_str(&right.to_string());
+            match right.as_ref() {
+                ExpressionTypes::Identifier(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::IntegerLiteral(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::PrefixExpression(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::InfixExpression(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::Boolean(expr) => out.push_str(&expr.to_string()),
+            }
         }
         out.push(')');
         out
-    }
-}
-
-impl AsAny for InfixExpression {
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
 
@@ -286,11 +283,5 @@ impl Node for Boolean {
 
     fn to_string(&self) -> String {
         self.value.to_string()
-    }
-}
-
-impl AsAny for Boolean {
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }

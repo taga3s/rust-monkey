@@ -1,11 +1,11 @@
 use token::token::{Token, TokenType};
 
-use crate::ast::{Identifier, LetStatement, Program};
+use crate::ast::{Identifier, LetStatement, Program, StatementTypes};
 
 #[test]
 fn test_to_string() {
     let program = Program {
-        statements: vec![Box::new(LetStatement {
+        statements: vec![StatementTypes::LetStatement(LetStatement {
             token: Token {
                 type_: TokenType::LET,
                 literal: "let".to_string(),
