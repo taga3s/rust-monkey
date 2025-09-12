@@ -7,7 +7,7 @@ use ::ast::ast::{
     Program, ReturnStatement, Statement,
 };
 use ::lexer::lexer::Lexer;
-use ast::ast::InfixExpression;
+use ast::ast::{Boolean, InfixExpression};
 use token::token::{Token, TokenType};
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
@@ -59,6 +59,8 @@ impl Parser {
 
         parser.register_prefix(TokenType::IDENT, Self::parse_identifier);
         parser.register_prefix(TokenType::INT, Self::parse_integer_literal);
+        parser.register_prefix(TokenType::TRUE, Self::parse_boolean);
+        parser.register_prefix(TokenType::FALSE, Self::parse_boolean);
         parser.register_prefix(TokenType::BANG, Self::parse_prefix_expression);
         parser.register_prefix(TokenType::MINUS, Self::parse_prefix_expression);
 
@@ -184,6 +186,7 @@ impl Parser {
 
         let mut left_exp = prefix_parse_fn(self);
 
+        // 右結合力が高い場合、 left_exp が次の演算子に関連づけられている infix_parse_fn に渡されることはない。
         while !self.peek_token_is(TokenType::SEMICOLON) && precedence < self.peek_precedence() {
             let infix_parse_fn = match self.infix_parse_fns.get(&self.peek_token.type_) {
                 Some(i) => *i,
@@ -231,6 +234,15 @@ impl Parser {
         };
 
         Some(Box::new(ident))
+    }
+
+    pub fn parse_boolean(&mut self) -> Option<Box<dyn Expression>> {
+        let boolean = Boolean {
+            token: self.cur_token.clone(),
+            value: self.cur_token_is(TokenType::TRUE),
+        };
+
+        Some(Box::new(boolean))
     }
 
     pub fn parse_prefix_expression(&mut self) -> Option<Box<dyn Expression>> {

@@ -269,3 +269,28 @@ impl AsAny for InfixExpression {
         self
     }
 }
+
+pub struct Boolean {
+    pub token: token::Token,
+    pub value: bool,
+}
+
+impl Expression for Boolean {
+    fn expression_node(&self) {}
+}
+
+impl Node for Boolean {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        self.value.to_string()
+    }
+}
+
+impl AsAny for Boolean {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
