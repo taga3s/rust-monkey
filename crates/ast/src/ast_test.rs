@@ -1,6 +1,6 @@
 use token::token::{Token, TokenType};
 
-use crate::ast::{Identifier, LetStatement, Program, StatementTypes};
+use crate::ast::{ExpressionTypes, Identifier, LetStatement, Program, StatementTypes};
 
 #[test]
 fn test_to_string() {
@@ -17,13 +17,13 @@ fn test_to_string() {
                 },
                 value: "myVar".to_string(),
             }),
-            value: Some(Box::new(Identifier {
+            value: Some(Box::new(ExpressionTypes::Identifier(Identifier {
                 token: Token {
                     type_: TokenType::IDENT,
                     literal: "anotherVar".to_string(),
                 },
                 value: "anotherVar".to_string(),
-            })),
+            }))),
         })],
     };
 

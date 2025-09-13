@@ -364,9 +364,11 @@ impl Node for FunctionLiteral {
             .join(", ");
         out.push_str(&params);
         out.push(')');
+        out.push('{');
         if let Some(body) = &self.body {
             out.push_str(&body.to_string());
         }
+        out.push('}');
         out
     }
 }
