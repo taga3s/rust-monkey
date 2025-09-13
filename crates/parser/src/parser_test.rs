@@ -4,14 +4,15 @@ use lexer::lexer::Lexer;
 use crate::parser::Parser;
 
 // -- Test Helpers -- //
+#[derive(Clone)]
 enum TestingLiteral {
     Int(i64),
     Str(&'static str),
     Bool(bool),
 }
 
-fn test_integer_literal(il: &Box<ExpressionTypes>, value: i64) -> bool {
-    let integer = match il.as_ref() {
+fn test_integer_literal(il: &ExpressionTypes, value: i64) -> bool {
+    let integer = match il {
         ExpressionTypes::IntegerLiteral(integer) => integer,
         _ => {
             panic!("il is not IntegerLiteral.");
@@ -33,11 +34,11 @@ fn test_integer_literal(il: &Box<ExpressionTypes>, value: i64) -> bool {
     true
 }
 
-fn test_identifier(exp: &Box<ExpressionTypes>, value: &str) -> bool {
-    let ident = match exp.as_ref() {
+fn test_identifier(ident: &ExpressionTypes, value: &str) -> bool {
+    let ident = match ident {
         ExpressionTypes::Identifier(ident) => ident,
         _ => {
-            panic!("exp is not Identifier.");
+            panic!("ident is not Identifier.");
         }
     };
 
@@ -56,8 +57,8 @@ fn test_identifier(exp: &Box<ExpressionTypes>, value: &str) -> bool {
     true
 }
 
-fn test_boolean_literal(exp: &Box<ExpressionTypes>, value: bool) -> bool {
-    let boolean = match exp.as_ref() {
+fn test_boolean_literal(exp: &ExpressionTypes, value: bool) -> bool {
+    let boolean = match exp {
         ExpressionTypes::Boolean(boolean) => boolean,
         _ => {
             panic!("exp is not Boolean.");
@@ -94,7 +95,7 @@ fn test_infix_expression(
     right: TestingLiteral,
 ) -> bool {
     let op_exp = match exp.as_ref() {
-        ExpressionTypes::InfixExpression(op_exp) => op_exp,
+        ExpressionTypes::Infix(op_exp) => op_exp,
         _ => {
             panic!("exp is not InfixExpression.");
         }
@@ -158,12 +159,12 @@ fn test_let_statements() {
     }
 
     fn test_let_statement(stmt: &StatementTypes, ident: &str) -> bool {
-        if !matches!(stmt, StatementTypes::LetStatement(_)) {
+        if !matches!(stmt, StatementTypes::Let(_)) {
             panic!("stmt is not LetStatement.");
         }
 
         let let_stmt = match stmt {
-            StatementTypes::LetStatement(s) => s,
+            StatementTypes::Let(s) => s,
             _ => {
                 panic!("stmt is not LetStatement.");
             }
@@ -212,7 +213,7 @@ fn test_return_statements() {
 
     for stmt in program.statements.iter() {
         let return_stmt = match stmt {
-            StatementTypes::ReturnStatement(s) => s,
+            StatementTypes::Return(s) => s,
             _ => {
                 panic!("stmt is not ReturnStatement.");
             }
@@ -382,7 +383,7 @@ fn test_parsing_prefix_expressions() {
         };
 
         let expression = match stmt.expression.as_ref().unwrap().as_ref() {
-            ExpressionTypes::PrefixExpression(expression) => expression,
+            ExpressionTypes::Prefix(expression) => expression,
             _ => panic!("stmt.expression is not PrefixExpression."),
         };
 
@@ -600,7 +601,8 @@ fn test_if_expression() {
         _ => panic!("expression.consequence.statements[0] is not ExpressionStatement."),
     };
 
-    if !test_identifier(&consequence.expression.as_ref().unwrap(), "x") {
+    let ident = consequence.expression.as_ref().unwrap().as_ref();
+    if !test_identifier(ident, "x") {
         return;
     }
 
@@ -661,7 +663,8 @@ fn test_if_else_expression() {
         _ => panic!("expression.consequence.statements[0] is not ExpressionStatement."),
     };
 
-    if !test_identifier(&consequence.expression.as_ref().unwrap(), "x") {
+    let ident = consequence.expression.as_ref().unwrap().as_ref();
+    if !test_identifier(ident, "x") {
         return;
     }
 
@@ -681,7 +684,129 @@ fn test_if_else_expression() {
         _ => panic!("expression.alternative.statements[0] is not ExpressionStatement."),
     };
 
-    if !test_identifier(&alternative.expression.as_ref().unwrap(), "y") {
+    let ident = alternative.expression.as_ref().unwrap().as_ref();
+    if !test_identifier(ident, "y") {
         return;
+    }
+}
+
+#[test]
+fn test_function_literal_parsing() {
+    let input = "fn(x, y) { x + y; }";
+
+    let lexer = Lexer::new(input.to_string());
+    let mut parser = Parser::new(lexer);
+
+    let program = parser.parse_program();
+    check_parser_errors(&parser);
+
+    if program.statements.len() != 1 {
+        panic!(
+            "program.statements does not contain 1 statement. got={}",
+            program.statements.len()
+        );
+    }
+
+    let stmt = match &program.statements[0] {
+        StatementTypes::ExpressionStatement(stmt) => stmt,
+        _ => panic!("program.statements[0] is not ExpressionStatement."),
+    };
+
+    let function = match stmt.expression.as_ref().unwrap().as_ref() {
+        ExpressionTypes::FunctionLiteral(function) => function,
+        _ => panic!("stmt.expression is not FunctionLiteral."),
+    };
+
+    if function.parameters.len() != 2 {
+        panic!(
+            "function.parameters does not contain 2 parameters. got={}",
+            function.parameters.len()
+        );
+    }
+
+    if !test_literal_expression(&function.parameters[0], TestingLiteral::Str("x")) {
+        return;
+    }
+
+    if !test_literal_expression(&function.parameters[1], TestingLiteral::Str("y")) {
+        return;
+    }
+
+    if function.body.as_ref().unwrap().statements.len() != 1 {
+        panic!(
+            "function.body.statements does not contain 1 statement. got={}",
+            function.body.as_ref().unwrap().statements.len()
+        );
+    }
+
+    let body_stmt = match &function.body.as_ref().unwrap().statements[0] {
+        StatementTypes::ExpressionStatement(stmt) => stmt,
+        _ => panic!("function.body.statements[0] is not ExpressionStatement."),
+    };
+
+    if !test_infix_expression(
+        body_stmt.expression.as_ref().unwrap(),
+        TestingLiteral::Str("x"),
+        "+",
+        TestingLiteral::Str("y"),
+    ) {
+        return;
+    }
+}
+
+#[test]
+fn test_function_parameter_parsing() {
+    let tests = vec![
+        ("fn() {};", vec![]),
+        ("fn(x) {};", vec![TestingLiteral::Str("x")]),
+        (
+            "fn(x, y, z) {};",
+            vec![
+                TestingLiteral::Str("x"),
+                TestingLiteral::Str("y"),
+                TestingLiteral::Str("z"),
+            ],
+        ),
+    ];
+
+    for test in tests {
+        let (input, expected_params) = test;
+
+        let lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
+
+        let program = parser.parse_program();
+        check_parser_errors(&parser);
+
+        if program.statements.len() != 1 {
+            panic!(
+                "program.statements does not contain 1 statement. got={}",
+                program.statements.len()
+            );
+        }
+
+        let stmt = match &program.statements[0] {
+            StatementTypes::ExpressionStatement(stmt) => stmt,
+            _ => panic!("program.statements[0] is not ExpressionStatement."),
+        };
+
+        let function = match stmt.expression.as_ref().unwrap().as_ref() {
+            ExpressionTypes::FunctionLiteral(function) => function,
+            _ => panic!("stmt.expression is not FunctionLiteral."),
+        };
+
+        if function.parameters.len() != expected_params.len() {
+            panic!(
+                "function.parameters does not contain {} parameters. got={}",
+                expected_params.len(),
+                function.parameters.len()
+            );
+        }
+
+        for (i, ident) in expected_params.iter().enumerate() {
+            if !test_literal_expression(&function.parameters[i], ident.clone()) {
+                return;
+            }
+        }
     }
 }

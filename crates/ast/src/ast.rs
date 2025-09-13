@@ -2,18 +2,39 @@
 use token::token;
 
 pub enum StatementTypes {
-    LetStatement(LetStatement),
-    ReturnStatement(ReturnStatement),
+    Let(LetStatement),
+    Return(ReturnStatement),
     ExpressionStatement(ExpressionStatement),
 }
 
+fn to_string_from_statement_types(stmt: &StatementTypes) -> String {
+    match stmt {
+        StatementTypes::Let(s) => s.to_string(),
+        StatementTypes::Return(s) => s.to_string(),
+        StatementTypes::ExpressionStatement(s) => s.to_string(),
+    }
+}
+
 pub enum ExpressionTypes {
-    Identifier(Identifier),
     IntegerLiteral(IntegerLiteral),
-    PrefixExpression(PrefixExpression),
-    InfixExpression(InfixExpression),
     Boolean(Boolean),
+    Identifier(Identifier),
+    Prefix(PrefixExpression),
+    Infix(InfixExpression),
     IfExpression(IfExpression),
+    FunctionLiteral(FunctionLiteral),
+}
+
+fn to_string_from_expression_types(expr: &ExpressionTypes) -> String {
+    match expr {
+        ExpressionTypes::Identifier(ident) => ident.to_string(),
+        ExpressionTypes::IntegerLiteral(int_lit) => int_lit.to_string(),
+        ExpressionTypes::Prefix(prefix_expr) => prefix_expr.to_string(),
+        ExpressionTypes::Infix(infix_expr) => infix_expr.to_string(),
+        ExpressionTypes::Boolean(bool_expr) => bool_expr.to_string(),
+        ExpressionTypes::IfExpression(if_expr) => if_expr.to_string(),
+        ExpressionTypes::FunctionLiteral(func_lit) => func_lit.to_string(),
+    }
 }
 
 pub trait Node {
@@ -42,11 +63,7 @@ pub struct Program {
 impl Program {
     pub fn token_literal(&self) -> String {
         if self.statements.len() > 0 {
-            match &self.statements[0] {
-                StatementTypes::LetStatement(s) => s.token_literal(),
-                StatementTypes::ReturnStatement(s) => s.token_literal(),
-                StatementTypes::ExpressionStatement(s) => s.token_literal(),
-            }
+            to_string_from_statement_types(&self.statements[0])
         } else {
             "".to_string()
         }
@@ -55,11 +72,7 @@ impl Program {
     pub fn to_string(&self) -> String {
         self.statements
             .iter()
-            .map(|s| match s {
-                StatementTypes::LetStatement(stmt) => stmt.to_string(),
-                StatementTypes::ReturnStatement(stmt) => stmt.to_string(),
-                StatementTypes::ExpressionStatement(stmt) => stmt.to_string(),
-            })
+            .map(|s| to_string_from_statement_types(s))
             .collect::<Vec<String>>()
             .join("")
     }
@@ -158,14 +171,7 @@ impl Node for ExpressionStatement {
 
     fn to_string(&self) -> String {
         if let Some(expression) = &self.expression {
-            match expression.as_ref() {
-                ExpressionTypes::Identifier(expr) => expr.to_string(),
-                ExpressionTypes::IntegerLiteral(expr) => expr.to_string(),
-                ExpressionTypes::PrefixExpression(expr) => expr.to_string(),
-                ExpressionTypes::InfixExpression(expr) => expr.to_string(),
-                ExpressionTypes::Boolean(expr) => expr.to_string(),
-                ExpressionTypes::IfExpression(expr) => expr.to_string(),
-            }
+            to_string_from_expression_types(expression)
         } else {
             "".to_string()
         }
@@ -211,14 +217,7 @@ impl Node for PrefixExpression {
         out.push('(');
         out.push_str(&self.operator);
         if let Some(right) = &self.right {
-            match right.as_ref() {
-                ExpressionTypes::Identifier(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::IntegerLiteral(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::PrefixExpression(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::InfixExpression(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::Boolean(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::IfExpression(expr) => out.push_str(&expr.to_string()),
-            }
+            out.push_str(&to_string_from_expression_types(right));
         }
         out.push(')');
         out
@@ -245,27 +244,13 @@ impl Node for InfixExpression {
         let mut out = String::new();
         out.push('(');
         if let Some(left) = &self.left {
-            match left.as_ref() {
-                ExpressionTypes::Identifier(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::IntegerLiteral(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::PrefixExpression(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::InfixExpression(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::Boolean(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::IfExpression(expr) => out.push_str(&expr.to_string()),
-            }
+            out.push_str(&to_string_from_expression_types(left));
         }
         out.push(' ');
         out.push_str(&self.operator);
         out.push(' ');
         if let Some(right) = &self.right {
-            match right.as_ref() {
-                ExpressionTypes::Identifier(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::IntegerLiteral(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::PrefixExpression(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::InfixExpression(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::Boolean(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::IfExpression(expr) => out.push_str(&expr.to_string()),
-            }
+            out.push_str(&to_string_from_expression_types(right));
         }
         out.push(')');
         out
@@ -311,14 +296,7 @@ impl Node for IfExpression {
         let mut out = String::new();
         out.push_str("if");
         if let Some(condition) = &self.condition {
-            match condition.as_ref() {
-                ExpressionTypes::Identifier(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::IntegerLiteral(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::PrefixExpression(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::InfixExpression(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::Boolean(expr) => out.push_str(&expr.to_string()),
-                ExpressionTypes::IfExpression(expr) => out.push_str(&expr.to_string()),
-            }
+            out.push_str(&to_string_from_expression_types(condition));
         }
         if let Some(consequence) = &self.consequence {
             out.push_str(&consequence.to_string());
@@ -348,11 +326,44 @@ impl Node for BlockStatement {
     fn to_string(&self) -> String {
         let mut out = String::new();
         for statement in &self.statements {
-            match statement {
-                StatementTypes::LetStatement(stmt) => out.push_str(&stmt.to_string()),
-                StatementTypes::ReturnStatement(stmt) => out.push_str(&stmt.to_string()),
-                StatementTypes::ExpressionStatement(stmt) => out.push_str(&stmt.to_string()),
-            }
+            out.push_str(&to_string_from_statement_types(statement));
+        }
+        out
+    }
+}
+
+pub struct FunctionLiteral {
+    pub token: token::Token,
+    pub parameters: Vec<Box<ExpressionTypes>>,
+    pub body: Option<BlockStatement>,
+}
+
+impl Expression for FunctionLiteral {
+    fn expression_node(&self) {}
+}
+
+impl Node for FunctionLiteral {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        let mut out = String::new();
+        out.push_str(&self.token_literal());
+        out.push('(');
+        let params = self
+            .parameters
+            .iter()
+            .map(|p| match p.as_ref() {
+                ExpressionTypes::Identifier(ident) => ident.to_string(),
+                _ => "".to_string(),
+            })
+            .collect::<Vec<String>>()
+            .join(", ");
+        out.push_str(&params);
+        out.push(')');
+        if let Some(body) = &self.body {
+            out.push_str(&body.to_string());
         }
         out
     }

@@ -3,9 +3,9 @@
 use std::collections::HashMap;
 
 use ast::ast::{
-    BlockStatement, Boolean, ExpressionStatement, ExpressionTypes, Identifier, IfExpression,
-    InfixExpression, IntegerLiteral, LetStatement, PrefixExpression, Program, ReturnStatement,
-    StatementTypes,
+    BlockStatement, Boolean, ExpressionStatement, ExpressionTypes, FunctionLiteral, Identifier,
+    IfExpression, InfixExpression, IntegerLiteral, LetStatement, PrefixExpression, Program,
+    ReturnStatement, StatementTypes,
 };
 use lexer::lexer::Lexer;
 use token::token::{Token, TokenType};
@@ -65,6 +65,7 @@ impl Parser {
         parser.register_prefix(TokenType::MINUS, Self::parse_prefix_expression);
         parser.register_prefix(TokenType::LPAREN, Self::parse_grouped_expression);
         parser.register_prefix(TokenType::IF, Self::parse_if_expression);
+        parser.register_prefix(TokenType::FUNCTION, Self::parse_function_literal);
 
         parser.register_infix(TokenType::PLUS, Self::parse_infix_expression);
         parser.register_infix(TokenType::MINUS, Self::parse_infix_expression);
@@ -143,7 +144,7 @@ impl Parser {
             self.next_token();
         }
 
-        Some(StatementTypes::LetStatement(stmt))
+        Some(StatementTypes::Let(stmt))
     }
 
     pub fn parse_return_statement(&mut self) -> Option<StatementTypes> {
@@ -159,7 +160,7 @@ impl Parser {
             self.next_token();
         }
 
-        Some(StatementTypes::ReturnStatement(stmt))
+        Some(StatementTypes::Return(stmt))
     }
 
     pub fn parse_expression_statement(&mut self) -> Option<StatementTypes> {
@@ -258,7 +259,7 @@ impl Parser {
 
         expression.right = self.parse_expression(Precedence::PREFIX);
 
-        Some(Box::new(ExpressionTypes::PrefixExpression(expression)))
+        Some(Box::new(ExpressionTypes::Prefix(expression)))
     }
 
     pub fn parse_grouped_expression(&mut self) -> Option<Box<ExpressionTypes>> {
@@ -292,7 +293,62 @@ impl Parser {
         self.next_token();
         expression.right = self.parse_expression(precedence);
 
-        Some(Box::new(ExpressionTypes::InfixExpression(expression)))
+        Some(Box::new(ExpressionTypes::Infix(expression)))
+    }
+
+    fn parse_function_literal(&mut self) -> Option<Box<ExpressionTypes>> {
+        let mut lit = FunctionLiteral {
+            token: self.cur_token.clone(),
+            parameters: vec![],
+            body: None,
+        };
+
+        if !self.expect_peek(TokenType::LPAREN) {
+            return None;
+        }
+
+        lit.parameters = self.parse_function_parameters().unwrap();
+
+        if !self.expect_peek(TokenType::LBRACE) {
+            return None;
+        }
+
+        lit.body = self.parse_block_statement();
+
+        Some(Box::new(ExpressionTypes::FunctionLiteral(lit)))
+    }
+
+    fn parse_function_parameters(&mut self) -> Option<Vec<Box<ExpressionTypes>>> {
+        let mut identifiers: Vec<Box<ExpressionTypes>> = vec![];
+
+        if self.peek_token_is(TokenType::RPAREN) {
+            self.next_token();
+            return Some(identifiers);
+        }
+
+        self.next_token();
+
+        let ident = Identifier {
+            token: self.cur_token.clone(),
+            value: self.cur_token.literal.clone(),
+        };
+        identifiers.push(Box::new(ExpressionTypes::Identifier(ident)));
+
+        while self.peek_token_is(TokenType::COMMA) {
+            self.next_token();
+            self.next_token();
+            let ident = Identifier {
+                token: self.cur_token.clone(),
+                value: self.cur_token.literal.clone(),
+            };
+            identifiers.push(Box::new(ExpressionTypes::Identifier(ident)));
+        }
+
+        if !self.expect_peek(TokenType::RPAREN) {
+            return None;
+        }
+
+        Some(identifiers)
     }
 
     fn parse_if_expression(&mut self) -> Option<Box<ExpressionTypes>> {

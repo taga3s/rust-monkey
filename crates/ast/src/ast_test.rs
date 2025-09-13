@@ -5,7 +5,7 @@ use crate::ast::{Identifier, LetStatement, Program, StatementTypes};
 #[test]
 fn test_to_string() {
     let program = Program {
-        statements: vec![StatementTypes::LetStatement(LetStatement {
+        statements: vec![StatementTypes::Let(LetStatement {
             token: Token {
                 type_: TokenType::LET,
                 literal: "let".to_string(),
