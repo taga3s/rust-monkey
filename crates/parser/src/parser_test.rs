@@ -130,30 +130,40 @@ fn check_parser_errors(parser: &Parser) {
 
 #[test]
 fn test_let_statements() {
-    let input = r#"
-      let x = 5;
-      let y = 10;
-      let foobar = 838383;
-    "#;
+    let tests = vec![
+        ("let x = 5;", "x", TestingLiteral::Int(5)),
+        ("let y = true;", "y", TestingLiteral::Bool(true)),
+        ("let foobar = y;", "foobar", TestingLiteral::Str("y")),
+    ];
 
-    let lexer = Lexer::new(input.to_string());
-    let mut parser = Parser::new(lexer);
+    for test in tests {
+        let (input, ident, expected) = test;
 
-    let program = parser.parse_program();
-    check_parser_errors(&parser);
+        let lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
 
-    if program.statements.len() != 3 {
-        panic!(
-            "program.statements does not contain 3 statements. got={}",
-            program.statements.len()
-        );
-    }
+        let program = parser.parse_program();
+        check_parser_errors(&parser);
 
-    let tests = vec!["x", "y", "foobar"];
+        if program.statements.len() != 1 {
+            panic!(
+                "program.statements does not contain 1 statement. got={}",
+                program.statements.len()
+            );
+        }
 
-    for (i, ident) in tests.iter().enumerate() {
-        let stmt = &program.statements[i];
+        let stmt = &program.statements[0];
         if !test_let_statement(stmt, ident) {
+            return;
+        }
+
+        let let_stmt = match stmt {
+            StatementTypes::Let(s) => s,
+            _ => {
+                panic!("stmt is not LetStatement.");
+            }
+        };
+        if !test_literal_expression(let_stmt.value.as_ref().unwrap(), expected) {
             return;
         }
     }
@@ -531,6 +541,15 @@ fn test_operator_precedence_parsing() {
         ("2 / (5 + 5)", "(2 / (5 + 5))"),
         ("-(5 + 5)", "(-(5 + 5))"),
         ("!(true == true)", "(!(true == true))"),
+        ("a + add(b * c) + d", "((a + add((b * c))) + d)"),
+        (
+            "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+            "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+        ),
+        (
+            "add(a + b + c * d / f + g)",
+            "add((((a + b) + ((c * d) / f)) + g))",
+        ),
     ];
 
     for test in tests {
@@ -808,5 +827,66 @@ fn test_function_parameter_parsing() {
                 return;
             }
         }
+    }
+}
+
+#[test]
+fn test_call_expression_parsing() {
+    let input = "add(1, 2 * 3, 4 + 5);";
+
+    let lexer = Lexer::new(input.to_string());
+    let mut parser = Parser::new(lexer);
+
+    let program = parser.parse_program();
+    check_parser_errors(&parser);
+
+    if program.statements.len() != 1 {
+        panic!(
+            "program.statements does not contain 1 statement. got={}",
+            program.statements.len()
+        );
+    }
+
+    let stmt = match &program.statements[0] {
+        StatementTypes::ExpressionStatement(stmt) => stmt,
+        _ => panic!("program.statements[0] is not ExpressionStatement."),
+    };
+
+    let exp = match stmt.expression.as_ref().unwrap().as_ref() {
+        ExpressionTypes::CallExpression(exp) => exp,
+        _ => panic!("stmt.expression is not CallExpression."),
+    };
+
+    if !test_identifier(exp.function.as_ref(), "add") {
+        return;
+    }
+
+    if exp.arguments.len() != 3 {
+        panic!(
+            "exp.arguments does not contain 3 arguments. got={}",
+            exp.arguments.len()
+        );
+    }
+
+    if !test_literal_expression(&exp.arguments[0], TestingLiteral::Int(1)) {
+        return;
+    }
+
+    if !test_infix_expression(
+        &exp.arguments[1],
+        TestingLiteral::Int(2),
+        "*",
+        TestingLiteral::Int(3),
+    ) {
+        return;
+    }
+
+    if !test_infix_expression(
+        &exp.arguments[2],
+        TestingLiteral::Int(4),
+        "+",
+        TestingLiteral::Int(5),
+    ) {
+        return;
     }
 }

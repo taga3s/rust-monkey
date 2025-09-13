@@ -1,11 +1,11 @@
 //! Parser for the Monkey programming language
 
-use std::collections::HashMap;
+use std::{collections::HashMap, vec};
 
 use ast::ast::{
-    BlockStatement, Boolean, ExpressionStatement, ExpressionTypes, FunctionLiteral, Identifier,
-    IfExpression, InfixExpression, IntegerLiteral, LetStatement, PrefixExpression, Program,
-    ReturnStatement, StatementTypes,
+    BlockStatement, Boolean, CallExpression, ExpressionStatement, ExpressionTypes, FunctionLiteral,
+    Identifier, IfExpression, InfixExpression, IntegerLiteral, LetStatement, PrefixExpression,
+    Program, ReturnStatement, StatementTypes,
 };
 use lexer::lexer::Lexer;
 use token::token::{Token, TokenType};
@@ -24,7 +24,7 @@ pub enum Precedence {
     CALL,        // myFunction(X)
 }
 
-const PRECEDENCES: [(TokenType, Precedence); 8] = [
+const PRECEDENCES: [(TokenType, Precedence); 9] = [
     (TokenType::EQ, Precedence::EQUALS),
     (TokenType::NOTEQ, Precedence::EQUALS),
     (TokenType::LT, Precedence::LESSGREATER),
@@ -33,6 +33,7 @@ const PRECEDENCES: [(TokenType, Precedence); 8] = [
     (TokenType::MINUS, Precedence::SUM),
     (TokenType::SLASH, Precedence::PRODUCT),
     (TokenType::ASTERISK, Precedence::PRODUCT),
+    (TokenType::LPAREN, Precedence::CALL),
 ];
 
 pub struct Parser {
@@ -75,6 +76,7 @@ impl Parser {
         parser.register_infix(TokenType::NOTEQ, Self::parse_infix_expression);
         parser.register_infix(TokenType::LT, Self::parse_infix_expression);
         parser.register_infix(TokenType::GT, Self::parse_infix_expression);
+        parser.register_infix(TokenType::LPAREN, Self::parse_call_expression);
 
         parser.next_token();
         parser.next_token();
@@ -140,7 +142,11 @@ impl Parser {
             return None;
         }
 
-        while !self.cur_token_is(TokenType::SEMICOLON) {
+        self.next_token();
+
+        stmt.value = self.parse_expression(Precedence::LOWEST);
+
+        if self.peek_token_is(TokenType::SEMICOLON) {
             self.next_token();
         }
 
@@ -148,14 +154,15 @@ impl Parser {
     }
 
     pub fn parse_return_statement(&mut self) -> Option<StatementTypes> {
-        let stmt = ReturnStatement {
+        let mut stmt = ReturnStatement {
             token: self.cur_token.clone(),
             return_value: None,
         };
 
         self.next_token();
 
-        //FIXME: implement parsing of return value
+        stmt.return_value = self.parse_expression(Precedence::LOWEST);
+
         while !self.cur_token_is(TokenType::SEMICOLON) {
             self.next_token();
         }
@@ -405,6 +412,43 @@ impl Parser {
         }
 
         Some(block)
+    }
+
+    fn parse_call_expression(
+        &mut self,
+        function: Box<ExpressionTypes>,
+    ) -> Option<Box<ExpressionTypes>> {
+        let mut exp = CallExpression {
+            token: self.cur_token.clone(),
+            function,
+            arguments: vec![],
+        };
+        exp.arguments = self.parse_call_arguments().unwrap();
+        Some(Box::new(ExpressionTypes::CallExpression(exp)))
+    }
+
+    fn parse_call_arguments(&mut self) -> Option<Vec<Box<ExpressionTypes>>> {
+        let mut args = vec![];
+
+        if self.peek_token_is(TokenType::RPAREN) {
+            self.next_token();
+            return Some(args);
+        }
+
+        self.next_token();
+        args.push(self.parse_expression(Precedence::LOWEST).unwrap());
+
+        while self.peek_token_is(TokenType::COMMA) {
+            self.next_token();
+            self.next_token();
+            args.push(self.parse_expression(Precedence::LOWEST).unwrap());
+        }
+
+        if !self.expect_peek(TokenType::RPAREN) {
+            return None;
+        }
+
+        Some(args)
     }
 
     fn cur_token_is(&self, tok: TokenType) -> bool {

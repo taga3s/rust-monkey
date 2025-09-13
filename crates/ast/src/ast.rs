@@ -23,6 +23,7 @@ pub enum ExpressionTypes {
     Infix(InfixExpression),
     IfExpression(IfExpression),
     FunctionLiteral(FunctionLiteral),
+    CallExpression(CallExpression),
 }
 
 fn to_string_from_expression_types(expr: &ExpressionTypes) -> String {
@@ -34,6 +35,7 @@ fn to_string_from_expression_types(expr: &ExpressionTypes) -> String {
         ExpressionTypes::Boolean(bool_expr) => bool_expr.to_string(),
         ExpressionTypes::IfExpression(if_expr) => if_expr.to_string(),
         ExpressionTypes::FunctionLiteral(func_lit) => func_lit.to_string(),
+        ExpressionTypes::CallExpression(call_expr) => call_expr.to_string(),
     }
 }
 
@@ -100,7 +102,7 @@ impl Node for Identifier {
 pub struct LetStatement {
     pub token: token::Token,
     pub name: Option<Identifier>,
-    pub value: Option<Box<dyn Expression>>,
+    pub value: Option<Box<ExpressionTypes>>,
 }
 
 impl Statement for LetStatement {
@@ -121,7 +123,7 @@ impl Node for LetStatement {
         }
         out.push_str(" = ");
         if let Some(value) = &self.value {
-            out.push_str(&value.to_string());
+            out.push_str(&to_string_from_expression_types(value));
         }
         out.push(';');
         out
@@ -130,7 +132,7 @@ impl Node for LetStatement {
 
 pub struct ReturnStatement {
     pub token: token::Token,
-    pub return_value: Option<Box<dyn Expression>>,
+    pub return_value: Option<Box<ExpressionTypes>>,
 }
 
 impl Statement for ReturnStatement {
@@ -148,7 +150,7 @@ impl Node for ReturnStatement {
         out.push(' ');
 
         if let Some(value) = &self.return_value {
-            out.push_str(&value.to_string());
+            out.push_str(&to_string_from_expression_types(value));
         }
         out.push(';');
         out
@@ -365,6 +367,37 @@ impl Node for FunctionLiteral {
         if let Some(body) = &self.body {
             out.push_str(&body.to_string());
         }
+        out
+    }
+}
+
+pub struct CallExpression {
+    pub token: token::Token,
+    pub function: Box<ExpressionTypes>,
+    pub arguments: Vec<Box<ExpressionTypes>>,
+}
+
+impl Expression for CallExpression {
+    fn expression_node(&self) {}
+}
+
+impl Node for CallExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        let mut out = String::new();
+        out.push_str(&to_string_from_expression_types(&self.function));
+        out.push('(');
+        let args = self
+            .arguments
+            .iter()
+            .map(|a| to_string_from_expression_types(a))
+            .collect::<Vec<String>>()
+            .join(", ");
+        out.push_str(&args);
+        out.push(')');
         out
     }
 }
