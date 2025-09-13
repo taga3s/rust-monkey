@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 use ::lexer::lexer::Lexer;
-use ::token::token::TokenType;
+use parser::parser::Parser;
 
 fn start() -> io::Result<()> {
     let mut input = String::new();
@@ -19,19 +19,24 @@ fn start() -> io::Result<()> {
             break;
         }
 
-        let mut lexer = Lexer::new(trimmed.to_string());
-
-        loop {
-            let tok = lexer.next_token();
-
-            match tok.type_ {
-                TokenType::EOF => break,
-                _ => println!("{:?}", tok),
-            }
+        let lexer = Lexer::new(trimmed.to_string());
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        if parser.errors().len() != 0 {
+            print_parse_errors(parser.errors());
+            continue;
         }
+
+        println!("{}", program.to_string());
     }
 
     Ok(())
+}
+
+fn print_parse_errors(errors: &Vec<String>) {
+    for msg in errors {
+        eprintln!("\t{}", msg);
+    }
 }
 
 fn main() {

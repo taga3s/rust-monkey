@@ -7,3 +7,4 @@ edition.workspace = true
 [dependencies]
 token = { path = "../token" }
 lexer = { path = "../lexer" }
+parser = { path = "../parser" }
