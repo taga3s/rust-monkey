@@ -2,12 +2,12 @@
 
 use std::collections::HashMap;
 
-use ::ast::ast::{
-    ExpressionStatement, Identifier, IntegerLiteral, LetStatement, PrefixExpression, Program,
-    ReturnStatement,
+use ast::ast::{
+    BlockStatement, Boolean, ExpressionStatement, ExpressionTypes, Identifier, IfExpression,
+    InfixExpression, IntegerLiteral, LetStatement, PrefixExpression, Program, ReturnStatement,
+    StatementTypes,
 };
-use ::lexer::lexer::Lexer;
-use ast::ast::{Boolean, ExpressionTypes, InfixExpression, StatementTypes};
+use lexer::lexer::Lexer;
 use token::token::{Token, TokenType};
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<ExpressionTypes>>;
@@ -64,6 +64,7 @@ impl Parser {
         parser.register_prefix(TokenType::BANG, Self::parse_prefix_expression);
         parser.register_prefix(TokenType::MINUS, Self::parse_prefix_expression);
         parser.register_prefix(TokenType::LPAREN, Self::parse_grouped_expression);
+        parser.register_prefix(TokenType::IF, Self::parse_if_expression);
 
         parser.register_infix(TokenType::PLUS, Self::parse_infix_expression);
         parser.register_infix(TokenType::MINUS, Self::parse_infix_expression);
@@ -292,6 +293,62 @@ impl Parser {
         expression.right = self.parse_expression(precedence);
 
         Some(Box::new(ExpressionTypes::InfixExpression(expression)))
+    }
+
+    fn parse_if_expression(&mut self) -> Option<Box<ExpressionTypes>> {
+        let mut expression = IfExpression {
+            token: self.cur_token.clone(),
+            condition: None,
+            consequence: None,
+            alternative: None,
+        };
+
+        if !self.expect_peek(TokenType::LPAREN) {
+            return None;
+        }
+
+        self.next_token();
+        expression.condition = self.parse_expression(Precedence::LOWEST);
+
+        if !self.expect_peek(TokenType::RPAREN) {
+            return None;
+        }
+
+        if !self.expect_peek(TokenType::LBRACE) {
+            return None;
+        }
+
+        expression.consequence = self.parse_block_statement();
+
+        if self.peek_token_is(TokenType::ELSE) {
+            self.next_token();
+
+            if !self.expect_peek(TokenType::LBRACE) {
+                return None;
+            }
+
+            expression.alternative = self.parse_block_statement();
+        }
+
+        return Some(Box::new(ExpressionTypes::IfExpression(expression)));
+    }
+
+    fn parse_block_statement(&mut self) -> Option<BlockStatement> {
+        let mut block = BlockStatement {
+            token: self.cur_token.clone(),
+            statements: vec![],
+        };
+
+        self.next_token();
+
+        while !self.cur_token_is(TokenType::RBRACE) && !self.cur_token_is(TokenType::EOF) {
+            if let Some(stmt) = self.parse_statement() {
+                block.statements.push(stmt);
+            }
+            self.next_token();
+        }
+
+        Some(block)
     }
 
     fn cur_token_is(&self, tok: TokenType) -> bool {

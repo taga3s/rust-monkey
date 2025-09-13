@@ -13,6 +13,7 @@ pub enum ExpressionTypes {
     PrefixExpression(PrefixExpression),
     InfixExpression(InfixExpression),
     Boolean(Boolean),
+    IfExpression(IfExpression),
 }
 
 pub trait Node {
@@ -163,6 +164,7 @@ impl Node for ExpressionStatement {
                 ExpressionTypes::PrefixExpression(expr) => expr.to_string(),
                 ExpressionTypes::InfixExpression(expr) => expr.to_string(),
                 ExpressionTypes::Boolean(expr) => expr.to_string(),
+                ExpressionTypes::IfExpression(expr) => expr.to_string(),
             }
         } else {
             "".to_string()
@@ -215,6 +217,7 @@ impl Node for PrefixExpression {
                 ExpressionTypes::PrefixExpression(expr) => out.push_str(&expr.to_string()),
                 ExpressionTypes::InfixExpression(expr) => out.push_str(&expr.to_string()),
                 ExpressionTypes::Boolean(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::IfExpression(expr) => out.push_str(&expr.to_string()),
             }
         }
         out.push(')');
@@ -248,6 +251,7 @@ impl Node for InfixExpression {
                 ExpressionTypes::PrefixExpression(expr) => out.push_str(&expr.to_string()),
                 ExpressionTypes::InfixExpression(expr) => out.push_str(&expr.to_string()),
                 ExpressionTypes::Boolean(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::IfExpression(expr) => out.push_str(&expr.to_string()),
             }
         }
         out.push(' ');
@@ -260,6 +264,7 @@ impl Node for InfixExpression {
                 ExpressionTypes::PrefixExpression(expr) => out.push_str(&expr.to_string()),
                 ExpressionTypes::InfixExpression(expr) => out.push_str(&expr.to_string()),
                 ExpressionTypes::Boolean(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::IfExpression(expr) => out.push_str(&expr.to_string()),
             }
         }
         out.push(')');
@@ -283,5 +288,72 @@ impl Node for Boolean {
 
     fn to_string(&self) -> String {
         self.value.to_string()
+    }
+}
+
+pub struct IfExpression {
+    pub token: token::Token,
+    pub condition: Option<Box<ExpressionTypes>>,
+    pub consequence: Option<BlockStatement>,
+    pub alternative: Option<BlockStatement>,
+}
+
+impl Expression for IfExpression {
+    fn expression_node(&self) {}
+}
+
+impl Node for IfExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        let mut out = String::new();
+        out.push_str("if");
+        if let Some(condition) = &self.condition {
+            match condition.as_ref() {
+                ExpressionTypes::Identifier(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::IntegerLiteral(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::PrefixExpression(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::InfixExpression(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::Boolean(expr) => out.push_str(&expr.to_string()),
+                ExpressionTypes::IfExpression(expr) => out.push_str(&expr.to_string()),
+            }
+        }
+        if let Some(consequence) = &self.consequence {
+            out.push_str(&consequence.to_string());
+        }
+        if let Some(alternative) = &self.alternative {
+            out.push_str("else");
+            out.push_str(&alternative.to_string());
+        }
+        out
+    }
+}
+
+pub struct BlockStatement {
+    pub token: token::Token,
+    pub statements: Vec<StatementTypes>,
+}
+
+impl Statement for BlockStatement {
+    fn statement_node(&self) {}
+}
+
+impl Node for BlockStatement {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        let mut out = String::new();
+        for statement in &self.statements {
+            match statement {
+                StatementTypes::LetStatement(stmt) => out.push_str(&stmt.to_string()),
+                StatementTypes::ReturnStatement(stmt) => out.push_str(&stmt.to_string()),
+                StatementTypes::ExpressionStatement(stmt) => out.push_str(&stmt.to_string()),
+            }
+        }
+        out
     }
 }

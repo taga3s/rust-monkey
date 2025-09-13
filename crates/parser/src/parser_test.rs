@@ -547,3 +547,141 @@ fn test_operator_precedence_parsing() {
         }
     }
 }
+
+#[test]
+fn test_if_expression() {
+    let input = "if (x < y) { x }";
+
+    let lexer = Lexer::new(input.to_string());
+    let mut parser = Parser::new(lexer);
+
+    let program = parser.parse_program();
+    check_parser_errors(&parser);
+
+    if program.statements.len() != 1 {
+        panic!(
+            "program.statements does not contain 1 statement. got={}",
+            program.statements.len()
+        );
+    }
+
+    let stmt = match &program.statements[0] {
+        StatementTypes::ExpressionStatement(stmt) => stmt,
+        _ => panic!("program.statements[0] is not ExpressionStatement."),
+    };
+
+    let expression = match stmt.expression.as_ref().unwrap().as_ref() {
+        ExpressionTypes::IfExpression(expression) => expression,
+        _ => panic!("stmt.expression is not IfExpression."),
+    };
+
+    if !test_infix_expression(
+        &expression.condition.as_ref().unwrap(),
+        TestingLiteral::Str("x"),
+        "<",
+        TestingLiteral::Str("y"),
+    ) {
+        return;
+    }
+
+    if expression.consequence.is_none() {
+        panic!("expression.consequence is None.");
+    }
+
+    if expression.consequence.as_ref().unwrap().statements.len() != 1 {
+        panic!(
+            "expression.consequence.statements does not contain 1 statement. got={}",
+            expression.consequence.as_ref().unwrap().statements.len()
+        );
+    }
+
+    let consequence = match &expression.consequence.as_ref().unwrap().statements[0] {
+        StatementTypes::ExpressionStatement(stmt) => stmt,
+        _ => panic!("expression.consequence.statements[0] is not ExpressionStatement."),
+    };
+
+    if !test_identifier(&consequence.expression.as_ref().unwrap(), "x") {
+        return;
+    }
+
+    if expression.alternative.is_some() {
+        panic!("expression.alternative is not None.");
+    }
+}
+
+#[test]
+fn test_if_else_expression() {
+    let input = "if (x < y) { x } else { y }";
+
+    let lexer = Lexer::new(input.to_string());
+    let mut parser = Parser::new(lexer);
+
+    let program = parser.parse_program();
+    check_parser_errors(&parser);
+
+    if program.statements.len() != 1 {
+        panic!(
+            "program.statements does not contain 1 statement. got={}",
+            program.statements.len()
+        );
+    }
+
+    let stmt = match &program.statements[0] {
+        StatementTypes::ExpressionStatement(stmt) => stmt,
+        _ => panic!("program.statements[0] is not ExpressionStatement."),
+    };
+
+    let expression = match stmt.expression.as_ref().unwrap().as_ref() {
+        ExpressionTypes::IfExpression(expression) => expression,
+        _ => panic!("stmt.expression is not IfExpression."),
+    };
+
+    if !test_infix_expression(
+        &expression.condition.as_ref().unwrap(),
+        TestingLiteral::Str("x"),
+        "<",
+        TestingLiteral::Str("y"),
+    ) {
+        return;
+    }
+
+    if expression.consequence.is_none() {
+        panic!("expression.consequence is None.");
+    }
+
+    if expression.consequence.as_ref().unwrap().statements.len() != 1 {
+        panic!(
+            "expression.consequence.statements does not contain 1 statement. got={}",
+            expression.consequence.as_ref().unwrap().statements.len()
+        );
+    }
+
+    let consequence = match &expression.consequence.as_ref().unwrap().statements[0] {
+        StatementTypes::ExpressionStatement(stmt) => stmt,
+        _ => panic!("expression.consequence.statements[0] is not ExpressionStatement."),
+    };
+
+    if !test_identifier(&consequence.expression.as_ref().unwrap(), "x") {
+        return;
+    }
+
+    if expression.alternative.is_none() {
+        panic!("expression.alternative is None.");
+    }
+
+    if expression.alternative.as_ref().unwrap().statements.len() != 1 {
+        panic!(
+            "expression.alternative.statements does not contain 1 statement. got={}",
+            expression.alternative.as_ref().unwrap().statements.len()
+        );
+    }
+
+    let alternative = match &expression.alternative.as_ref().unwrap().statements[0] {
+        StatementTypes::ExpressionStatement(stmt) => stmt,
+        _ => panic!("expression.alternative.statements[0] is not ExpressionStatement."),
+    };
+
+    if !test_identifier(&alternative.expression.as_ref().unwrap(), "y") {
+        return;
+    }
+}
