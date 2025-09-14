@@ -22,7 +22,7 @@ impl Lexer {
     }
 
     pub fn next_token(&mut self) -> Token {
-        self.skip_whitespace();
+        self.skip_whitespaces();
 
         let mut tok = Token::new();
 
@@ -66,7 +66,6 @@ impl Lexer {
                 tok.type_ = TokenType::STRING;
                 tok.literal = self.read_string();
             }
-
             None => {
                 tok.literal = "".to_string();
                 tok.type_ = TokenType::EOF;
@@ -89,7 +88,7 @@ impl Lexer {
         tok
     }
 
-    pub fn read_char(&mut self) {
+    fn read_char(&mut self) {
         if self.read_position >= self.input.len() {
             self.ch = None;
         } else {
@@ -99,7 +98,7 @@ impl Lexer {
         self.read_position += 1;
     }
 
-    pub fn peek_char(&mut self) -> Option<char> {
+    fn peek_char(&mut self) -> Option<char> {
         if self.read_position >= self.input.len() {
             None
         } else {
@@ -107,7 +106,7 @@ impl Lexer {
         }
     }
 
-    pub fn skip_whitespace(&mut self) {
+    fn skip_whitespaces(&mut self) {
         while self.ch == Some(' ')
             || self.ch == Some('\t')
             || self.ch == Some('\n')
@@ -117,23 +116,37 @@ impl Lexer {
         }
     }
 
-    pub fn read_identifier(&mut self) -> String {
+    fn read_identifier(&mut self) -> String {
         let position = self.position;
-        while self.ch.is_some() && self.is_letter(self.ch.unwrap()) {
+        loop {
+            let cur_ch = match self.ch {
+                Some(c) => c,
+                None => break,
+            };
+            if !self.is_letter(cur_ch) {
+                break;
+            }
             self.read_char();
         }
         self.input[position..self.position].to_string()
     }
 
-    pub fn read_number(&mut self) -> String {
+    fn read_number(&mut self) -> String {
         let position = self.position;
-        while self.ch.is_some() && self.is_digit(self.ch.unwrap()) {
+        loop {
+            let cur_ch = match self.ch {
+                Some(c) => c,
+                None => break,
+            };
+            if !self.is_digit(cur_ch) {
+                break;
+            }
             self.read_char();
         }
         self.input[position..self.position].to_string()
     }
 
-    pub fn read_string(&mut self) -> String {
+    fn read_string(&mut self) -> String {
         let position = self.position + 1;
         loop {
             self.read_char();
