@@ -88,7 +88,7 @@ impl Parser {
         &self.errors
     }
 
-    pub fn peek_error(&mut self, tok: TokenType) {
+    fn peek_error(&mut self, tok: TokenType) {
         let msg = format!(
             "expected next token to be {:?}, got {:?} instead",
             tok, self.peek_token.type_
@@ -96,7 +96,7 @@ impl Parser {
         self.errors.push(msg);
     }
 
-    pub fn next_token(&mut self) {
+    fn next_token(&mut self) {
         self.cur_token = self.peek_token.clone();
         self.peek_token = self.lexer.next_token();
     }
@@ -114,7 +114,7 @@ impl Parser {
         program
     }
 
-    pub fn parse_statement(&mut self) -> Option<StatementTypes> {
+    fn parse_statement(&mut self) -> Option<StatementTypes> {
         match self.cur_token.type_ {
             TokenType::LET => self.parse_let_statement(),
             TokenType::RETURN => self.parse_return_statement(),
@@ -122,7 +122,7 @@ impl Parser {
         }
     }
 
-    pub fn parse_let_statement(&mut self) -> Option<StatementTypes> {
+    fn parse_let_statement(&mut self) -> Option<StatementTypes> {
         let mut stmt = LetStatement {
             token: self.cur_token.clone(),
             name: None,
@@ -153,7 +153,7 @@ impl Parser {
         Some(StatementTypes::Let(stmt))
     }
 
-    pub fn parse_return_statement(&mut self) -> Option<StatementTypes> {
+    fn parse_return_statement(&mut self) -> Option<StatementTypes> {
         let mut stmt = ReturnStatement {
             token: self.cur_token.clone(),
             return_value: None,
@@ -170,7 +170,7 @@ impl Parser {
         Some(StatementTypes::Return(stmt))
     }
 
-    pub fn parse_expression_statement(&mut self) -> Option<StatementTypes> {
+    fn parse_expression_statement(&mut self) -> Option<StatementTypes> {
         let mut stmt = ExpressionStatement {
             token: self.cur_token.clone(),
             expression: None,
@@ -185,7 +185,7 @@ impl Parser {
         Some(StatementTypes::ExpressionStatement(stmt))
     }
 
-    pub fn parse_expression(&mut self, precedence: Precedence) -> Option<Box<ExpressionTypes>> {
+    fn parse_expression(&mut self, precedence: Precedence) -> Option<Box<ExpressionTypes>> {
         let prefix_parse_fn = match self.prefix_parse_fns.get(&self.cur_token.type_) {
             Some(p) => *p,
             None => {
@@ -199,7 +199,7 @@ impl Parser {
         // 右結合力が高い場合、 left_exp が次の演算子に関連づけられている infix_parse_fn に渡されることはない。
         while !self.peek_token_is(TokenType::SEMICOLON) && precedence < self.peek_precedence() {
             let infix_parse_fn = match self.infix_parse_fns.get(&self.peek_token.type_) {
-                Some(i) => *i,
+                Some(f) => *f,
                 None => return left_exp,
             };
 
@@ -220,7 +220,7 @@ impl Parser {
         self.errors.push(msg);
     }
 
-    pub fn parse_identifier(&mut self) -> Option<Box<ExpressionTypes>> {
+    fn parse_identifier(&mut self) -> Option<Box<ExpressionTypes>> {
         let ident = Identifier {
             token: self.cur_token.clone(),
             value: self.cur_token.literal.clone(),
@@ -228,7 +228,7 @@ impl Parser {
         Some(Box::new(ExpressionTypes::Identifier(ident)))
     }
 
-    pub fn parse_integer_literal(&mut self) -> Option<Box<ExpressionTypes>> {
+    fn parse_integer_literal(&mut self) -> Option<Box<ExpressionTypes>> {
         let value = match self.cur_token.literal.parse::<i64>() {
             Ok(v) => v,
             Err(_) => {
@@ -246,7 +246,7 @@ impl Parser {
         Some(Box::new(ExpressionTypes::IntegerLiteral(ident)))
     }
 
-    pub fn parse_boolean(&mut self) -> Option<Box<ExpressionTypes>> {
+    fn parse_boolean(&mut self) -> Option<Box<ExpressionTypes>> {
         let boolean = Boolean {
             token: self.cur_token.clone(),
             value: self.cur_token_is(TokenType::TRUE),
@@ -255,7 +255,7 @@ impl Parser {
         Some(Box::new(ExpressionTypes::Boolean(boolean)))
     }
 
-    pub fn parse_prefix_expression(&mut self) -> Option<Box<ExpressionTypes>> {
+    fn parse_prefix_expression(&mut self) -> Option<Box<ExpressionTypes>> {
         let mut expression = PrefixExpression {
             token: self.cur_token.clone(),
             operator: self.cur_token.literal.clone(),
@@ -269,7 +269,7 @@ impl Parser {
         Some(Box::new(ExpressionTypes::Prefix(expression)))
     }
 
-    pub fn parse_grouped_expression(&mut self) -> Option<Box<ExpressionTypes>> {
+    fn parse_grouped_expression(&mut self) -> Option<Box<ExpressionTypes>> {
         self.next_token();
 
         let exp = self.parse_expression(Precedence::LOWEST);
@@ -314,7 +314,10 @@ impl Parser {
             return None;
         }
 
-        lit.parameters = self.parse_function_parameters().unwrap();
+        lit.parameters = match self.parse_function_parameters() {
+            Some(p) => p,
+            None => return None,
+        };
 
         if !self.expect_peek(TokenType::LBRACE) {
             return None;
