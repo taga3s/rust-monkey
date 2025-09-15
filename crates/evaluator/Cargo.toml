@@ -1,12 +1,11 @@
 [package]
-name = "repl"
+name = "evaluator"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
 
 [dependencies]
-token = { path = "../token" }
 lexer = { path = "../lexer" }
 ast = { path = "../ast" }
 parser = { path = "../parser" }
-evaluator = { path = "../evaluator" }
+object = { path = "../object" }

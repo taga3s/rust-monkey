@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 use ::lexer::lexer::Lexer;
-use ast::ast::Node;
+use evaluator::evaluator;
 use parser::parser::Parser;
 
 fn start() -> io::Result<()> {
@@ -22,18 +22,16 @@ fn start() -> io::Result<()> {
 
         let lexer = Lexer::new(trimmed.to_string());
         let mut parser = Parser::new(lexer);
-        let program = match parser.parse_program() {
-            Node::Program(p) => p,
-            _ => {
-                panic!("parser.parse_program() did not return Program.");
-            }
-        };
+        let program = parser.parse_program();
         if parser.errors().len() != 0 {
             print_parse_errors(parser.errors());
             continue;
         }
 
-        println!("{}", program.to_string());
+        let evaluated = evaluator::eval(&program);
+        if let Some(obj) = evaluated {
+            println!("{}", obj.inspect());
+        }
     }
 
     Ok(())
