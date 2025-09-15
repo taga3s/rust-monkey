@@ -1,4 +1,4 @@
-use ast::ast::{ExpressionTypes, Node, StatementTypes};
+use ast::ast::{Expression, Node, Statement, TNode};
 use lexer::lexer::Lexer;
 
 use crate::parser::Parser;
@@ -11,9 +11,17 @@ enum TestingLiteral {
     Bool(bool),
 }
 
-fn test_integer_literal(il: &ExpressionTypes, value: i64) -> bool {
+fn test_literal_expression(exp: &Expression, expected: TestingLiteral) -> bool {
+    match expected {
+        TestingLiteral::Int(value) => return test_integer_literal(exp, value),
+        TestingLiteral::Str(value) => return test_identifier(exp, value),
+        TestingLiteral::Bool(value) => return test_boolean_literal(exp, value),
+    }
+}
+
+fn test_integer_literal(il: &Expression, value: i64) -> bool {
     let integer = match il {
-        ExpressionTypes::IntegerLiteral(integer) => integer,
+        Expression::IntegerLiteral(integer) => integer,
         _ => {
             panic!("il is not IntegerLiteral.");
         }
@@ -34,9 +42,9 @@ fn test_integer_literal(il: &ExpressionTypes, value: i64) -> bool {
     true
 }
 
-fn test_identifier(ident: &ExpressionTypes, value: &str) -> bool {
+fn test_identifier(ident: &Expression, value: &str) -> bool {
     let ident = match ident {
-        ExpressionTypes::Identifier(ident) => ident,
+        Expression::Identifier(ident) => ident,
         _ => {
             panic!("ident is not Identifier.");
         }
@@ -57,9 +65,9 @@ fn test_identifier(ident: &ExpressionTypes, value: &str) -> bool {
     true
 }
 
-fn test_boolean_literal(exp: &ExpressionTypes, value: bool) -> bool {
+fn test_boolean_literal(exp: &Expression, value: bool) -> bool {
     let boolean = match exp {
-        ExpressionTypes::Boolean(boolean) => boolean,
+        Expression::Boolean(boolean) => boolean,
         _ => {
             panic!("exp is not Boolean.");
         }
@@ -80,28 +88,27 @@ fn test_boolean_literal(exp: &ExpressionTypes, value: bool) -> bool {
     true
 }
 
-fn test_literal_expression(exp: &Box<ExpressionTypes>, expected: TestingLiteral) -> bool {
-    match expected {
-        TestingLiteral::Int(value) => return test_integer_literal(exp, value),
-        TestingLiteral::Str(value) => return test_identifier(exp, value),
-        TestingLiteral::Bool(value) => return test_boolean_literal(exp, value),
-    }
-}
-
 fn test_infix_expression(
-    exp: &Box<ExpressionTypes>,
+    exp: &Expression,
     left: TestingLiteral,
     operator: &str,
     right: TestingLiteral,
 ) -> bool {
-    let op_exp = match exp.as_ref() {
-        ExpressionTypes::Infix(op_exp) => op_exp,
+    let op_exp = match exp {
+        Expression::Infix(op_exp) => op_exp,
         _ => {
             panic!("exp is not InfixExpression.");
         }
     };
 
-    if !test_literal_expression(&op_exp.left.as_ref().unwrap(), left) {
+    let left_exp = match op_exp.left.as_ref().unwrap().as_ref() {
+        Node::Expression(e) => e,
+        _ => {
+            panic!("op_exp.left is not Expression.");
+        }
+    };
+
+    if !test_literal_expression(left_exp, left) {
         return false;
     }
 
@@ -109,7 +116,14 @@ fn test_infix_expression(
         panic!("operator is not {}. got={}", operator, op_exp.operator);
     }
 
-    if !test_literal_expression(&op_exp.right.as_ref().unwrap(), right) {
+    let right_exp = match op_exp.right.as_ref().unwrap().as_ref() {
+        Node::Expression(e) => e,
+        _ => {
+            panic!("op_exp.right is not Expression.");
+        }
+    };
+
+    if !test_literal_expression(right_exp, right) {
         return false;
     }
 
@@ -142,7 +156,12 @@ fn test_let_statements() {
         let lexer = Lexer::new(input.to_string());
         let mut parser = Parser::new(lexer);
 
-        let program = parser.parse_program();
+        let program = match parser.parse_program() {
+            Node::Program(p) => p,
+            _ => {
+                panic!("parser.parse_program() did not return Program.");
+            }
+        };
         check_parser_errors(&parser);
 
         if program.statements.len() != 1 {
@@ -152,29 +171,39 @@ fn test_let_statements() {
             );
         }
 
-        let stmt = &program.statements[0];
+        let stmt = match &program.statements[0] {
+            Node::Statement(s) => s,
+            _ => {
+                panic!("program.statements[0] is not Statement.");
+            }
+        };
         if !test_let_statement(stmt, ident) {
             return;
         }
 
-        let let_stmt = match stmt {
-            StatementTypes::Let(s) => s,
+        let let_stmt_value = match stmt {
+            Statement::Let(s) => match s.value.as_ref().unwrap().as_ref() {
+                Node::Expression(e) => e,
+                _ => {
+                    panic!("let_stmt.value is not Expression.");
+                }
+            },
             _ => {
                 panic!("stmt is not LetStatement.");
             }
         };
-        if !test_literal_expression(let_stmt.value.as_ref().unwrap(), expected) {
+        if !test_literal_expression(let_stmt_value, expected) {
             return;
         }
     }
 
-    fn test_let_statement(stmt: &StatementTypes, ident: &str) -> bool {
-        if !matches!(stmt, StatementTypes::Let(_)) {
+    fn test_let_statement(stmt: &Statement, ident: &str) -> bool {
+        if !matches!(stmt, Statement::Let(_)) {
             panic!("stmt is not LetStatement.");
         }
 
         let let_stmt = match stmt {
-            StatementTypes::Let(s) => s,
+            Statement::Let(s) => s,
             _ => {
                 panic!("stmt is not LetStatement.");
             }
@@ -211,7 +240,12 @@ fn test_return_statements() {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = parser.parse_program();
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
     check_parser_errors(&parser);
 
     if program.statements.len() != 3 {
@@ -223,7 +257,7 @@ fn test_return_statements() {
 
     for stmt in program.statements.iter() {
         let return_stmt = match stmt {
-            StatementTypes::Return(s) => s,
+            Node::Statement(Statement::Return(s)) => s,
             _ => {
                 panic!("stmt is not ReturnStatement.");
             }
@@ -245,7 +279,12 @@ fn test_identifier_expression() {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = parser.parse_program();
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
     check_parser_errors(&parser);
 
     if program.statements.len() != 1 {
@@ -256,12 +295,12 @@ fn test_identifier_expression() {
     }
 
     let stmt = match &program.statements[0] {
-        StatementTypes::ExpressionStatement(stmt) => stmt,
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("program.statements[0] is not ExpressionStatement."),
     };
 
     let ident = match stmt.expression.as_ref().unwrap().as_ref() {
-        ExpressionTypes::Identifier(ident) => ident,
+        Node::Expression(Expression::Identifier(ident)) => ident,
         _ => panic!("stmt.expression is not Identifier."),
     };
 
@@ -284,7 +323,12 @@ fn test_integer_literal_expression() {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = parser.parse_program();
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
     check_parser_errors(&parser);
 
     if program.statements.len() != 1 {
@@ -295,12 +339,12 @@ fn test_integer_literal_expression() {
     }
 
     let stmt = match &program.statements[0] {
-        StatementTypes::ExpressionStatement(stmt) => stmt,
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("program.statements[0] is not ExpressionStatement."),
     };
 
     let literal = match stmt.expression.as_ref().unwrap().as_ref() {
-        ExpressionTypes::IntegerLiteral(literal) => literal,
+        Node::Expression(Expression::IntegerLiteral(literal)) => literal,
         _ => panic!("stmt.expression is not IntegerLiteral."),
     };
 
@@ -327,7 +371,12 @@ fn test_boolean_expression() {
         let lexer = Lexer::new(input.to_string());
         let mut parser = Parser::new(lexer);
 
-        let program = parser.parse_program();
+        let program = match parser.parse_program() {
+            Node::Program(p) => p,
+            _ => {
+                panic!("parser.parse_program() did not return Program.");
+            }
+        };
         check_parser_errors(&parser);
 
         if program.statements.len() != 1 {
@@ -338,12 +387,12 @@ fn test_boolean_expression() {
         }
 
         let stmt = match &program.statements[0] {
-            StatementTypes::ExpressionStatement(stmt) => stmt,
+            Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
             _ => panic!("program.statements[0] is not ExpressionStatement."),
         };
 
         let boolean = match stmt.expression.as_ref().unwrap().as_ref() {
-            ExpressionTypes::Boolean(boolean) => boolean,
+            Node::Expression(Expression::Boolean(boolean)) => boolean,
             _ => panic!("stmt.expression is not Boolean."),
         };
 
@@ -376,7 +425,12 @@ fn test_parsing_prefix_expressions() {
         let lexer = Lexer::new(input.to_string());
         let mut parser = Parser::new(lexer);
 
-        let program = parser.parse_program();
+        let program = match parser.parse_program() {
+            Node::Program(p) => p,
+            _ => {
+                panic!("parser.parse_program() did not return Program.");
+            }
+        };
         check_parser_errors(&parser);
 
         if program.statements.len() != 1 {
@@ -388,12 +442,12 @@ fn test_parsing_prefix_expressions() {
         }
 
         let stmt = match &program.statements[0] {
-            StatementTypes::ExpressionStatement(stmt) => stmt,
+            Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
             _ => panic!("program.statements[0] is not ExpressionStatement."),
         };
 
         let expression = match stmt.expression.as_ref().unwrap().as_ref() {
-            ExpressionTypes::Prefix(expression) => expression,
+            Node::Expression(Expression::Prefix(expression)) => expression,
             _ => panic!("stmt.expression is not PrefixExpression."),
         };
 
@@ -404,7 +458,14 @@ fn test_parsing_prefix_expressions() {
             );
         }
 
-        if !test_literal_expression(&expression.right.as_ref().unwrap(), value) {
+        let right_exp = match expression.right.as_ref().unwrap().as_ref() {
+            Node::Expression(e) => e,
+            _ => {
+                panic!("expression.right is not Expression.");
+            }
+        };
+
+        if !test_literal_expression(right_exp, value) {
             return;
         }
     }
@@ -487,7 +548,12 @@ fn test_parsing_infix_expressions() {
         let lexer = Lexer::new(input.to_string());
         let mut parser = Parser::new(lexer);
 
-        let program = parser.parse_program();
+        let program = match parser.parse_program() {
+            Node::Program(p) => p,
+            _ => {
+                panic!("parser.parse_program() did not return Program.");
+            }
+        };
         check_parser_errors(&parser);
 
         if program.statements.len() != 1 {
@@ -499,16 +565,16 @@ fn test_parsing_infix_expressions() {
         }
 
         let stmt = match &program.statements[0] {
-            StatementTypes::ExpressionStatement(stmt) => stmt,
+            Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
             _ => panic!("program.statements[0] is not ExpressionStatement."),
         };
 
-        if !test_infix_expression(
-            stmt.expression.as_ref().unwrap(),
-            left_value,
-            operator,
-            right_value,
-        ) {
+        let exp = match stmt.expression.as_ref().unwrap().as_ref() {
+            Node::Expression(exp) => exp,
+            _ => panic!("stmt.expression is not InfixExpression."),
+        };
+
+        if !test_infix_expression(exp, left_value, operator, right_value) {
             return;
         }
     }
@@ -558,7 +624,12 @@ fn test_operator_precedence_parsing() {
         let lexer = Lexer::new(input.to_string());
         let mut parser = Parser::new(lexer);
 
-        let program = parser.parse_program();
+        let program = match parser.parse_program() {
+            Node::Program(p) => p,
+            _ => {
+                panic!("parser.parse_program() did not return Program.");
+            }
+        };
         check_parser_errors(&parser);
 
         let actual = program.to_string();
@@ -575,7 +646,12 @@ fn test_if_expression() {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = parser.parse_program();
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
     check_parser_errors(&parser);
 
     if program.statements.len() != 1 {
@@ -586,47 +662,52 @@ fn test_if_expression() {
     }
 
     let stmt = match &program.statements[0] {
-        StatementTypes::ExpressionStatement(stmt) => stmt,
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("program.statements[0] is not ExpressionStatement."),
     };
 
-    let expression = match stmt.expression.as_ref().unwrap().as_ref() {
-        ExpressionTypes::IfExpression(expression) => expression,
+    let ifexp = match stmt.expression.as_ref().unwrap().as_ref() {
+        Node::Expression(Expression::IfExpression(expression)) => expression,
         _ => panic!("stmt.expression is not IfExpression."),
     };
 
-    if !test_infix_expression(
-        &expression.condition.as_ref().unwrap(),
-        TestingLiteral::Str("x"),
-        "<",
-        TestingLiteral::Str("y"),
-    ) {
+    let exp = match ifexp.condition.as_ref().unwrap().as_ref() {
+        Node::Expression(e) => e,
+        _ => {
+            panic!("ifexp.condition is not Expression.");
+        }
+    };
+
+    if !test_infix_expression(exp, TestingLiteral::Str("x"), "<", TestingLiteral::Str("y")) {
         return;
     }
 
-    if expression.consequence.is_none() {
-        panic!("expression.consequence is None.");
+    if ifexp.consequence.is_none() {
+        panic!("ifexp.consequence is None.");
     }
 
-    if expression.consequence.as_ref().unwrap().statements.len() != 1 {
+    if ifexp.consequence.as_ref().unwrap().statements.len() != 1 {
         panic!(
-            "expression.consequence.statements does not contain 1 statement. got={}",
-            expression.consequence.as_ref().unwrap().statements.len()
+            "ifexp.consequence.statements does not contain 1 statement. got={}",
+            ifexp.consequence.as_ref().unwrap().statements.len()
         );
     }
 
-    let consequence = match &expression.consequence.as_ref().unwrap().statements[0] {
-        StatementTypes::ExpressionStatement(stmt) => stmt,
-        _ => panic!("expression.consequence.statements[0] is not ExpressionStatement."),
+    let consequence = match &ifexp.consequence.as_ref().unwrap().statements[0] {
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
+        _ => panic!("ifexp.consequence.statements[0] is not ExpressionStatement."),
     };
 
-    let ident = consequence.expression.as_ref().unwrap().as_ref();
+    let ident = match consequence.expression.as_ref().unwrap().as_ref() {
+        Node::Expression(e) => e,
+        _ => panic!("consequence.expression is not Identifier."),
+    };
     if !test_identifier(ident, "x") {
         return;
     }
 
-    if expression.alternative.is_some() {
-        panic!("expression.alternative is not None.");
+    if ifexp.alternative.is_some() {
+        panic!("ifexp.alternative is not None.");
     }
 }
 
@@ -637,7 +718,12 @@ fn test_if_else_expression() {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = parser.parse_program();
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
     check_parser_errors(&parser);
 
     if program.statements.len() != 1 {
@@ -648,17 +734,24 @@ fn test_if_else_expression() {
     }
 
     let stmt = match &program.statements[0] {
-        StatementTypes::ExpressionStatement(stmt) => stmt,
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("program.statements[0] is not ExpressionStatement."),
     };
 
-    let expression = match stmt.expression.as_ref().unwrap().as_ref() {
-        ExpressionTypes::IfExpression(expression) => expression,
+    let ifexp = match stmt.expression.as_ref().unwrap().as_ref() {
+        Node::Expression(Expression::IfExpression(expression)) => expression,
         _ => panic!("stmt.expression is not IfExpression."),
     };
 
+    let condition = match ifexp.condition.as_ref().unwrap().as_ref() {
+        Node::Expression(e) => e,
+        _ => {
+            panic!("ifexp.condition is not Expression.");
+        }
+    };
+
     if !test_infix_expression(
-        &expression.condition.as_ref().unwrap(),
+        condition,
         TestingLiteral::Str("x"),
         "<",
         TestingLiteral::Str("y"),
@@ -666,44 +759,52 @@ fn test_if_else_expression() {
         return;
     }
 
-    if expression.consequence.is_none() {
-        panic!("expression.consequence is None.");
+    if ifexp.consequence.is_none() {
+        panic!("ifexp.consequence is None.");
     }
 
-    if expression.consequence.as_ref().unwrap().statements.len() != 1 {
+    if ifexp.consequence.as_ref().unwrap().statements.len() != 1 {
         panic!(
-            "expression.consequence.statements does not contain 1 statement. got={}",
-            expression.consequence.as_ref().unwrap().statements.len()
+            "ifexp.consequence.statements does not contain 1 statement. got={}",
+            ifexp.consequence.as_ref().unwrap().statements.len()
         );
     }
 
-    let consequence = match &expression.consequence.as_ref().unwrap().statements[0] {
-        StatementTypes::ExpressionStatement(stmt) => stmt,
-        _ => panic!("expression.consequence.statements[0] is not ExpressionStatement."),
+    let consequence = match &ifexp.consequence.as_ref().unwrap().statements[0] {
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
+        _ => panic!("ifexp.consequence.statements[0] is not ExpressionStatement."),
     };
 
-    let ident = consequence.expression.as_ref().unwrap().as_ref();
+    let ident = match consequence.expression.as_ref().unwrap().as_ref() {
+        Node::Expression(e) => e,
+        _ => panic!("consequence.expression is not Identifier."),
+    };
+
     if !test_identifier(ident, "x") {
         return;
     }
 
-    if expression.alternative.is_none() {
-        panic!("expression.alternative is None.");
+    if ifexp.alternative.is_none() {
+        panic!("ifexp.alternative is None.");
     }
 
-    if expression.alternative.as_ref().unwrap().statements.len() != 1 {
+    if ifexp.alternative.as_ref().unwrap().statements.len() != 1 {
         panic!(
-            "expression.alternative.statements does not contain 1 statement. got={}",
-            expression.alternative.as_ref().unwrap().statements.len()
+            "ifexp.alternative.statements does not contain 1 statement. got={}",
+            ifexp.alternative.as_ref().unwrap().statements.len()
         );
     }
 
-    let alternative = match &expression.alternative.as_ref().unwrap().statements[0] {
-        StatementTypes::ExpressionStatement(stmt) => stmt,
-        _ => panic!("expression.alternative.statements[0] is not ExpressionStatement."),
+    let alternative = match &ifexp.alternative.as_ref().unwrap().statements[0] {
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
+        _ => panic!("ifexp.alternative.statements[0] is not ExpressionStatement."),
     };
 
-    let ident = alternative.expression.as_ref().unwrap().as_ref();
+    let ident = match alternative.expression.as_ref().unwrap().as_ref() {
+        Node::Expression(e) => e,
+        _ => panic!("alternative.expression is not Identifier."),
+    };
+
     if !test_identifier(ident, "y") {
         return;
     }
@@ -716,7 +817,12 @@ fn test_function_literal_parsing() {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = parser.parse_program();
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
     check_parser_errors(&parser);
 
     if program.statements.len() != 1 {
@@ -727,12 +833,12 @@ fn test_function_literal_parsing() {
     }
 
     let stmt = match &program.statements[0] {
-        StatementTypes::ExpressionStatement(stmt) => stmt,
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("program.statements[0] is not ExpressionStatement."),
     };
 
     let function = match stmt.expression.as_ref().unwrap().as_ref() {
-        ExpressionTypes::FunctionLiteral(function) => function,
+        Node::Expression(Expression::FunctionLiteral(function)) => function,
         _ => panic!("stmt.expression is not FunctionLiteral."),
     };
 
@@ -743,11 +849,25 @@ fn test_function_literal_parsing() {
         );
     }
 
-    if !test_literal_expression(&function.parameters[0], TestingLiteral::Str("x")) {
+    let param0 = match function.parameters[0].as_ref() {
+        Node::Expression(e) => e,
+        _ => {
+            panic!("function.parameters[0] is not Expression.");
+        }
+    };
+
+    if !test_literal_expression(param0, TestingLiteral::Str("x")) {
         return;
     }
 
-    if !test_literal_expression(&function.parameters[1], TestingLiteral::Str("y")) {
+    let param1 = match function.parameters[1].as_ref() {
+        Node::Expression(e) => e,
+        _ => {
+            panic!("function.parameters[1] is not Expression.");
+        }
+    };
+
+    if !test_literal_expression(param1, TestingLiteral::Str("y")) {
         return;
     }
 
@@ -759,16 +879,16 @@ fn test_function_literal_parsing() {
     }
 
     let body_stmt = match &function.body.as_ref().unwrap().statements[0] {
-        StatementTypes::ExpressionStatement(stmt) => stmt,
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("function.body.statements[0] is not ExpressionStatement."),
     };
 
-    if !test_infix_expression(
-        body_stmt.expression.as_ref().unwrap(),
-        TestingLiteral::Str("x"),
-        "+",
-        TestingLiteral::Str("y"),
-    ) {
+    let exp = match body_stmt.expression.as_ref().unwrap().as_ref() {
+        Node::Expression(e) => e,
+        _ => panic!("body_stmt.expression is not InfixExpression."),
+    };
+
+    if !test_infix_expression(exp, TestingLiteral::Str("x"), "+", TestingLiteral::Str("y")) {
         return;
     }
 }
@@ -794,7 +914,12 @@ fn test_function_parameter_parsing() {
         let lexer = Lexer::new(input.to_string());
         let mut parser = Parser::new(lexer);
 
-        let program = parser.parse_program();
+        let program = match parser.parse_program() {
+            Node::Program(p) => p,
+            _ => {
+                panic!("parser.parse_program() did not return Program.");
+            }
+        };
         check_parser_errors(&parser);
 
         if program.statements.len() != 1 {
@@ -805,12 +930,12 @@ fn test_function_parameter_parsing() {
         }
 
         let stmt = match &program.statements[0] {
-            StatementTypes::ExpressionStatement(stmt) => stmt,
+            Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
             _ => panic!("program.statements[0] is not ExpressionStatement."),
         };
 
         let function = match stmt.expression.as_ref().unwrap().as_ref() {
-            ExpressionTypes::FunctionLiteral(function) => function,
+            Node::Expression(Expression::FunctionLiteral(function)) => function,
             _ => panic!("stmt.expression is not FunctionLiteral."),
         };
 
@@ -823,7 +948,13 @@ fn test_function_parameter_parsing() {
         }
 
         for (i, ident) in expected_params.iter().enumerate() {
-            if !test_literal_expression(&function.parameters[i], ident.clone()) {
+            let param = match function.parameters[i].as_ref() {
+                Node::Expression(e) => e,
+                _ => {
+                    panic!("function.parameters[{}] is not Expression.", i);
+                }
+            };
+            if !test_literal_expression(param, ident.clone()) {
                 return;
             }
         }
@@ -837,7 +968,12 @@ fn test_call_expression_parsing() {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
 
-    let program = parser.parse_program();
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
     check_parser_errors(&parser);
 
     if program.statements.len() != 1 {
@@ -848,16 +984,23 @@ fn test_call_expression_parsing() {
     }
 
     let stmt = match &program.statements[0] {
-        StatementTypes::ExpressionStatement(stmt) => stmt,
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("program.statements[0] is not ExpressionStatement."),
     };
 
     let exp = match stmt.expression.as_ref().unwrap().as_ref() {
-        ExpressionTypes::CallExpression(exp) => exp,
+        Node::Expression(Expression::CallExpression(exp)) => exp,
         _ => panic!("stmt.expression is not CallExpression."),
     };
 
-    if !test_identifier(exp.function.as_ref(), "add") {
+    let function = match exp.function.as_ref() {
+        Node::Expression(e) => e,
+        _ => {
+            panic!("exp.function is not Expression.");
+        }
+    };
+
+    if !test_identifier(function, "add") {
         return;
     }
 
@@ -868,25 +1011,36 @@ fn test_call_expression_parsing() {
         );
     }
 
-    if !test_literal_expression(&exp.arguments[0], TestingLiteral::Int(1)) {
+    let exp0 = match &exp.arguments[0].as_ref() {
+        Node::Expression(exps) => exps,
+        _ => {
+            panic!("exp.arguments is not Expressions.");
+        }
+    };
+
+    if !test_literal_expression(exp0, TestingLiteral::Int(1)) {
         return;
     }
 
-    if !test_infix_expression(
-        &exp.arguments[1],
-        TestingLiteral::Int(2),
-        "*",
-        TestingLiteral::Int(3),
-    ) {
+    let exp1 = match &exp.arguments[1].as_ref() {
+        Node::Expression(exps) => exps,
+        _ => {
+            panic!("exp.arguments is not Expressions.");
+        }
+    };
+
+    if !test_infix_expression(exp1, TestingLiteral::Int(2), "*", TestingLiteral::Int(3)) {
         return;
     }
 
-    if !test_infix_expression(
-        &exp.arguments[2],
-        TestingLiteral::Int(4),
-        "+",
-        TestingLiteral::Int(5),
-    ) {
+    let exp2 = match &exp.arguments[2].as_ref() {
+        Node::Expression(exps) => exps,
+        _ => {
+            panic!("exp.arguments is not Expressions.");
+        }
+    };
+
+    if !test_infix_expression(exp2, TestingLiteral::Int(4), "+", TestingLiteral::Int(5)) {
         return;
     }
 }

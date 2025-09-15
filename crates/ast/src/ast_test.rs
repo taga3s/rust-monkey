@@ -1,11 +1,11 @@
 use token::token::{Token, TokenType};
 
-use crate::ast::{ExpressionTypes, Identifier, LetStatement, Program, StatementTypes};
+use crate::ast::{Expression, Identifier, LetStatement, Node, Program, Statement};
 
 #[test]
 fn test_to_string() {
     let program = Program {
-        statements: vec![StatementTypes::Let(LetStatement {
+        statements: vec![Node::Statement(Statement::Let(LetStatement {
             token: Token {
                 type_: TokenType::LET,
                 literal: "let".to_string(),
@@ -17,14 +17,16 @@ fn test_to_string() {
                 },
                 value: "myVar".to_string(),
             }),
-            value: Some(Box::new(ExpressionTypes::Identifier(Identifier {
-                token: Token {
-                    type_: TokenType::IDENT,
-                    literal: "anotherVar".to_string(),
+            value: Some(Box::new(Node::Expression(Expression::Identifier(
+                Identifier {
+                    token: Token {
+                        type_: TokenType::IDENT,
+                        literal: "anotherVar".to_string(),
+                    },
+                    value: "anotherVar".to_string(),
                 },
-                value: "anotherVar".to_string(),
-            }))),
-        })],
+            )))),
+        }))],
     };
 
     if program.to_string() != "let myVar = anotherVar;" {
