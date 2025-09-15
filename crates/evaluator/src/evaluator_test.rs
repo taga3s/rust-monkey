@@ -36,7 +36,7 @@ fn test_boolean_object(obj: ObjectTypes, expected: bool) {
 
 #[test]
 fn test_eval_integer_expression() {
-    let tests = vec![("5", 5), ("10", 10)];
+    let tests = vec![("5", 5), ("10", 10), ("-5", -5), ("-10", -10)];
 
     for (input, expected) in tests {
         let evaluated = test_eval(input);
@@ -47,6 +47,23 @@ fn test_eval_integer_expression() {
 #[test]
 fn test_eval_boolean_expression() {
     let tests = vec![("true", true), ("false", false)];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        test_boolean_object(evaluated, expected);
+    }
+}
+
+#[test]
+fn test_bang_operator() {
+    let tests = vec![
+        ("!true", false),
+        ("!false", true),
+        ("!5", false),
+        ("!!true", true),
+        ("!!false", false),
+        ("!!5", true),
+    ];
 
     for (input, expected) in tests {
         let evaluated = test_eval(input);

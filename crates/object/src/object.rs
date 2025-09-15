@@ -2,7 +2,7 @@
 
 type ObjectType = String;
 
-const INTEGER_OBJ: &str = "INTEGER";
+pub const INTEGER_OBJ: &str = "INTEGER";
 const BOOLEAN_OBJ: &str = "BOOLEAN";
 const NULL_OBJ: &str = "NULL";
 
@@ -13,6 +13,14 @@ pub enum ObjectTypes {
 }
 
 impl ObjectTypes {
+    pub fn _type(&self) -> ObjectType {
+        match self {
+            ObjectTypes::Integer(integer) => integer._type(),
+            ObjectTypes::Boolean(boolean) => boolean._type(),
+            ObjectTypes::Null(null) => null._type(),
+        }
+    }
+
     pub fn inspect(&self) -> String {
         match self {
             ObjectTypes::Integer(integer) => integer.inspect(),
