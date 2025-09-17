@@ -1,5 +1,5 @@
 use lexer::lexer::Lexer;
-use object::object::ObjectTypes;
+use object::object::{Null, ObjectTypes};
 use parser::parser::Parser;
 
 use crate::evaluator::eval;
@@ -104,5 +104,37 @@ fn test_bang_operator() {
     for (input, expected) in tests {
         let evaluated = test_eval(input);
         test_boolean_object(evaluated, expected);
+    }
+}
+
+#[test]
+fn test_if_else_expressions() {
+    let tests = vec![
+        ("if (true) { 10 }", Some(10)),
+        ("if (false) { 10 }", None),
+        ("if (1) { 10 }", Some(10)),
+        ("if (1 < 2) { 10 }", Some(10)),
+        ("if (1 > 2) { 10 }", None),
+        ("if (1 > 2) { 10 } else { 20 }", Some(20)),
+        ("if (1 < 2) { 10 } else { 20 }", Some(10)),
+    ];
+
+    for test in tests {
+        let evaluated = test_eval(test.0);
+        match test.1 {
+            Some(expected) => {
+                test_integer_object(evaluated, expected);
+            }
+            None => {
+                test_null_object(evaluated);
+            }
+        }
+    }
+}
+
+fn test_null_object(obj: ObjectTypes) -> bool {
+    match obj {
+        ObjectTypes::Null(Null {}) => true,
+        _ => panic!("object is not Null. got={}", obj.inspect()),
     }
 }

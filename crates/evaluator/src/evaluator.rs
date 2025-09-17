@@ -1,6 +1,6 @@
 //! Evaluator for the Monkey programming language
 
-use ast::ast::{Expression, Node, Statement};
+use ast::ast::{Expression, IfExpression, Node, Statement};
 use object::object::{Boolean, Integer, Null, ObjectTypes, INTEGER_OBJ};
 
 const NULL: ObjectTypes = ObjectTypes::Null(Null {});
@@ -24,10 +24,14 @@ pub fn eval(node: &Node) -> Option<ObjectTypes> {
                 let right = eval(prefix.right.as_ref().unwrap());
                 return eval_prefix_expression(&prefix.operator, right);
             }
+            Expression::IfExpression(ifexp) => {
+                return eval_if_expression(ifexp);
+            }
             _ => return None,
         },
         Node::Statement(stmt) => match stmt {
             Statement::ExpressionStatement(es) => eval(es.expression.as_ref().unwrap()),
+            Statement::BlockStatement(bs) => eval_statements(&bs.statements),
             _ => return None,
         },
     };
@@ -151,5 +155,24 @@ fn eval_integer_infix_expression(
         "==" => native_bool_to_boolean_object(left == right),
         "!=" => native_bool_to_boolean_object(left != right),
         _ => None,
+    }
+}
+
+fn eval_if_expression(ie: &IfExpression) -> Option<ObjectTypes> {
+    let condition = eval(ie.condition.as_ref().unwrap());
+    if is_truthy(condition) {
+        return eval(ie.consequence.as_ref().unwrap());
+    } else if let Some(alt) = &ie.alternative {
+        return eval(alt);
+    } else {
+        return Some(NULL);
+    }
+}
+
+fn is_truthy(obj: Option<ObjectTypes>) -> bool {
+    match obj {
+        Some(ObjectTypes::Boolean(boolean)) => boolean.value,
+        Some(ObjectTypes::Null(_)) => false,
+        _ => true,
     }
 }

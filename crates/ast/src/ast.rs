@@ -21,6 +21,7 @@ pub enum Statement {
     Let(LetStatement),
     Return(ReturnStatement),
     ExpressionStatement(ExpressionStatement),
+    BlockStatement(BlockStatement),
 }
 
 impl Statement {
@@ -29,6 +30,7 @@ impl Statement {
             Statement::Let(s) => s.to_string(),
             Statement::Return(s) => s.to_string(),
             Statement::ExpressionStatement(s) => s.to_string(),
+            Statement::BlockStatement(s) => s.to_string(),
         }
     }
 }
@@ -301,8 +303,8 @@ impl TNode for Boolean {
 pub struct IfExpression {
     pub token: token::Token,
     pub condition: Option<Box<Node>>,
-    pub consequence: Option<BlockStatement>,
-    pub alternative: Option<BlockStatement>,
+    pub consequence: Option<Box<Node>>,
+    pub alternative: Option<Box<Node>>,
 }
 
 impl TExpression for IfExpression {
@@ -357,7 +359,7 @@ impl TNode for BlockStatement {
 pub struct FunctionLiteral {
     pub token: token::Token,
     pub parameters: Vec<Box<Node>>,
-    pub body: Option<BlockStatement>,
+    pub body: Option<Box<Node>>,
 }
 
 impl TExpression for FunctionLiteral {

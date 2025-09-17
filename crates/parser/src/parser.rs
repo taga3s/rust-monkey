@@ -404,7 +404,7 @@ impl Parser {
         ))));
     }
 
-    fn parse_block_statement(&mut self) -> Option<BlockStatement> {
+    fn parse_block_statement(&mut self) -> Option<Box<Node>> {
         let mut block = BlockStatement {
             token: self.cur_token.clone(),
             statements: vec![],
@@ -419,7 +419,7 @@ impl Parser {
             self.next_token();
         }
 
-        Some(block)
+        Some(Box::new(Node::Statement(Statement::BlockStatement(block))))
     }
 
     fn parse_call_expression(&mut self, function: Box<Node>) -> Option<Box<Node>> {

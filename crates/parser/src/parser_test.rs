@@ -686,14 +686,21 @@ fn test_if_expression() {
         panic!("ifexp.consequence is None.");
     }
 
-    if ifexp.consequence.as_ref().unwrap().statements.len() != 1 {
+    let if_exp_consequence = match ifexp.consequence.as_ref().unwrap().as_ref() {
+        Node::Statement(Statement::BlockStatement(b)) => b,
+        _ => {
+            panic!("ifexp.consequence is not BlockStatement.");
+        }
+    };
+
+    if if_exp_consequence.statements.len() != 1 {
         panic!(
-            "ifexp.consequence.statements does not contain 1 statement. got={}",
-            ifexp.consequence.as_ref().unwrap().statements.len()
+            "if_exp_consequence.statements does not contain 1 statement. got={}",
+            if_exp_consequence.statements.len()
         );
     }
 
-    let consequence = match &ifexp.consequence.as_ref().unwrap().statements[0] {
+    let consequence = match &if_exp_consequence.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("ifexp.consequence.statements[0] is not ExpressionStatement."),
     };
@@ -763,14 +770,21 @@ fn test_if_else_expression() {
         panic!("ifexp.consequence is None.");
     }
 
-    if ifexp.consequence.as_ref().unwrap().statements.len() != 1 {
+    let if_exp_consequence = match ifexp.consequence.as_ref().unwrap().as_ref() {
+        Node::Statement(Statement::BlockStatement(b)) => b,
+        _ => {
+            panic!("ifexp.consequence is not BlockStatement.");
+        }
+    };
+
+    if if_exp_consequence.statements.len() != 1 {
         panic!(
-            "ifexp.consequence.statements does not contain 1 statement. got={}",
-            ifexp.consequence.as_ref().unwrap().statements.len()
+            "if_exp_consequence.statements does not contain 1 statement. got={}",
+            if_exp_consequence.statements.len()
         );
     }
 
-    let consequence = match &ifexp.consequence.as_ref().unwrap().statements[0] {
+    let consequence = match &if_exp_consequence.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("ifexp.consequence.statements[0] is not ExpressionStatement."),
     };
@@ -788,14 +802,21 @@ fn test_if_else_expression() {
         panic!("ifexp.alternative is None.");
     }
 
-    if ifexp.alternative.as_ref().unwrap().statements.len() != 1 {
+    let if_exp_alternative = match ifexp.alternative.as_ref().unwrap().as_ref() {
+        Node::Statement(Statement::BlockStatement(b)) => b,
+        _ => {
+            panic!("ifexp.alternative is not BlockStatement.");
+        }
+    };
+
+    if if_exp_alternative.statements.len() != 1 {
         panic!(
-            "ifexp.alternative.statements does not contain 1 statement. got={}",
-            ifexp.alternative.as_ref().unwrap().statements.len()
+            "if_exp_alternative.statements does not contain 1 statement. got={}",
+            if_exp_alternative.statements.len()
         );
     }
 
-    let alternative = match &ifexp.alternative.as_ref().unwrap().statements[0] {
+    let alternative = match &if_exp_alternative.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("ifexp.alternative.statements[0] is not ExpressionStatement."),
     };
@@ -871,14 +892,21 @@ fn test_function_literal_parsing() {
         return;
     }
 
-    if function.body.as_ref().unwrap().statements.len() != 1 {
+    let function_body = match function.body.as_ref().unwrap().as_ref() {
+        Node::Statement(Statement::BlockStatement(b)) => b,
+        _ => {
+            panic!("function.body is not BlockStatement.");
+        }
+    };
+
+    if function_body.statements.len() != 1 {
         panic!(
             "function.body.statements does not contain 1 statement. got={}",
-            function.body.as_ref().unwrap().statements.len()
+            function_body.statements.len()
         );
     }
 
-    let body_stmt = match &function.body.as_ref().unwrap().statements[0] {
+    let body_stmt = match &function_body.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("function.body.statements[0] is not ExpressionStatement."),
     };
