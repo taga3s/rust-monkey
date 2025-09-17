@@ -14,12 +14,11 @@ pub fn eval(node: &Node) -> Option<ObjectTypes> {
             Expression::IntegerLiteral(il) => {
                 Some(ObjectTypes::Integer(Integer { value: il.value }))
             }
-            Expression::Boolean(boolean) => {
-                if boolean.value {
-                    Some(TRUE)
-                } else {
-                    Some(FALSE)
-                }
+            Expression::Boolean(boolean) => native_bool_to_boolean_object(boolean.value),
+            Expression::Infix(infix) => {
+                let left = eval(infix.left.as_ref().unwrap());
+                let right = eval(infix.right.as_ref().unwrap());
+                return eval_infix_expression(&infix.operator, left, right);
             }
             Expression::Prefix(prefix) => {
                 let right = eval(prefix.right.as_ref().unwrap());
@@ -33,6 +32,14 @@ pub fn eval(node: &Node) -> Option<ObjectTypes> {
         },
     };
     result
+}
+
+fn native_bool_to_boolean_object(input: bool) -> Option<ObjectTypes> {
+    if input {
+        Some(TRUE)
+    } else {
+        Some(FALSE)
+    }
 }
 
 fn eval_statements(stmts: &[Node]) -> Option<ObjectTypes> {
@@ -81,6 +88,68 @@ fn eval_minus_prefix_operator_expression(right: Option<ObjectTypes>) -> Option<O
         ObjectTypes::Integer(integer) => Some(ObjectTypes::Integer(Integer {
             value: -integer.value,
         })),
+        _ => None,
+    }
+}
+
+fn eval_infix_expression(
+    operator: &str,
+    left: Option<ObjectTypes>,
+    right: Option<ObjectTypes>,
+) -> Option<ObjectTypes> {
+    let left = match left {
+        Some(obj) => obj,
+        None => return None,
+    };
+    let right = match right {
+        Some(obj) => obj,
+        None => return None,
+    };
+
+    if &left._type() == INTEGER_OBJ && &right._type() == INTEGER_OBJ {
+        return eval_integer_infix_expression(operator, left, right);
+    };
+    if operator == "==" {
+        return native_bool_to_boolean_object(left == right);
+    }
+    if operator == "!=" {
+        return native_bool_to_boolean_object(left.inspect() != right.inspect());
+    }
+
+    None
+}
+
+fn eval_integer_infix_expression(
+    operator: &str,
+    left: ObjectTypes,
+    right: ObjectTypes,
+) -> Option<ObjectTypes> {
+    let left = match left {
+        ObjectTypes::Integer(integer) => integer.value,
+        _ => return None,
+    };
+    let right = match right {
+        ObjectTypes::Integer(integer) => integer.value,
+        _ => return None,
+    };
+
+    match operator {
+        "+" => Some(ObjectTypes::Integer(Integer {
+            value: left + right,
+        })),
+        "-" => Some(ObjectTypes::Integer(Integer {
+            value: left - right,
+        })),
+        "*" => Some(ObjectTypes::Integer(Integer {
+            value: left * right,
+        })),
+        "/" => Some(ObjectTypes::Integer(Integer {
+            value: left / right,
+        })),
+        "<" => native_bool_to_boolean_object(left < right),
+        ">" => native_bool_to_boolean_object(left > right),
+        "==" => native_bool_to_boolean_object(left == right),
+        "!=" => native_bool_to_boolean_object(left != right),
         _ => None,
     }
 }

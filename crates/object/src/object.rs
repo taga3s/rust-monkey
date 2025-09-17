@@ -6,6 +6,7 @@ pub const INTEGER_OBJ: &str = "INTEGER";
 const BOOLEAN_OBJ: &str = "BOOLEAN";
 const NULL_OBJ: &str = "NULL";
 
+#[derive(PartialEq)]
 pub enum ObjectTypes {
     Integer(Integer),
     Boolean(Boolean),
@@ -35,6 +36,7 @@ trait Object {
     fn inspect(&self) -> String;
 }
 
+#[derive(PartialEq)]
 pub struct Integer {
     pub value: i64,
 }
@@ -49,6 +51,7 @@ impl Object for Integer {
     }
 }
 
+#[derive(PartialEq)]
 pub struct Boolean {
     pub value: bool,
 }
@@ -63,6 +66,7 @@ impl Object for Boolean {
     }
 }
 
+#[derive(PartialEq)]
 pub struct Null;
 
 impl Object for Null {
