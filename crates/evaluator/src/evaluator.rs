@@ -1,7 +1,9 @@
 //! Evaluator for the Monkey programming language
 
-use ast::ast::{Expression, IfExpression, Node, Statement};
-use object::object::{Boolean, Integer, Null, ObjectTypes, INTEGER_OBJ};
+use ast::ast::{BlockStatement, Expression, IfExpression, Node, Program, Statement};
+use object::object::{
+    Boolean, Integer, Null, ObjectTypes, ReturnValue, INTEGER_OBJ, RETURN_VALUE_OBJ,
+};
 
 const NULL: ObjectTypes = ObjectTypes::Null(Null {});
 const TRUE: ObjectTypes = ObjectTypes::Boolean(Boolean { value: true });
@@ -9,7 +11,7 @@ const FALSE: ObjectTypes = ObjectTypes::Boolean(Boolean { value: false });
 
 pub fn eval(node: &Node) -> Option<ObjectTypes> {
     let result = match node {
-        Node::Program(program) => eval_statements(&program.statements),
+        Node::Program(program) => eval_program(&program),
         Node::Expression(expr) => match expr {
             Expression::IntegerLiteral(il) => {
                 Some(ObjectTypes::Integer(Integer { value: il.value }))
@@ -31,10 +33,44 @@ pub fn eval(node: &Node) -> Option<ObjectTypes> {
         },
         Node::Statement(stmt) => match stmt {
             Statement::ExpressionStatement(es) => eval(es.expression.as_ref().unwrap()),
-            Statement::BlockStatement(bs) => eval_statements(&bs.statements),
+            Statement::Return(rs) => {
+                let val = eval(rs.return_value.as_ref().unwrap());
+                return Some(ObjectTypes::ReturnValue(ReturnValue {
+                    value: Box::new(val.unwrap()),
+                }));
+            }
+            Statement::BlockStatement(bs) => eval_block_statement(&bs),
             _ => return None,
         },
     };
+    result
+}
+
+fn eval_program(program: &Program) -> Option<ObjectTypes> {
+    let mut result = None;
+
+    for stmt in &program.statements {
+        result = eval(&stmt);
+
+        if let Some(ObjectTypes::ReturnValue(return_value)) = result {
+            return Some(*return_value.value);
+        }
+    }
+    result
+}
+
+fn eval_block_statement(bs: &BlockStatement) -> Option<ObjectTypes> {
+    let mut result = None;
+
+    for stmt in &bs.statements {
+        result = eval(&stmt);
+
+        if let Some(r) = &result {
+            if r._type() == RETURN_VALUE_OBJ {
+                return result;
+            }
+        }
+    }
     result
 }
 
@@ -44,16 +80,6 @@ fn native_bool_to_boolean_object(input: bool) -> Option<ObjectTypes> {
     } else {
         Some(FALSE)
     }
-}
-
-fn eval_statements(stmts: &[Node]) -> Option<ObjectTypes> {
-    let mut result = None;
-
-    for stmt in stmts {
-        result = eval(stmt);
-    }
-
-    result
 }
 
 fn eval_prefix_expression(operator: &str, right: Option<ObjectTypes>) -> Option<ObjectTypes> {
