@@ -1,8 +1,11 @@
 //! Evaluator for the Monkey programming language
 
-use ast::ast::{BlockStatement, Expression, IfExpression, Node, Program, Statement};
-use object::object::{
-    Boolean, Integer, Null, ObjectTypes, ReturnValue, ERROR_OBJ, INTEGER_OBJ, RETURN_VALUE_OBJ,
+use ast::ast::{BlockStatement, Expression, Identifier, IfExpression, Node, Program, Statement};
+use object::{
+    environment::Environment,
+    object::{
+        Boolean, Integer, Null, ObjectTypes, ReturnValue, ERROR_OBJ, INTEGER_OBJ, RETURN_VALUE_OBJ,
+    },
 };
 
 const NULL: ObjectTypes = ObjectTypes::Null(Null {});
@@ -20,41 +23,50 @@ fn is_error(obj: &Option<ObjectTypes>) -> bool {
     false
 }
 
-pub fn eval(node: &Node) -> Option<ObjectTypes> {
+pub fn eval(node: &Node, env: &mut Environment) -> Option<ObjectTypes> {
     let result = match node {
-        Node::Program(program) => eval_program(&program),
+        Node::Program(program) => eval_program(&program, env),
         Node::Expression(expr) => match expr {
             Expression::IntegerLiteral(il) => {
                 Some(ObjectTypes::Integer(Integer { value: il.value }))
             }
             Expression::Boolean(boolean) => native_bool_to_boolean_object(boolean.value),
             Expression::Infix(infix) => {
-                let left = eval(infix.left.as_ref().unwrap());
+                let left = eval(infix.left.as_ref().unwrap(), env);
                 if is_error(&left) {
                     return left;
                 }
-                let right = eval(infix.right.as_ref().unwrap());
+                let right = eval(infix.right.as_ref().unwrap(), env);
                 if is_error(&right) {
                     return right;
                 }
                 return eval_infix_expression(&infix.operator, left, right);
             }
             Expression::Prefix(prefix) => {
-                let right = eval(prefix.right.as_ref().unwrap());
+                let right = eval(prefix.right.as_ref().unwrap(), env);
                 if is_error(&right) {
                     return right;
                 }
                 return eval_prefix_expression(&prefix.operator, right);
             }
             Expression::IfExpression(ifexp) => {
-                return eval_if_expression(ifexp);
+                return eval_if_expression(ifexp, env);
             }
-            _ => return None,
+            Expression::Identifier(ident) => eval_identifier(ident, env),
+            _ => None,
         },
         Node::Statement(stmt) => match stmt {
-            Statement::ExpressionStatement(es) => eval(es.expression.as_ref().unwrap()),
+            Statement::ExpressionStatement(es) => eval(es.expression.as_ref().unwrap(), env),
+            Statement::Let(ls) => {
+                let val = eval(ls.value.as_ref().unwrap(), env);
+                if is_error(&val) {
+                    return val;
+                }
+                env.set(ls.name.as_ref().unwrap().value.clone(), val.unwrap());
+                None
+            }
             Statement::Return(rs) => {
-                let val = eval(rs.return_value.as_ref().unwrap());
+                let val = eval(rs.return_value.as_ref().unwrap(), env);
                 if is_error(&val) {
                     return val;
                 }
@@ -62,35 +74,36 @@ pub fn eval(node: &Node) -> Option<ObjectTypes> {
                     value: Box::new(val.unwrap()),
                 }));
             }
-            Statement::BlockStatement(bs) => eval_block_statement(&bs),
-            _ => return None,
+            Statement::BlockStatement(bs) => eval_block_statement(bs, env),
         },
     };
     result
 }
 
-fn eval_program(program: &Program) -> Option<ObjectTypes> {
+fn eval_program(program: &Program, env: &mut Environment) -> Option<ObjectTypes> {
     let mut result = None;
 
     for stmt in &program.statements {
-        result = eval(&stmt);
+        result = eval(&stmt, env);
 
-        match result.as_ref().unwrap() {
-            ObjectTypes::ReturnValue(return_value) => {
-                return Some(*return_value.value.clone());
+        if let Some(r) = &result {
+            match r {
+                ObjectTypes::ReturnValue(return_value) => {
+                    return Some(*return_value.value.clone());
+                }
+                ObjectTypes::Error(_) => return result,
+                _ => {}
             }
-            ObjectTypes::Error(_) => return result,
-            _ => {}
         }
     }
     result
 }
 
-fn eval_block_statement(bs: &BlockStatement) -> Option<ObjectTypes> {
+fn eval_block_statement(bs: &BlockStatement, env: &mut Environment) -> Option<ObjectTypes> {
     let mut result = None;
 
     for stmt in &bs.statements {
-        result = eval(&stmt);
+        result = eval(&stmt, env);
 
         if let Some(r) = &result {
             if r._type() == RETURN_VALUE_OBJ || r._type() == ERROR_OBJ {
@@ -118,6 +131,13 @@ fn eval_prefix_expression(operator: &str, right: Option<ObjectTypes>) -> Option<
             operator,
             right.unwrap()._type()
         )),
+    }
+}
+
+fn eval_identifier(node: &Identifier, env: &mut Environment) -> Option<ObjectTypes> {
+    match env.get(&node.value) {
+        Some(val) => Some(val.clone()),
+        None => new_error(format!("identifier not found: {}", node.value)),
     }
 }
 
@@ -233,12 +253,12 @@ fn eval_integer_infix_expression(
     }
 }
 
-fn eval_if_expression(ie: &IfExpression) -> Option<ObjectTypes> {
-    let condition = eval(ie.condition.as_ref().unwrap());
+fn eval_if_expression(ie: &IfExpression, env: &mut Environment) -> Option<ObjectTypes> {
+    let condition = eval(ie.condition.as_ref().unwrap(), env);
     if is_truthy(condition) {
-        return eval(ie.consequence.as_ref().unwrap());
+        return eval(ie.consequence.as_ref().unwrap(), env);
     } else if let Some(alt) = &ie.alternative {
-        return eval(alt);
+        return eval(alt, env);
     } else {
         return Some(NULL);
     }

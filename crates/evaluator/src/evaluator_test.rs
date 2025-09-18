@@ -1,5 +1,8 @@
 use lexer::lexer::Lexer;
-use object::object::{Null, ObjectTypes};
+use object::{
+    environment::new_environment,
+    object::{Null, ObjectTypes},
+};
 use parser::parser::Parser;
 
 use crate::evaluator::eval;
@@ -8,8 +11,9 @@ fn test_eval(input: &str) -> ObjectTypes {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
+    let mut env = new_environment();
 
-    eval(&program).unwrap()
+    eval(&program, &mut env).unwrap()
 }
 
 fn test_integer_object(obj: ObjectTypes, expected: i64) {
@@ -171,6 +175,7 @@ fn test_error_handling() {
             "if (10 > 1) { if (10 > 1) { return true + false; } return 1; }",
             "unknown operator: BOOLEAN + BOOLEAN",
         ),
+        ("foobar", "identifier not found: foobar"),
     ];
 
     for test in tests {
@@ -184,5 +189,20 @@ fn test_error_handling() {
                 eprintln!("object is not Error. got={}", evaluated.inspect());
             }
         }
+    }
+}
+
+#[test]
+fn test_let_statements() {
+    let tests = vec![
+        ("let a = 5; a;", 5),
+        ("let a = 5 * 5; a;", 25),
+        ("let a = 5; let b = a; b;", 5),
+        ("let a = 5; let b = a; let c = a + b + 5; c;", 15),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        test_integer_object(evaluated, expected);
     }
 }

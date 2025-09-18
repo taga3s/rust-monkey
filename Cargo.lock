@@ -46,6 +46,7 @@ dependencies = [
  "ast",
  "evaluator",
  "lexer",
+ "object",
  "parser",
  "token",
 ]

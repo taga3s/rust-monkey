@@ -2,10 +2,12 @@ use std::io::{self, Write};
 
 use ::lexer::lexer::Lexer;
 use evaluator::evaluator;
+use object::environment;
 use parser::parser::Parser;
 
 fn start() -> io::Result<()> {
     let mut input = String::new();
+    let mut env = environment::new_environment();
 
     loop {
         input.clear();
@@ -28,7 +30,7 @@ fn start() -> io::Result<()> {
             continue;
         }
 
-        let evaluated = evaluator::eval(&program);
+        let evaluated = evaluator::eval(&program, &mut env);
         if let Some(obj) = evaluated {
             println!("{}", obj.inspect());
         }
