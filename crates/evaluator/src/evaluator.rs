@@ -2,12 +2,23 @@
 
 use ast::ast::{BlockStatement, Expression, IfExpression, Node, Program, Statement};
 use object::object::{
-    Boolean, Integer, Null, ObjectTypes, ReturnValue, INTEGER_OBJ, RETURN_VALUE_OBJ,
+    Boolean, Integer, Null, ObjectTypes, ReturnValue, ERROR_OBJ, INTEGER_OBJ, RETURN_VALUE_OBJ,
 };
 
 const NULL: ObjectTypes = ObjectTypes::Null(Null {});
 const TRUE: ObjectTypes = ObjectTypes::Boolean(Boolean { value: true });
 const FALSE: ObjectTypes = ObjectTypes::Boolean(Boolean { value: false });
+
+fn new_error(message: String) -> Option<ObjectTypes> {
+    Some(ObjectTypes::Error(object::object::Error { message }))
+}
+
+fn is_error(obj: &Option<ObjectTypes>) -> bool {
+    if let Some(obj) = obj {
+        return obj._type() == ERROR_OBJ;
+    }
+    false
+}
 
 pub fn eval(node: &Node) -> Option<ObjectTypes> {
     let result = match node {
@@ -19,11 +30,20 @@ pub fn eval(node: &Node) -> Option<ObjectTypes> {
             Expression::Boolean(boolean) => native_bool_to_boolean_object(boolean.value),
             Expression::Infix(infix) => {
                 let left = eval(infix.left.as_ref().unwrap());
+                if is_error(&left) {
+                    return left;
+                }
                 let right = eval(infix.right.as_ref().unwrap());
+                if is_error(&right) {
+                    return right;
+                }
                 return eval_infix_expression(&infix.operator, left, right);
             }
             Expression::Prefix(prefix) => {
                 let right = eval(prefix.right.as_ref().unwrap());
+                if is_error(&right) {
+                    return right;
+                }
                 return eval_prefix_expression(&prefix.operator, right);
             }
             Expression::IfExpression(ifexp) => {
@@ -35,6 +55,9 @@ pub fn eval(node: &Node) -> Option<ObjectTypes> {
             Statement::ExpressionStatement(es) => eval(es.expression.as_ref().unwrap()),
             Statement::Return(rs) => {
                 let val = eval(rs.return_value.as_ref().unwrap());
+                if is_error(&val) {
+                    return val;
+                }
                 return Some(ObjectTypes::ReturnValue(ReturnValue {
                     value: Box::new(val.unwrap()),
                 }));
@@ -52,8 +75,12 @@ fn eval_program(program: &Program) -> Option<ObjectTypes> {
     for stmt in &program.statements {
         result = eval(&stmt);
 
-        if let Some(ObjectTypes::ReturnValue(return_value)) = result {
-            return Some(*return_value.value);
+        match result.as_ref().unwrap() {
+            ObjectTypes::ReturnValue(return_value) => {
+                return Some(*return_value.value.clone());
+            }
+            ObjectTypes::Error(_) => return result,
+            _ => {}
         }
     }
     result
@@ -66,7 +93,7 @@ fn eval_block_statement(bs: &BlockStatement) -> Option<ObjectTypes> {
         result = eval(&stmt);
 
         if let Some(r) = &result {
-            if r._type() == RETURN_VALUE_OBJ {
+            if r._type() == RETURN_VALUE_OBJ || r._type() == ERROR_OBJ {
                 return result;
             }
         }
@@ -86,7 +113,11 @@ fn eval_prefix_expression(operator: &str, right: Option<ObjectTypes>) -> Option<
     match operator {
         "!" => eval_bang_operator_expression(right),
         "-" => eval_minus_prefix_operator_expression(right),
-        _ => None,
+        _ => new_error(format!(
+            "unknown operator: {}{}",
+            operator,
+            right.unwrap()._type()
+        )),
     }
 }
 
@@ -111,7 +142,7 @@ fn eval_minus_prefix_operator_expression(right: Option<ObjectTypes>) -> Option<O
     };
 
     if right._type() != INTEGER_OBJ {
-        return Some(ObjectTypes::Null(Null {}));
+        return new_error(format!("unknown operator: -{}", right._type()));
     }
 
     match right {
@@ -145,8 +176,21 @@ fn eval_infix_expression(
     if operator == "!=" {
         return native_bool_to_boolean_object(left.inspect() != right.inspect());
     }
+    if &left._type() != &right._type() {
+        return new_error(format!(
+            "type mismatch: {} {} {}",
+            left._type(),
+            operator,
+            right._type()
+        ));
+    }
 
-    None
+    new_error(format!(
+        "unknown operator: {} {} {}",
+        left._type(),
+        operator,
+        right._type()
+    ))
 }
 
 fn eval_integer_infix_expression(
@@ -154,33 +198,38 @@ fn eval_integer_infix_expression(
     left: ObjectTypes,
     right: ObjectTypes,
 ) -> Option<ObjectTypes> {
-    let left = match left {
+    let left_val = match &left {
         ObjectTypes::Integer(integer) => integer.value,
         _ => return None,
     };
-    let right = match right {
+    let right_val = match &right {
         ObjectTypes::Integer(integer) => integer.value,
         _ => return None,
     };
 
     match operator {
         "+" => Some(ObjectTypes::Integer(Integer {
-            value: left + right,
+            value: left_val + right_val,
         })),
         "-" => Some(ObjectTypes::Integer(Integer {
-            value: left - right,
+            value: left_val - right_val,
         })),
         "*" => Some(ObjectTypes::Integer(Integer {
-            value: left * right,
+            value: left_val * right_val,
         })),
         "/" => Some(ObjectTypes::Integer(Integer {
-            value: left / right,
+            value: left_val / right_val,
         })),
-        "<" => native_bool_to_boolean_object(left < right),
-        ">" => native_bool_to_boolean_object(left > right),
-        "==" => native_bool_to_boolean_object(left == right),
-        "!=" => native_bool_to_boolean_object(left != right),
-        _ => None,
+        "<" => native_bool_to_boolean_object(left_val < right_val),
+        ">" => native_bool_to_boolean_object(left_val > right_val),
+        "==" => native_bool_to_boolean_object(left_val == right_val),
+        "!=" => native_bool_to_boolean_object(left_val != right_val),
+        _ => new_error(format!(
+            "unknown operator: {} {} {}",
+            &left._type(),
+            operator,
+            &right._type()
+        )),
     }
 }
 
