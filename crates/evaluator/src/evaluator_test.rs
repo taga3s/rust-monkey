@@ -13,7 +13,7 @@ fn test_eval(input: &str) -> ObjectTypes {
     let program = parser.parse_program();
     let mut env = new_environment();
 
-    eval(&program, &mut env).unwrap()
+    eval(&program, &mut env)
 }
 
 fn test_integer_object(obj: ObjectTypes, expected: i64) {

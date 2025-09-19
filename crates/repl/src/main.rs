@@ -31,9 +31,7 @@ fn start() -> io::Result<()> {
         }
 
         let evaluated = evaluator::eval(&program, &mut env);
-        if let Some(obj) = evaluated {
-            println!("{}", obj.inspect());
-        }
+        println!("{}", evaluated.inspect());
     }
 
     Ok(())
