@@ -172,12 +172,10 @@ impl Parser {
     }
 
     fn parse_expression_statement(&mut self) -> Option<Statement> {
-        let mut stmt = ExpressionStatement {
+        let stmt = ExpressionStatement {
             token: self.cur_token.clone(),
-            expression: None,
+            expression: self.parse_expression(Precedence::LOWEST),
         };
-
-        stmt.expression = self.parse_expression(Precedence::LOWEST);
 
         if self.peek_token_is(TokenType::SEMICOLON) {
             self.next_token();
@@ -188,7 +186,7 @@ impl Parser {
 
     fn parse_expression(&mut self, precedence: Precedence) -> Option<Box<Node>> {
         let prefix_parse_fn = match self.prefix_parse_fns.get(&self.cur_token._type) {
-            Some(p) => *p,
+            Some(p) => p,
             None => {
                 self.no_prefix_parse_fn_error(self.cur_token._type.clone());
                 return None;
@@ -200,7 +198,7 @@ impl Parser {
         // 右結合力が高い場合、 left_exp が次の演算子に関連づけられている infix_parse_fn に渡されることはない。
         while !self.peek_token_is(TokenType::SEMICOLON) && precedence < self.peek_precedence() {
             let infix_parse_fn = match self.infix_parse_fns.get(&self.peek_token._type) {
-                Some(f) => *f,
+                Some(f) => f.clone(),
                 None => return left_exp,
             };
 
@@ -399,9 +397,9 @@ impl Parser {
             expression.alternative = self.parse_block_statement();
         }
 
-        return Some(Box::new(Node::Expression(Expression::IfExpression(
+        Some(Box::new(Node::Expression(Expression::IfExpression(
             expression,
-        ))));
+        ))))
     }
 
     fn parse_block_statement(&mut self) -> Option<Box<Node>> {
@@ -423,12 +421,11 @@ impl Parser {
     }
 
     fn parse_call_expression(&mut self, function: Box<Node>) -> Option<Box<Node>> {
-        let mut exp = CallExpression {
+        let exp = CallExpression {
             token: self.cur_token.clone(),
             function,
-            arguments: vec![],
+            arguments: self.parse_call_arguments()?,
         };
-        exp.arguments = self.parse_call_arguments().unwrap();
         Some(Box::new(Node::Expression(Expression::CallExpression(exp))))
     }
 
@@ -441,12 +438,12 @@ impl Parser {
         }
 
         self.next_token();
-        args.push(self.parse_expression(Precedence::LOWEST).unwrap());
+        args.push(self.parse_expression(Precedence::LOWEST)?);
 
         while self.peek_token_is(TokenType::COMMA) {
             self.next_token();
             self.next_token();
-            args.push(self.parse_expression(Precedence::LOWEST).unwrap());
+            args.push(self.parse_expression(Precedence::LOWEST)?);
         }
 
         if !self.expect_peek(TokenType::RPAREN) {
@@ -477,7 +474,7 @@ impl Parser {
     fn peek_precedence(&self) -> Precedence {
         match PRECEDENCES
             .iter()
-            .find(|(t, _)| *t == self.peek_token._type)
+            .find(|(t, _)| t.clone() == self.peek_token._type)
         {
             Some((_, p)) => p.clone(),
             None => Precedence::LOWEST,
@@ -485,7 +482,7 @@ impl Parser {
     }
 
     fn cur_precedence(&self) -> Precedence {
-        match PRECEDENCES.iter().find(|(t, _)| *t == self.cur_token._type) {
+        match PRECEDENCES.iter().find(|(t, _)| t == &self.cur_token._type) {
             Some((_, p)) => p.clone(),
             None => Precedence::LOWEST,
         }
