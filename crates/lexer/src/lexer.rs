@@ -31,7 +31,7 @@ impl Lexer {
                 if self.peek_char() == Some('=') {
                     let ch = self.ch.unwrap();
                     self.read_char();
-                    tok.type_ = TokenType::EQ;
+                    tok._type = TokenType::EQ;
                     tok.literal = format!("{}{}", ch, self.ch.unwrap());
                 } else {
                     tok = self.new_token(TokenType::ASSIGN, self.ch.unwrap());
@@ -50,7 +50,7 @@ impl Lexer {
                 if self.peek_char() == Some('=') {
                     let ch = self.ch.unwrap();
                     self.read_char();
-                    tok.type_ = TokenType::NOTEQ;
+                    tok._type = TokenType::NOTEQ;
                     tok.literal = format!("{}{}", ch, self.ch.unwrap());
                 } else {
                     tok = self.new_token(TokenType::BANG, self.ch.unwrap());
@@ -63,20 +63,20 @@ impl Lexer {
             Some('{') => tok = self.new_token(TokenType::LBRACE, self.ch.unwrap()),
             Some('}') => tok = self.new_token(TokenType::RBRACE, self.ch.unwrap()),
             Some('"') => {
-                tok.type_ = TokenType::STRING;
+                tok._type = TokenType::STRING;
                 tok.literal = self.read_string();
             }
             None => {
                 tok.literal = "".to_string();
-                tok.type_ = TokenType::EOF;
+                tok._type = TokenType::EOF;
             }
             _ => {
                 if self.is_letter(self.ch.unwrap()) {
                     tok.literal = self.read_identifier();
-                    tok.type_ = lookup_ident(&tok.literal);
+                    tok._type = lookup_ident(&tok.literal);
                     return tok;
                 } else if self.is_digit(self.ch.unwrap()) {
-                    tok.type_ = TokenType::INT;
+                    tok._type = TokenType::INT;
                     tok.literal = self.read_number();
                     return tok;
                 }
@@ -159,7 +159,7 @@ impl Lexer {
 
     fn new_token(&self, token_type: TokenType, ch: char) -> Token {
         Token {
-            type_: token_type,
+            _type: token_type,
             literal: if ch.to_string() == " " {
                 "".to_string()
             } else {

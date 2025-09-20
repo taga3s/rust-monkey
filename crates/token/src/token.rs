@@ -2,14 +2,14 @@
 
 #[derive(Debug, Clone)]
 pub struct Token {
-    pub type_: TokenType,
+    pub _type: TokenType,
     pub literal: String,
 }
 
 impl Token {
     pub fn new() -> Self {
         Token {
-            type_: TokenType::ILLEGAL,
+            _type: TokenType::ILLEGAL,
             literal: String::new(),
         }
     }
