@@ -2,13 +2,14 @@
 
 use ast::ast::{BlockStatement, Expression, Identifier, IfExpression, Node, Program, Statement};
 use object::{
-    environment::Environment,
+    environment::{new_enclosed_environment, Environment},
     object::{
-        Boolean, Integer, Null, ObjectTypes, ReturnValue, ERROR_OBJ, INTEGER_OBJ, RETURN_VALUE_OBJ,
+        Boolean, Function, Integer, Null, ObjectTypes, ReturnValue, ERROR_OBJ, INTEGER_OBJ,
+        RETURN_VALUE_OBJ,
     },
 };
 
-const NULL: ObjectTypes = ObjectTypes::Null(Null {});
+// const NULL: ObjectTypes = ObjectTypes::Null(Null {});
 const TRUE: ObjectTypes = ObjectTypes::Boolean(Boolean { value: true });
 const FALSE: ObjectTypes = ObjectTypes::Boolean(Boolean { value: false });
 
@@ -38,7 +39,43 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
                 return eval_prefix_expression(&prefix.operator, &right);
             }
             Expression::IfExpression(ifexp) => eval_if_expression(ifexp, env),
-            _ => NULL, //FIXME: handle other object types
+            Expression::FunctionLiteral(fl) => {
+                let mut parameters = Vec::new();
+                for p in &fl.parameters {
+                    match p.as_ref() {
+                        Node::Expression(Expression::Identifier(ident)) => {
+                            parameters.push(ident.clone())
+                        }
+                        _ => {
+                            return new_error(
+                                "function parameter is not an identifier".to_string(),
+                            );
+                        }
+                    }
+                }
+                let body = match fl.body.as_ref().unwrap().as_ref() {
+                    Node::Statement(Statement::BlockStatement(bs)) => bs,
+                    _ => {
+                        return new_error("function body is not a block statement".to_string());
+                    }
+                };
+                return ObjectTypes::Function(Function {
+                    parameters,
+                    body: body.clone(),
+                    env: env.clone(),
+                });
+            }
+            Expression::CallExpression(ce) => {
+                let func = eval(ce.function.as_ref(), env);
+                if is_error(&func) {
+                    return func;
+                }
+                let args = eval_expressions(&ce.arguments, env);
+                if args.len() == 1 && is_error(&args[0]) {
+                    return args[0].clone();
+                }
+                return apply_function(&func, &args);
+            }
         },
         Node::Statement(stmt) => match stmt {
             Statement::ExpressionStatement(es) => eval(es.expression.as_ref().unwrap(), env),
@@ -47,8 +84,7 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
                 if is_error(&val) {
                     return val;
                 }
-                env.set(ls.name.as_ref().unwrap().value.clone(), val);
-                NULL //FIXME: handle other object types
+                return env.set(ls.name.as_ref().unwrap().value.clone(), val);
             }
             Statement::Return(rs) => {
                 let val = eval(rs.return_value.as_ref().unwrap(), env);
@@ -236,4 +272,50 @@ fn eval_if_expression(ie: &IfExpression, env: &mut Environment) -> ObjectTypes {
         return eval(alt, env);
     }
     return ObjectTypes::Null(Null {});
+}
+
+fn eval_expressions(exps: &Vec<Box<Node>>, env: &mut Environment) -> Vec<ObjectTypes> {
+    let mut result = Vec::new();
+
+    for e in exps {
+        let evaluated = eval(e.as_ref(), env);
+        if is_error(&evaluated) {
+            return vec![evaluated];
+        }
+        result.push(evaluated);
+    }
+    result
+}
+
+fn apply_function(func: &ObjectTypes, args: &Vec<ObjectTypes>) -> ObjectTypes {
+    match func {
+        ObjectTypes::Function(function) => {
+            let mut extended_env = extend_function_env(function, args);
+            let evaluated = eval(
+                &Node::Statement(Statement::BlockStatement(function.body.clone())),
+                &mut extended_env,
+            );
+            unwrap_return_value(evaluated)
+        }
+        _ => new_error(format!("not a function: {}", func._type())),
+    }
+}
+
+fn extend_function_env(func: &Function, args: &Vec<ObjectTypes>) -> Environment {
+    let mut env = new_enclosed_environment(func.env.clone());
+
+    for (param_idx, param) in func.parameters.iter().enumerate() {
+        env.set(param.value.clone(), args[param_idx].clone());
+    }
+
+    env
+}
+
+fn unwrap_return_value(obj: ObjectTypes) -> ObjectTypes {
+    if obj._type() == RETURN_VALUE_OBJ {
+        if let ObjectTypes::ReturnValue(rv) = obj {
+            return *rv.value;
+        }
+    }
+    obj
 }

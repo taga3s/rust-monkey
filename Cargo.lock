@@ -29,6 +29,9 @@ dependencies = [
 [[package]]
 name = "object"
 version = "0.1.0"
+dependencies = [
+ "ast",
+]
 
 [[package]]
 name = "parser"

@@ -1,3 +1,4 @@
+use ast::ast::TNode;
 use lexer::lexer::Lexer;
 use object::{
     environment::new_environment,
@@ -205,4 +206,52 @@ fn test_let_statements() {
         let evaluated = test_eval(input);
         test_integer_object(evaluated, expected);
     }
+}
+
+#[test]
+fn test_function_object() {
+    let input = "fn(x) { x + 2; };";
+
+    let evaluated = test_eval(input);
+    match evaluated {
+        ObjectTypes::Function(function) => {
+            assert_eq!(function.parameters.len(), 1);
+            assert_eq!(function.parameters[0].to_string(), "x");
+            assert_eq!(function.body.to_string(), "(x + 2)");
+        }
+        _ => {
+            panic!("object is not Function. got={}", evaluated.inspect());
+        }
+    }
+}
+
+#[test]
+fn test_function_application() {
+    let tests = vec![
+        ("let identity = fn(x) { x; }; identity(5);", 5),
+        ("let identity = fn(x) { return x; }; identity(5);", 5),
+        ("let double = fn(x) { x * 2; }; double(5);", 10),
+        ("let add = fn(x, y) { x + y; }; add(5, 5);", 10),
+        ("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20),
+        ("fn(x) { x; }(5)", 5),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        test_integer_object(evaluated, expected);
+    }
+}
+
+#[test]
+fn test_closures() {
+    let input = "
+    let newAdder = fn(x) {
+        fn(y) { x + y };
+    };
+    let addTwo = newAdder(2);
+    addTwo(3);
+    ";
+
+    let evaluated = test_eval(input);
+    test_integer_object(evaluated, 5);
 }

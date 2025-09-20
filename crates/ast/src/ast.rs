@@ -1,6 +1,7 @@
 //! AST for the Monkey programming language
 use token::token;
 
+#[derive(PartialEq, Clone)]
 pub enum Node {
     Program(Program),
     Statement(Statement),
@@ -17,6 +18,7 @@ impl Node {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub enum Statement {
     Let(LetStatement),
     Return(ReturnStatement),
@@ -35,6 +37,7 @@ impl Statement {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub enum Expression {
     IntegerLiteral(IntegerLiteral),
     Boolean(Boolean),
@@ -80,6 +83,7 @@ where
     fn expression_node(&self);
 }
 
+#[derive(PartialEq, Clone)]
 pub struct Program {
     pub statements: Vec<Node>,
 }
@@ -102,6 +106,7 @@ impl TNode for Program {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub struct Identifier {
     pub token: token::Token,
     pub value: String,
@@ -121,6 +126,7 @@ impl TNode for Identifier {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub struct LetStatement {
     pub token: token::Token,
     pub name: Option<Identifier>,
@@ -152,6 +158,7 @@ impl TNode for LetStatement {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub struct ReturnStatement {
     pub token: token::Token,
     pub return_value: Option<Box<Node>>,
@@ -179,6 +186,7 @@ impl TNode for ReturnStatement {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub struct ExpressionStatement {
     pub token: token::Token,
     pub expression: Option<Box<Node>>,
@@ -202,6 +210,7 @@ impl TNode for ExpressionStatement {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub struct IntegerLiteral {
     pub token: token::Token,
     pub value: i64,
@@ -221,6 +230,7 @@ impl TNode for IntegerLiteral {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub struct PrefixExpression {
     pub token: token::Token,
     pub operator: String,
@@ -248,6 +258,7 @@ impl TNode for PrefixExpression {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub struct InfixExpression {
     pub token: token::Token,
     pub left: Option<Box<Node>>,
@@ -281,6 +292,7 @@ impl TNode for InfixExpression {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub struct Boolean {
     pub token: token::Token,
     pub value: bool,
@@ -300,6 +312,7 @@ impl TNode for Boolean {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub struct IfExpression {
     pub token: token::Token,
     pub condition: Option<Box<Node>>,
@@ -333,6 +346,7 @@ impl TNode for IfExpression {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub struct BlockStatement {
     pub token: token::Token,
     pub statements: Vec<Node>,
@@ -356,6 +370,7 @@ impl TNode for BlockStatement {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub struct FunctionLiteral {
     pub token: token::Token,
     pub parameters: Vec<Box<Node>>,
@@ -395,6 +410,7 @@ impl TNode for FunctionLiteral {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub struct CallExpression {
     pub token: token::Token,
     pub function: Box<Node>,

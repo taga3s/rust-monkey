@@ -1,6 +1,6 @@
 //! Token for the Monkey programming language
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub _type: TokenType,
     pub literal: String,

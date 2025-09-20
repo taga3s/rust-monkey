@@ -1,11 +1,16 @@
 //! Object of Evaluation for the Monkey interpreter.
 
+use ast::ast::{BlockStatement, Identifier, TNode};
+
+use crate::environment::Environment;
+
 type ObjectType = String;
 
 pub const INTEGER_OBJ: &str = "INTEGER";
 const BOOLEAN_OBJ: &str = "BOOLEAN";
 const NULL_OBJ: &str = "NULL";
 pub const RETURN_VALUE_OBJ: &str = "RETURN_VALUE";
+const FUNCTION_OBJ: &str = "FUNCTION";
 pub const ERROR_OBJ: &str = "ERROR";
 
 #[derive(PartialEq, Clone)]
@@ -15,6 +20,7 @@ pub enum ObjectTypes {
     Null(Null),
     ReturnValue(ReturnValue),
     Error(Error),
+    Function(Function),
 }
 
 impl ObjectTypes {
@@ -25,6 +31,7 @@ impl ObjectTypes {
             ObjectTypes::Null(null) => null._type(),
             ObjectTypes::ReturnValue(return_value) => return_value._type(),
             ObjectTypes::Error(error) => error._type(),
+            ObjectTypes::Function(function) => function._type(),
         }
     }
 
@@ -35,6 +42,7 @@ impl ObjectTypes {
             ObjectTypes::Null(null) => null.inspect(),
             ObjectTypes::ReturnValue(return_value) => return_value.inspect(),
             ObjectTypes::Error(error) => error.inspect(),
+            ObjectTypes::Function(function) => function.inspect(),
         }
     }
 }
@@ -114,5 +122,27 @@ impl Object for Error {
 
     fn inspect(&self) -> String {
         format!("ERROR: {}", self.message)
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub struct Function {
+    pub parameters: Vec<Identifier>,
+    pub body: BlockStatement,
+    pub env: Environment,
+}
+
+impl Object for Function {
+    fn _type(&self) -> ObjectType {
+        FUNCTION_OBJ.to_string()
+    }
+
+    fn inspect(&self) -> String {
+        let params: Vec<String> = self.parameters.iter().map(|p| p.to_string()).collect();
+        format!(
+            "fn({}) {{\n{}\n}}",
+            params.join(", "),
+            self.body.to_string()
+        )
     }
 }
