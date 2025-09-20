@@ -18,6 +18,7 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
         Node::Expression(expr) => match expr {
             Expression::IntegerLiteral(il) => ObjectTypes::Integer(Integer { value: il.value }),
             Expression::Boolean(boolean) => native_bool_to_boolean_object(boolean.value),
+            Expression::Identifier(ident) => eval_identifier(ident, env),
             Expression::Infix(infix) => {
                 let left = eval(infix.left.as_ref().unwrap(), env);
                 if is_error(&left) {
@@ -27,19 +28,16 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
                 if is_error(&right) {
                     return right;
                 }
-                return eval_infix_expression(&infix.operator, left, right);
+                return eval_infix_expression(&infix.operator, &left, &right);
             }
             Expression::Prefix(prefix) => {
                 let right = eval(prefix.right.as_ref().unwrap(), env);
                 if is_error(&right) {
                     return right;
                 }
-                return eval_prefix_expression(&prefix.operator, right);
+                return eval_prefix_expression(&prefix.operator, &right);
             }
-            Expression::IfExpression(ifexp) => {
-                return eval_if_expression(ifexp, env);
-            }
-            Expression::Identifier(ident) => eval_identifier(ident, env),
+            Expression::IfExpression(ifexp) => eval_if_expression(ifexp, env),
             _ => NULL, //FIXME: handle other object types
         },
         Node::Statement(stmt) => match stmt {
@@ -113,7 +111,7 @@ fn native_bool_to_boolean_object(input: bool) -> ObjectTypes {
     }
 }
 
-fn eval_prefix_expression(operator: &str, right: ObjectTypes) -> ObjectTypes {
+fn eval_prefix_expression(operator: &str, right: &ObjectTypes) -> ObjectTypes {
     match operator {
         "!" => eval_bang_operator_expression(right),
         "-" => eval_minus_prefix_operator_expression(right),
@@ -128,7 +126,7 @@ fn eval_identifier(node: &Identifier, env: &mut Environment) -> ObjectTypes {
     }
 }
 
-fn eval_bang_operator_expression(right: ObjectTypes) -> ObjectTypes {
+fn eval_bang_operator_expression(right: &ObjectTypes) -> ObjectTypes {
     match right {
         ObjectTypes::Boolean(boolean) => {
             if boolean.value {
@@ -142,7 +140,7 @@ fn eval_bang_operator_expression(right: ObjectTypes) -> ObjectTypes {
     }
 }
 
-fn eval_minus_prefix_operator_expression(right: ObjectTypes) -> ObjectTypes {
+fn eval_minus_prefix_operator_expression(right: &ObjectTypes) -> ObjectTypes {
     if right._type() != INTEGER_OBJ {
         return new_error(format!("unknown operator: -{}", right._type()));
     }
@@ -155,16 +153,10 @@ fn eval_minus_prefix_operator_expression(right: ObjectTypes) -> ObjectTypes {
     }
 }
 
-fn eval_infix_expression(operator: &str, left: ObjectTypes, right: ObjectTypes) -> ObjectTypes {
+fn eval_infix_expression(operator: &str, left: &ObjectTypes, right: &ObjectTypes) -> ObjectTypes {
     if &left._type() == INTEGER_OBJ && &right._type() == INTEGER_OBJ {
         return eval_integer_infix_expression(operator, left, right);
     };
-    if operator == "==" {
-        return native_bool_to_boolean_object(left == right);
-    }
-    if operator == "!=" {
-        return native_bool_to_boolean_object(left.inspect() != right.inspect());
-    }
     if &left._type() != &right._type() {
         return new_error(format!(
             "type mismatch: {} {} {}",
@@ -172,6 +164,12 @@ fn eval_infix_expression(operator: &str, left: ObjectTypes, right: ObjectTypes) 
             operator,
             right._type()
         ));
+    }
+    if operator == "==" {
+        return native_bool_to_boolean_object(left == right);
+    }
+    if operator == "!=" {
+        return native_bool_to_boolean_object(left.inspect() != right.inspect());
     }
 
     new_error(format!(
@@ -184,8 +182,8 @@ fn eval_infix_expression(operator: &str, left: ObjectTypes, right: ObjectTypes) 
 
 fn eval_integer_infix_expression(
     operator: &str,
-    left: ObjectTypes,
-    right: ObjectTypes,
+    left: &ObjectTypes,
+    right: &ObjectTypes,
 ) -> ObjectTypes {
     let left_val = match &left {
         ObjectTypes::Integer(integer) => integer.value,
@@ -222,21 +220,20 @@ fn eval_integer_infix_expression(
     }
 }
 
-fn eval_if_expression(ie: &IfExpression, env: &mut Environment) -> ObjectTypes {
-    let condition = eval(ie.condition.as_ref().unwrap(), env);
-    if is_truthy(condition) {
-        return eval(ie.consequence.as_ref().unwrap(), env);
-    } else if let Some(alt) = &ie.alternative {
-        return eval(alt, env);
-    } else {
-        return ObjectTypes::Null(Null {});
-    }
-}
-
-fn is_truthy(obj: ObjectTypes) -> bool {
+fn is_truthy(obj: &ObjectTypes) -> bool {
     match obj {
         ObjectTypes::Boolean(boolean) => boolean.value,
         ObjectTypes::Null(_) => false,
         _ => true,
     }
+}
+
+fn eval_if_expression(ie: &IfExpression, env: &mut Environment) -> ObjectTypes {
+    let condition = eval(ie.condition.as_ref().unwrap(), env);
+    if is_truthy(&condition) {
+        return eval(ie.consequence.as_ref().unwrap(), env);
+    } else if let Some(alt) = &ie.alternative {
+        return eval(alt, env);
+    }
+    return ObjectTypes::Null(Null {});
 }
