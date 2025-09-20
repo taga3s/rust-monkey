@@ -4,8 +4,6 @@ Rust implementation of the Monkey programming language.
 
 This project is under construction.
 
-## TODO
-- [x] Lexer
-- [ ] Parser
-- [ ] Evaluator
-- [ ] REPL
+## features
+- Tree-Walking Interpreter
+  - interprets the AST on the fly
