@@ -84,8 +84,8 @@ pub struct Program {
     pub statements: Vec<Node>,
 }
 
-impl Program {
-    pub fn token_literal(&self) -> String {
+impl TNode for Program {
+    fn token_literal(&self) -> String {
         if self.statements.len() > 0 {
             String::from(self.statements[0].to_string())
         } else {
@@ -93,7 +93,7 @@ impl Program {
         }
     }
 
-    pub fn to_string(&self) -> String {
+    fn to_string(&self) -> String {
         self.statements
             .iter()
             .map(|s| s.to_string())
