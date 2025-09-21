@@ -12,6 +12,7 @@ const BOOLEAN_OBJ: &str = "BOOLEAN";
 const NULL_OBJ: &str = "NULL";
 pub const RETURN_VALUE_OBJ: &str = "RETURN_VALUE";
 const FUNCTION_OBJ: &str = "FUNCTION";
+const BUILTIN_OBJ: &str = "BUILTIN";
 pub const ERROR_OBJ: &str = "ERROR";
 
 #[derive(PartialEq, Clone)]
@@ -23,6 +24,7 @@ pub enum ObjectTypes {
     ReturnValue(ReturnValue),
     Error(Error),
     Function(Function),
+    Builtin(Builtin),
 }
 
 impl ObjectTypes {
@@ -35,6 +37,7 @@ impl ObjectTypes {
             ObjectTypes::ReturnValue(return_value) => return_value._type(),
             ObjectTypes::Error(error) => error._type(),
             ObjectTypes::Function(function) => function._type(),
+            ObjectTypes::Builtin(builtin) => builtin._type(),
         }
     }
 
@@ -47,6 +50,7 @@ impl ObjectTypes {
             ObjectTypes::ReturnValue(return_value) => return_value.inspect(),
             ObjectTypes::Error(error) => error.inspect(),
             ObjectTypes::Function(function) => function.inspect(),
+            ObjectTypes::Builtin(builtin) => builtin.inspect(),
         }
     }
 }
@@ -163,5 +167,22 @@ impl Object for Function {
             params.join(", "),
             self.body.to_string()
         )
+    }
+}
+
+pub type BuiltinFunction = fn(Vec<ObjectTypes>) -> ObjectTypes;
+
+#[derive(PartialEq, Clone)]
+pub struct Builtin {
+    pub _fn: BuiltinFunction,
+}
+
+impl Object for Builtin {
+    fn _type(&self) -> ObjectType {
+        BUILTIN_OBJ.to_string()
+    }
+
+    fn inspect(&self) -> String {
+        "builtin function".to_string()
     }
 }

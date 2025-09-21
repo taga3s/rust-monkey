@@ -159,10 +159,18 @@ fn eval_prefix_expression(operator: &str, right: &ObjectTypes) -> ObjectTypes {
 }
 
 fn eval_identifier(node: &Identifier, env: &mut Environment) -> ObjectTypes {
-    match env.get(&node.value) {
-        Some(val) => val.clone(),
-        None => new_error(format!("identifier not found: {}", node.value)),
+    if let Some(val) = env.get(&node.value) {
+        return val.clone();
     }
+
+    if let Some((_, builtin)) = crate::builtins::BUILTINS
+        .iter()
+        .find(|(name, _)| *name == node.value)
+    {
+        return builtin.clone();
+    }
+
+    return new_error(format!("identifier not found: {}", node.value));
 }
 
 fn eval_bang_operator_expression(right: &ObjectTypes) -> ObjectTypes {
@@ -321,17 +329,20 @@ fn eval_expressions(exps: &Vec<Box<Node>>, env: &mut Environment) -> Vec<ObjectT
 }
 
 fn apply_function(func: &ObjectTypes, args: &Vec<ObjectTypes>) -> ObjectTypes {
-    match func {
-        ObjectTypes::Function(function) => {
-            let mut extended_env = extend_function_env(function, args);
-            let evaluated = eval(
-                &Node::Statement(Statement::BlockStatement(function.body.clone())),
-                &mut extended_env,
-            );
-            unwrap_return_value(evaluated)
-        }
-        _ => new_error(format!("not a function: {}", func._type())),
+    if let ObjectTypes::Function(function) = func {
+        let mut extended_env = extend_function_env(&function, args);
+        let evaluated = eval(
+            &Node::Statement(Statement::BlockStatement(function.body.clone())),
+            &mut extended_env,
+        );
+        return unwrap_return_value(evaluated);
     }
+
+    if let ObjectTypes::Builtin(builtin) = func {
+        return (builtin._fn)(args.clone());
+    }
+
+    new_error(format!("not a function: {}", func._type()))
 }
 
 fn extend_function_env(func: &Function, args: &Vec<ObjectTypes>) -> Environment {

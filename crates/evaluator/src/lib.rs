@@ -1,3 +1,4 @@
+mod builtins;
 pub mod evaluator;
 
 #[cfg(test)]

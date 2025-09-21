@@ -8,6 +8,14 @@ use parser::parser::Parser;
 
 use crate::evaluator::eval;
 
+// -- Test Helpers -- //
+#[derive(Clone)]
+enum TestingLiteral {
+    Int(i64),
+    Str(&'static str),
+    Bool(bool),
+}
+
 fn test_eval(input: &str) -> ObjectTypes {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
@@ -286,4 +294,40 @@ fn test_closures() {
 
     let evaluated = test_eval(input);
     test_integer_object(evaluated, 5);
+}
+
+#[test]
+fn test_builtin_functions() {
+    let tests = vec![
+        (r#"len("")"#, TestingLiteral::Int(0)),
+        (r#"len("four")"#, TestingLiteral::Int(4)),
+        (r#"len("hello world")"#, TestingLiteral::Int(11)),
+        (
+            "len(1)",
+            TestingLiteral::Str("argument to `len` not supported, got INTEGER"),
+        ),
+        (
+            r#"len("one", "two")"#,
+            TestingLiteral::Str("wrong number of arguments. got=2, want=1"),
+        ),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+
+        match expected {
+            TestingLiteral::Int(expected) => {
+                test_integer_object(evaluated, expected);
+            }
+            TestingLiteral::Str(expected) => match evaluated {
+                ObjectTypes::Error(error) => {
+                    assert_eq!(error.message, expected);
+                }
+                _ => {
+                    panic!("object is not Error. got={}", evaluated.inspect());
+                }
+            },
+            _ => panic!("test case error"),
+        }
+    }
 }
