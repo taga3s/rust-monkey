@@ -331,3 +331,55 @@ fn test_builtin_functions() {
         }
     }
 }
+
+#[test]
+fn test_array_literals() {
+    let input = "[1, 2 * 2, 3 + 3]";
+
+    let evaluated = test_eval(input);
+    match evaluated {
+        ObjectTypes::Array(array) => {
+            assert_eq!(array.elements.len(), 3);
+            test_integer_object(array.elements[0].clone(), 1);
+            test_integer_object(array.elements[1].clone(), 4);
+            test_integer_object(array.elements[2].clone(), 6);
+        }
+        _ => {
+            panic!("object is not Array. got={}", evaluated.inspect());
+        }
+    }
+}
+
+#[test]
+fn test_array_index_expressions() {
+    let tests = vec![
+        ("[1, 2, 3][0]", Some(1)),
+        ("[1, 2, 3][1]", Some(2)),
+        ("[1, 2, 3][2]", Some(3)),
+        ("let i = 0; [1][i];", Some(1)),
+        ("[1, 2, 3][1 + 1];", Some(3)),
+        ("let myArray = [1, 2, 3]; myArray[2];", Some(3)),
+        (
+            "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];",
+            Some(6),
+        ),
+        (
+            "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]",
+            Some(2),
+        ),
+        ("[1, 2, 3][3]", None),
+        ("[1, 2, 3][-1]", None),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        match expected {
+            Some(expected) => {
+                test_integer_object(evaluated, expected);
+            }
+            None => {
+                test_null_object(evaluated);
+            }
+        }
+    }
+}

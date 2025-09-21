@@ -9,6 +9,7 @@ type ObjectType = String;
 pub const INTEGER_OBJ: &str = "INTEGER";
 pub const STRING_OBJ: &str = "STRING";
 const BOOLEAN_OBJ: &str = "BOOLEAN";
+pub const ARRAY_OBJ: &str = "ARRAY";
 const NULL_OBJ: &str = "NULL";
 pub const RETURN_VALUE_OBJ: &str = "RETURN_VALUE";
 const FUNCTION_OBJ: &str = "FUNCTION";
@@ -20,6 +21,7 @@ pub enum ObjectTypes {
     Integer(Integer),
     StringLiteral(StringLiteral),
     Boolean(Boolean),
+    Array(Array),
     Null(Null),
     ReturnValue(ReturnValue),
     Error(Error),
@@ -33,6 +35,7 @@ impl ObjectTypes {
             ObjectTypes::Integer(integer) => integer._type(),
             ObjectTypes::StringLiteral(string) => string._type(),
             ObjectTypes::Boolean(boolean) => boolean._type(),
+            ObjectTypes::Array(array) => array._type(),
             ObjectTypes::Null(null) => null._type(),
             ObjectTypes::ReturnValue(return_value) => return_value._type(),
             ObjectTypes::Error(error) => error._type(),
@@ -46,6 +49,7 @@ impl ObjectTypes {
             ObjectTypes::Integer(integer) => integer.inspect(),
             ObjectTypes::StringLiteral(string) => string.inspect(),
             ObjectTypes::Boolean(boolean) => boolean.inspect(),
+            ObjectTypes::Array(array) => array.inspect(),
             ObjectTypes::Null(null) => null.inspect(),
             ObjectTypes::ReturnValue(return_value) => return_value.inspect(),
             ObjectTypes::Error(error) => error.inspect(),
@@ -102,6 +106,22 @@ impl Object for Boolean {
 
     fn inspect(&self) -> String {
         format!("{}", self.value)
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub struct Array {
+    pub elements: Vec<ObjectTypes>,
+}
+
+impl Object for Array {
+    fn _type(&self) -> ObjectType {
+        ARRAY_OBJ.to_string()
+    }
+
+    fn inspect(&self) -> String {
+        let elements: Vec<String> = self.elements.iter().map(|e| e.inspect()).collect();
+        format!("[{}]", elements.join(", "))
     }
 }
 

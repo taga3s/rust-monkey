@@ -4,8 +4,8 @@ use ast::ast::{BlockStatement, Expression, Identifier, IfExpression, Node, Progr
 use object::{
     environment::{new_enclosed_environment, Environment},
     object::{
-        Boolean, Function, Integer, Null, ObjectTypes, ReturnValue, StringLiteral, ERROR_OBJ,
-        INTEGER_OBJ, RETURN_VALUE_OBJ, STRING_OBJ,
+        Array, Boolean, Function, Integer, Null, ObjectTypes, ReturnValue, StringLiteral,
+        ARRAY_OBJ, ERROR_OBJ, INTEGER_OBJ, RETURN_VALUE_OBJ, STRING_OBJ,
     },
 };
 
@@ -22,6 +22,24 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
                 value: sl.value.clone(),
             }),
             Expression::Boolean(boolean) => native_bool_to_boolean_object(boolean.value),
+            Expression::ArrayLiteral(al) => {
+                let elements = eval_expressions(&al.elements, env);
+                if elements.len() == 1 && is_error(&elements[0]) {
+                    return elements[0].clone();
+                }
+                ObjectTypes::Array(Array { elements })
+            }
+            Expression::IndexExpression(ie) => {
+                let left = eval(ie.left.clone().unwrap().as_ref(), env);
+                if is_error(&left) {
+                    return left;
+                }
+                let index = eval(ie.index.clone().unwrap().as_ref(), env);
+                if is_error(&index) {
+                    return index;
+                }
+                return eval_index_expression(&left, &index);
+            }
             Expression::Identifier(ident) => eval_identifier(ident, env),
             Expression::Infix(infix) => {
                 let left = eval(infix.left.as_ref().unwrap(), env);
@@ -362,4 +380,30 @@ fn unwrap_return_value(obj: ObjectTypes) -> ObjectTypes {
         }
     }
     obj
+}
+
+fn eval_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {
+    if left._type() != ARRAY_OBJ || index._type() != INTEGER_OBJ {
+        return new_error(format!("index operator not supported: {}", left._type()));
+    }
+
+    eval_array_expression(left, index)
+}
+
+fn eval_array_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {
+    let array = match left {
+        ObjectTypes::Array(array) => array,
+        _ => return new_error("left is not an array".to_string()),
+    };
+    let idx = match index {
+        ObjectTypes::Integer(integer) => integer.value,
+        _ => return new_error("index is not an integer".to_string()),
+    };
+    let max = array.elements.len() as i64 - 1;
+
+    if idx < 0 || idx > max {
+        return ObjectTypes::Null(Null {});
+    }
+
+    array.elements[idx as usize].clone()
 }

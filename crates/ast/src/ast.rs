@@ -42,6 +42,8 @@ pub enum Expression {
     IntegerLiteral(IntegerLiteral),
     StringLiteral(StringLiteral),
     Boolean(Boolean),
+    ArrayLiteral(ArrayLiteral),
+    IndexExpression(IndexExpression),
     Identifier(Identifier),
     Prefix(PrefixExpression),
     Infix(InfixExpression),
@@ -56,6 +58,8 @@ impl Expression {
             Expression::IntegerLiteral(e) => e.to_string(),
             Expression::StringLiteral(e) => e.to_string(),
             Expression::Boolean(e) => e.to_string(),
+            Expression::ArrayLiteral(e) => e.to_string(),
+            Expression::IndexExpression(e) => e.to_string(),
             Expression::Identifier(e) => e.to_string(),
             Expression::Prefix(e) => e.to_string(),
             Expression::Infix(e) => e.to_string(),
@@ -331,6 +335,68 @@ impl TNode for Boolean {
 
     fn to_string(&self) -> String {
         self.value.to_string()
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub struct ArrayLiteral {
+    pub token: token::Token,
+    pub elements: Vec<Box<Node>>,
+}
+
+impl TExpression for ArrayLiteral {
+    fn expression_node(&self) {}
+}
+
+impl TNode for ArrayLiteral {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        let mut out = String::new();
+        out.push('[');
+        let elems = self
+            .elements
+            .iter()
+            .map(|e| e.to_string())
+            .collect::<Vec<String>>()
+            .join(", ");
+        out.push_str(&elems);
+        out.push(']');
+        out
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub struct IndexExpression {
+    pub token: token::Token,
+    pub left: Option<Box<Node>>,
+    pub index: Option<Box<Node>>,
+}
+
+impl TExpression for IndexExpression {
+    fn expression_node(&self) {}
+}
+
+impl TNode for IndexExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        let mut out = String::new();
+        out.push('(');
+        if let Some(left) = &self.left {
+            out.push_str(&left.to_string());
+        }
+        out.push('[');
+        if let Some(index) = &self.index {
+            out.push_str(&index.to_string());
+        }
+        out.push(']');
+        out.push(')');
+        out
     }
 }
 

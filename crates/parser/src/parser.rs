@@ -22,9 +22,10 @@ pub enum Precedence {
     PRODUCT,     // *
     PREFIX,      // -X or !X
     CALL,        // myFunction(X)
+    INDEX,       // array[index]
 }
 
-const PRECEDENCES: [(TokenType, Precedence); 9] = [
+const PRECEDENCES: [(TokenType, Precedence); 10] = [
     (TokenType::EQ, Precedence::EQUALS),
     (TokenType::NOTEQ, Precedence::EQUALS),
     (TokenType::LT, Precedence::LESSGREATER),
@@ -34,6 +35,7 @@ const PRECEDENCES: [(TokenType, Precedence); 9] = [
     (TokenType::SLASH, Precedence::PRODUCT),
     (TokenType::ASTERISK, Precedence::PRODUCT),
     (TokenType::LPAREN, Precedence::CALL),
+    (TokenType::LBRACKET, Precedence::INDEX),
 ];
 
 pub struct Parser {
@@ -66,6 +68,7 @@ impl Parser {
         parser.register_prefix(TokenType::BANG, Self::parse_prefix_expression);
         parser.register_prefix(TokenType::MINUS, Self::parse_prefix_expression);
         parser.register_prefix(TokenType::LPAREN, Self::parse_grouped_expression);
+        parser.register_prefix(TokenType::LBRACKET, Self::parse_array_literal);
         parser.register_prefix(TokenType::IF, Self::parse_if_expression);
         parser.register_prefix(TokenType::FUNCTION, Self::parse_function_literal);
 
@@ -78,6 +81,7 @@ impl Parser {
         parser.register_infix(TokenType::LT, Self::parse_infix_expression);
         parser.register_infix(TokenType::GT, Self::parse_infix_expression);
         parser.register_infix(TokenType::LPAREN, Self::parse_call_expression);
+        parser.register_infix(TokenType::LBRACKET, Self::parse_index_expression);
 
         parser.next_token();
         parser.next_token();
@@ -295,6 +299,55 @@ impl Parser {
         exp
     }
 
+    fn parse_array_literal(&mut self) -> Option<Box<Node>> {
+        let array = ast::ast::ArrayLiteral {
+            token: self.cur_token.clone(),
+            elements: self.parse_expression_list(TokenType::RBRACKET)?,
+        };
+        Some(Box::new(Node::Expression(Expression::ArrayLiteral(array))))
+    }
+
+    fn parse_expression_list(&mut self, end: TokenType) -> Option<Vec<Box<Node>>> {
+        let mut list = vec![];
+
+        if self.peek_token_is(end.clone()) {
+            self.next_token();
+            return Some(list);
+        }
+
+        self.next_token();
+        list.push(self.parse_expression(Precedence::LOWEST)?);
+
+        while self.peek_token_is(TokenType::COMMA) {
+            self.next_token();
+            self.next_token();
+            list.push(self.parse_expression(Precedence::LOWEST)?);
+        }
+
+        if !self.expect_peek(end) {
+            return None;
+        }
+
+        Some(list)
+    }
+
+    fn parse_index_expression(&mut self, left: Box<Node>) -> Option<Box<Node>> {
+        let mut exp = ast::ast::IndexExpression {
+            token: self.cur_token.clone(),
+            left: Some(left),
+            index: None,
+        };
+
+        self.next_token();
+        exp.index = self.parse_expression(Precedence::LOWEST);
+
+        if !self.expect_peek(TokenType::RBRACKET) {
+            return None;
+        }
+
+        Some(Box::new(Node::Expression(Expression::IndexExpression(exp))))
+    }
+
     fn register_infix(&mut self, tok: TokenType, _fn: InfixParseFn) {
         self.infix_parse_fns.insert(tok, _fn);
     }
@@ -434,33 +487,9 @@ impl Parser {
         let exp = CallExpression {
             token: self.cur_token.clone(),
             function,
-            arguments: self.parse_call_arguments()?,
+            arguments: self.parse_expression_list(TokenType::RPAREN)?,
         };
         Some(Box::new(Node::Expression(Expression::CallExpression(exp))))
-    }
-
-    fn parse_call_arguments(&mut self) -> Option<Vec<Box<Node>>> {
-        let mut args = vec![];
-
-        if self.peek_token_is(TokenType::RPAREN) {
-            self.next_token();
-            return Some(args);
-        }
-
-        self.next_token();
-        args.push(self.parse_expression(Precedence::LOWEST)?);
-
-        while self.peek_token_is(TokenType::COMMA) {
-            self.next_token();
-            self.next_token();
-            args.push(self.parse_expression(Precedence::LOWEST)?);
-        }
-
-        if !self.expect_peek(TokenType::RPAREN) {
-            return None;
-        }
-
-        Some(args)
     }
 
     fn cur_token_is(&self, tok: TokenType) -> bool {

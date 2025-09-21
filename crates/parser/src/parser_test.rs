@@ -445,6 +445,135 @@ fn test_boolean_expression() {
 }
 
 #[test]
+fn test_parsing_array_literals() {
+    let input = "[1, 2 * 2, 3 + 3]";
+
+    let lexer = Lexer::new(input.to_string());
+    let mut parser = Parser::new(lexer);
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
+    check_parser_errors(&parser);
+
+    if program.statements.len() != 1 {
+        panic!(
+            "program.statements does not contain 1 statement. got={}",
+            program.statements.len()
+        );
+    }
+    let stmt = match &program.statements[0] {
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
+        _ => panic!("program.statements[0] is not ExpressionStatement."),
+    };
+    let array = match stmt.expression.as_ref().unwrap().as_ref() {
+        Node::Expression(Expression::ArrayLiteral(array)) => array,
+        _ => panic!("stmt.expression is not ArrayLiteral."),
+    };
+
+    let index_0_exp = match array.elements.get(0) {
+        Some(e) => match e.as_ref() {
+            Node::Expression(e) => e,
+            _ => {
+                panic!("array.elements[0] is not Expression.");
+            }
+        },
+        None => {
+            panic!("array.elements does not contain 1 element.");
+        }
+    };
+
+    let index_1_exp = match array.elements.get(1) {
+        Some(e) => match e.as_ref() {
+            Node::Expression(e) => e,
+            _ => {
+                panic!("array.elements[1] is not Expression.");
+            }
+        },
+        None => {
+            panic!("array.elements does not contain 2 elements.");
+        }
+    };
+
+    let index_2_exp = match array.elements.get(2) {
+        Some(e) => match e.as_ref() {
+            Node::Expression(e) => e,
+            _ => {
+                panic!("array.elements[2] is not Expression.");
+            }
+        },
+        None => {
+            panic!("array.elements does not contain 3 elements.");
+        }
+    };
+
+    test_integer_literal(index_0_exp, 1);
+    test_infix_expression(
+        index_1_exp,
+        TestingLiteral::Int(2),
+        "*",
+        TestingLiteral::Int(2),
+    );
+    test_infix_expression(
+        index_2_exp,
+        TestingLiteral::Int(3),
+        "+",
+        TestingLiteral::Int(3),
+    );
+}
+
+#[test]
+fn test_parsing_index_expressions() {
+    let input = "myArray[1 + 1]";
+
+    let lexer = Lexer::new(input.to_string());
+    let mut parser = Parser::new(lexer);
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
+    check_parser_errors(&parser);
+
+    if program.statements.len() != 1 {
+        panic!(
+            "program.statements does not contain 1 statement. got={}",
+            program.statements.len()
+        );
+    }
+    let stmt = match &program.statements[0] {
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
+        _ => panic!("program.statements[0] is not ExpressionStatement."),
+    };
+    let index_exp = match stmt.expression.as_ref().unwrap().as_ref() {
+        Node::Expression(Expression::IndexExpression(index)) => index,
+        _ => panic!("stmt.expression is not IndexExpression."),
+    };
+
+    let ident = match index_exp.left.as_ref().unwrap().as_ref() {
+        Node::Expression(e) => e,
+        _ => {
+            panic!("index_exp.left is not Expression.");
+        }
+    };
+
+    if !test_identifier(ident, "myArray") {
+        return;
+    }
+
+    let index = match index_exp.index.as_ref().unwrap().as_ref() {
+        Node::Expression(e) => e,
+        _ => {
+            panic!("index_exp.index is not Expression.");
+        }
+    };
+    test_infix_expression(index, TestingLiteral::Int(1), "+", TestingLiteral::Int(1));
+}
+
+#[test]
 fn test_parsing_prefix_expressions() {
     let prefix_tests = vec![
         ("!5;", "!", TestingLiteral::Int(5)),
@@ -649,6 +778,14 @@ fn test_operator_precedence_parsing() {
         (
             "add(a + b + c * d / f + g)",
             "add((((a + b) + ((c * d) / f)) + g))",
+        ),
+        (
+            "a * [1, 2, 3, 4][b * c] * d",
+            "((a * ([1, 2, 3, 4][(b * c)])) * d)",
+        ),
+        (
+            "add(a * b[2], b[1], 2 * [1, 2][1])",
+            "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",
         ),
     ];
 
