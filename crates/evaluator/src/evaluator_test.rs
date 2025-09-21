@@ -14,6 +14,7 @@ enum TestingLiteral {
     Int(i64),
     Str(&'static str),
     Bool(bool),
+    Array(Vec<TestingLiteral>),
 }
 
 fn test_eval(input: &str) -> ObjectTypes {
@@ -310,6 +311,22 @@ fn test_builtin_functions() {
             r#"len("one", "two")"#,
             TestingLiteral::Str("wrong number of arguments. got=2, want=1"),
         ),
+        ("len([1, 2, 3])", TestingLiteral::Int(3)),
+        ("len([])", TestingLiteral::Int(0)),
+        ("first([1, 2, 3])", TestingLiteral::Int(1)),
+        ("last([1, 2, 3])", TestingLiteral::Int(3)),
+        (
+            "rest([1, 2, 3])",
+            TestingLiteral::Array(vec![TestingLiteral::Int(2), TestingLiteral::Int(3)]),
+        ),
+        (
+            "push([1, 2], 3)",
+            TestingLiteral::Array(vec![
+                TestingLiteral::Int(1),
+                TestingLiteral::Int(2),
+                TestingLiteral::Int(3),
+            ]),
+        ),
     ];
 
     for (input, expected) in tests {
@@ -325,6 +342,35 @@ fn test_builtin_functions() {
                 }
                 _ => {
                     panic!("object is not Error. got={}", evaluated.inspect());
+                }
+            },
+            TestingLiteral::Array(expected) => match evaluated {
+                ObjectTypes::Array(array) => {
+                    for (i, elem) in expected.iter().enumerate() {
+                        match elem {
+                            TestingLiteral::Int(v) => {
+                                test_integer_object(array.elements[i].clone(), *v);
+                            }
+                            TestingLiteral::Bool(v) => {
+                                test_boolean_object(array.elements[i].clone(), *v);
+                            }
+                            TestingLiteral::Str(v) => match array.elements[i].clone() {
+                                ObjectTypes::StringLiteral(s) => {
+                                    assert_eq!(s.value, *v);
+                                }
+                                _ => panic!(
+                                    "object is not StringLiteral. got={}",
+                                    array.elements[i].inspect()
+                                ),
+                            },
+                            TestingLiteral::Array(_) => {
+                                panic!("nested arrays not supported in test")
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    panic!("object is not Array. got={}", evaluated.inspect());
                 }
             },
             _ => panic!("test case error"),
