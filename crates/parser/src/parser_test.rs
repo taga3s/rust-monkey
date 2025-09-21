@@ -362,6 +362,40 @@ fn test_integer_literal_expression() {
 }
 
 #[test]
+fn test_string_literal_expression() {
+    let input = r#""hello world";"#;
+
+    let lexer = Lexer::new(input.to_string());
+    let mut parser = Parser::new(lexer);
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
+    check_parser_errors(&parser);
+
+    if program.statements.len() != 1 {
+        panic!(
+            "program.statements does not contain 1 statement. got={}",
+            program.statements.len()
+        );
+    }
+
+    let stmt = match &program.statements[0] {
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
+        _ => panic!("program.statements[0] is not ExpressionStatement."),
+    };
+    let literal = match stmt.expression.as_ref().unwrap().as_ref() {
+        Node::Expression(Expression::StringLiteral(literal)) => literal,
+        _ => panic!("stmt.expression is not StringLiteral."),
+    };
+    if literal.value != "hello world" {
+        panic!("literal.value is not 'hello world'. got={}", literal.value);
+    }
+}
+
+#[test]
 fn test_boolean_expression() {
     let tests = vec![("true;", true), ("false;", false)];
 

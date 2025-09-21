@@ -40,6 +40,7 @@ impl Statement {
 #[derive(PartialEq, Clone)]
 pub enum Expression {
     IntegerLiteral(IntegerLiteral),
+    StringLiteral(StringLiteral),
     Boolean(Boolean),
     Identifier(Identifier),
     Prefix(PrefixExpression),
@@ -53,6 +54,7 @@ impl Expression {
     pub fn to_string(&self) -> String {
         match self {
             Expression::IntegerLiteral(e) => e.to_string(),
+            Expression::StringLiteral(e) => e.to_string(),
             Expression::Boolean(e) => e.to_string(),
             Expression::Identifier(e) => e.to_string(),
             Expression::Prefix(e) => e.to_string(),
@@ -227,6 +229,26 @@ impl TNode for IntegerLiteral {
 
     fn to_string(&self) -> String {
         self.value.to_string()
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub struct StringLiteral {
+    pub token: token::Token,
+    pub value: String,
+}
+
+impl TExpression for StringLiteral {
+    fn expression_node(&self) {}
+}
+
+impl TNode for StringLiteral {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        self.value.clone()
     }
 }
 

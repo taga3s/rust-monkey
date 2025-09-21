@@ -4,8 +4,8 @@ use ast::ast::{BlockStatement, Expression, Identifier, IfExpression, Node, Progr
 use object::{
     environment::{new_enclosed_environment, Environment},
     object::{
-        Boolean, Function, Integer, Null, ObjectTypes, ReturnValue, ERROR_OBJ, INTEGER_OBJ,
-        RETURN_VALUE_OBJ,
+        Boolean, Function, Integer, Null, ObjectTypes, ReturnValue, StringLiteral, ERROR_OBJ,
+        INTEGER_OBJ, RETURN_VALUE_OBJ, STRING_OBJ,
     },
 };
 
@@ -18,6 +18,9 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
         Node::Program(program) => eval_program(&program, env),
         Node::Expression(expr) => match expr {
             Expression::IntegerLiteral(il) => ObjectTypes::Integer(Integer { value: il.value }),
+            Expression::StringLiteral(sl) => ObjectTypes::StringLiteral(StringLiteral {
+                value: sl.value.clone(),
+            }),
             Expression::Boolean(boolean) => native_bool_to_boolean_object(boolean.value),
             Expression::Identifier(ident) => eval_identifier(ident, env),
             Expression::Infix(infix) => {
@@ -193,6 +196,9 @@ fn eval_infix_expression(operator: &str, left: &ObjectTypes, right: &ObjectTypes
     if &left._type() == INTEGER_OBJ && &right._type() == INTEGER_OBJ {
         return eval_integer_infix_expression(operator, left, right);
     };
+    if &left._type() == STRING_OBJ && &right._type() == STRING_OBJ {
+        return eval_string_infix_expression(operator, left, right);
+    };
     if &left._type() != &right._type() {
         return new_error(format!(
             "type mismatch: {} {} {}",
@@ -247,6 +253,33 @@ fn eval_integer_infix_expression(
         ">" => native_bool_to_boolean_object(left_val > right_val),
         "==" => native_bool_to_boolean_object(left_val == right_val),
         "!=" => native_bool_to_boolean_object(left_val != right_val),
+        _ => new_error(format!(
+            "unknown operator: {} {} {}",
+            &left._type(),
+            operator,
+            &right._type()
+        )),
+    }
+}
+
+fn eval_string_infix_expression(
+    operator: &str,
+    left: &ObjectTypes,
+    right: &ObjectTypes,
+) -> ObjectTypes {
+    let left_val = match &left {
+        ObjectTypes::StringLiteral(string) => string.value.clone(),
+        _ => return new_error("left is not a string".to_string()),
+    };
+    let right_val = match &right {
+        ObjectTypes::StringLiteral(string) => string.value.clone(),
+        _ => return new_error("right is not a string".to_string()),
+    };
+
+    match operator {
+        "+" => ObjectTypes::StringLiteral(StringLiteral {
+            value: format!("{}{}", left_val, right_val),
+        }),
         _ => new_error(format!(
             "unknown operator: {} {} {}",
             &left._type(),

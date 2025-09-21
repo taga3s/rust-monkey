@@ -5,7 +5,7 @@ use std::{collections::HashMap, vec};
 use ast::ast::{
     BlockStatement, Boolean, CallExpression, Expression, ExpressionStatement, FunctionLiteral,
     Identifier, IfExpression, InfixExpression, IntegerLiteral, LetStatement, Node,
-    PrefixExpression, Program, ReturnStatement, Statement,
+    PrefixExpression, Program, ReturnStatement, Statement, StringLiteral,
 };
 use lexer::lexer::Lexer;
 use token::token::{Token, TokenType};
@@ -60,6 +60,7 @@ impl Parser {
 
         parser.register_prefix(TokenType::IDENT, Self::parse_identifier);
         parser.register_prefix(TokenType::INT, Self::parse_integer_literal);
+        parser.register_prefix(TokenType::STRING, Self::parse_string_literal);
         parser.register_prefix(TokenType::TRUE, Self::parse_boolean);
         parser.register_prefix(TokenType::FALSE, Self::parse_boolean);
         parser.register_prefix(TokenType::BANG, Self::parse_prefix_expression);
@@ -247,6 +248,15 @@ impl Parser {
 
         Some(Box::new(Node::Expression(Expression::IntegerLiteral(
             ident,
+        ))))
+    }
+
+    fn parse_string_literal(&mut self) -> Option<Box<Node>> {
+        Some(Box::new(Node::Expression(Expression::StringLiteral(
+            StringLiteral {
+                token: self.cur_token.clone(),
+                value: self.cur_token.literal.clone(),
+            },
         ))))
     }
 

@@ -66,6 +66,38 @@ fn test_eval_integer_expression() {
 }
 
 #[test]
+fn test_string_literal() {
+    let input = r#""Hello, World!""#;
+
+    let evaluated = test_eval(input);
+    match evaluated {
+        ObjectTypes::StringLiteral(string) => {
+            assert_eq!(string.value, "Hello, World!");
+        }
+        _ => panic!(
+            "evaluated is not StringLiteral. got={}",
+            evaluated.inspect()
+        ),
+    }
+}
+
+#[test]
+fn test_string_concatenation() {
+    let input = r#""Hello, " + "World!""#;
+
+    let evaluated = test_eval(input);
+    match evaluated {
+        ObjectTypes::StringLiteral(string) => {
+            assert_eq!(string.value, "Hello, World!");
+        }
+        _ => panic!(
+            "evaluated is not StringLiteral. got={}",
+            evaluated.inspect()
+        ),
+    }
+}
+
+#[test]
 fn test_eval_boolean_expression() {
     let tests = vec![
         ("true", true),
