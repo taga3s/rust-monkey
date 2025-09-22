@@ -1,6 +1,6 @@
 use object::object::{Builtin, ObjectTypes};
 
-pub const BUILTINS: [(&str, ObjectTypes); 5] = [
+pub const BUILTINS: [(&str, ObjectTypes); 6] = [
     ("len", ObjectTypes::Builtin(Builtin { _fn: len_builtin })),
     (
         "first",
@@ -9,6 +9,7 @@ pub const BUILTINS: [(&str, ObjectTypes); 5] = [
     ("last", ObjectTypes::Builtin(Builtin { _fn: last_builtin })),
     ("rest", ObjectTypes::Builtin(Builtin { _fn: rest_builtin })),
     ("push", ObjectTypes::Builtin(Builtin { _fn: push_builtin })),
+    ("puts", ObjectTypes::Builtin(Builtin { _fn: puts_builtin })),
 ];
 
 fn len_builtin(args: Vec<ObjectTypes>) -> ObjectTypes {
@@ -116,4 +117,11 @@ fn push_builtin(args: Vec<ObjectTypes>) -> ObjectTypes {
             message: format!("argument to `push` must be ARRAY, got {}", args[0]._type()),
         }),
     }
+}
+
+fn puts_builtin(args: Vec<ObjectTypes>) -> ObjectTypes {
+    for arg in args {
+        println!("{}", arg.inspect());
+    }
+    ObjectTypes::Null(object::object::Null {})
 }
