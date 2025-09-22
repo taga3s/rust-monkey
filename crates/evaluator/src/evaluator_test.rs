@@ -2,7 +2,7 @@ use ast::ast::TNode;
 use lexer::lexer::Lexer;
 use object::{
     environment::new_environment,
-    object::{Null, ObjectTypes},
+    object::{Boolean, Integer, Null, ObjectTypes, StringLiteral},
 };
 use parser::parser::Parser;
 
@@ -218,6 +218,11 @@ fn test_error_handling() {
             "unknown operator: BOOLEAN + BOOLEAN",
         ),
         ("foobar", "identifier not found: foobar"),
+        ("\"Hello\" - \"World\"", "unknown operator: STRING - STRING"),
+        (
+            r#"{"name": "Monkey"}[fn(x) { x }];"#,
+            "unusable as hash key: FUNCTION",
+        ),
     ];
 
     for test in tests {
@@ -415,6 +420,91 @@ fn test_array_index_expressions() {
         ),
         ("[1, 2, 3][3]", None),
         ("[1, 2, 3][-1]", None),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        match expected {
+            Some(expected) => {
+                test_integer_object(evaluated, expected);
+            }
+            None => {
+                test_null_object(evaluated);
+            }
+        }
+    }
+}
+
+#[test]
+fn test_hash_literals() {
+    let input = r#"
+    let two = "two";
+    {
+        "one": 10 - 9,
+        two: 1 + 1,
+        "thr" + "ee": 6 / 2,
+        4: 4,
+        true: 5,
+        false: 6
+    }
+    "#;
+
+    let evaluated = test_eval(input);
+    match evaluated {
+        ObjectTypes::Hash(hash) => {
+            let expected = vec![
+                (
+                    ObjectTypes::StringLiteral(StringLiteral {
+                        value: "one".to_string(),
+                    }),
+                    1,
+                ),
+                (
+                    ObjectTypes::StringLiteral(StringLiteral {
+                        value: "two".to_string(),
+                    }),
+                    2,
+                ),
+                (
+                    ObjectTypes::StringLiteral(StringLiteral {
+                        value: "three".to_string(),
+                    }),
+                    3,
+                ),
+                (ObjectTypes::Integer(Integer { value: 4 }), 4),
+                (ObjectTypes::Boolean(Boolean { value: true }), 5),
+                (ObjectTypes::Boolean(Boolean { value: false }), 6),
+            ];
+
+            assert_eq!(hash.pairs.len(), expected.len());
+
+            for (expected_key, expected_value) in expected {
+                let hash_key = match &expected_key {
+                    ObjectTypes::StringLiteral(s) => s.hash_key(),
+                    ObjectTypes::Integer(i) => i.hash_key(),
+                    ObjectTypes::Boolean(b) => b.hash_key(),
+                    _ => panic!("unusable as hash key: {}", expected_key.inspect()),
+                };
+                let pair = hash.pairs.get(&hash_key).unwrap();
+                test_integer_object(pair.value.clone(), expected_value);
+            }
+        }
+        _ => {
+            panic!("Eval didn't return Hash. got={}", evaluated.inspect());
+        }
+    }
+}
+
+#[test]
+fn test_hash_index_expressions() {
+    let tests = vec![
+        (r#"{"foo": 5}["foo"]"#, Some(5)),
+        (r#"{"foo": 5}["bar"]"#, None),
+        (r#"let key = "foo"; {"foo": 5}[key]"#, Some(5)),
+        (r#"{}["foo"]"#, None),
+        (r#"{5: 5}[5]"#, Some(5)),
+        (r#"{true: 5}[true]"#, Some(5)),
+        (r#"{false: 5}[false]"#, Some(5)),
     ];
 
     for (input, expected) in tests {

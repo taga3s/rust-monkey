@@ -1,11 +1,15 @@
 //! Evaluator for the Monkey programming language
 
-use ast::ast::{BlockStatement, Expression, Identifier, IfExpression, Node, Program, Statement};
+use std::collections::HashMap;
+
+use ast::ast::{
+    BlockStatement, Expression, HashLiteral, Identifier, IfExpression, Node, Program, Statement,
+};
 use object::{
     environment::{new_enclosed_environment, Environment},
     object::{
-        Array, Boolean, Function, Integer, Null, ObjectTypes, ReturnValue, StringLiteral,
-        ARRAY_OBJ, ERROR_OBJ, INTEGER_OBJ, RETURN_VALUE_OBJ, STRING_OBJ,
+        Array, Boolean, Function, Hash, HashPair, Integer, Null, ObjectTypes, ReturnValue,
+        StringLiteral, ARRAY_OBJ, ERROR_OBJ, HASH_OBJ, INTEGER_OBJ, RETURN_VALUE_OBJ, STRING_OBJ,
     },
 };
 
@@ -97,6 +101,7 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
                 }
                 return apply_function(&func, &args);
             }
+            Expression::HashLiteral(hl) => eval_hash_literal(hl, env),
         },
         Node::Statement(stmt) => match stmt {
             Statement::ExpressionStatement(es) => eval(es.expression.as_ref().unwrap(), env),
@@ -383,11 +388,14 @@ fn unwrap_return_value(obj: ObjectTypes) -> ObjectTypes {
 }
 
 fn eval_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {
-    if left._type() != ARRAY_OBJ || index._type() != INTEGER_OBJ {
-        return new_error(format!("index operator not supported: {}", left._type()));
+    if left._type() == ARRAY_OBJ && index._type() == INTEGER_OBJ {
+        return eval_array_expression(left, index);
+    }
+    if left._type() == HASH_OBJ {
+        return eval_hash_index_expression(left, index);
     }
 
-    eval_array_expression(left, index)
+    return new_error(format!("index operator not supported: {}", left._type()));
 }
 
 fn eval_array_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {
@@ -406,4 +414,54 @@ fn eval_array_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes
     }
 
     array.elements[idx as usize].clone()
+}
+
+fn eval_hash_literal(hl: &HashLiteral, env: &mut Environment) -> ObjectTypes {
+    let mut pairs = HashMap::new();
+
+    for (key_node, value_node) in &hl.pairs {
+        let key = eval(key_node, env);
+        if is_error(&key) {
+            return key;
+        }
+
+        let hash_key = match &key {
+            ObjectTypes::StringLiteral(s) => s.hash_key(),
+            ObjectTypes::Integer(i) => i.hash_key(),
+            ObjectTypes::Boolean(b) => b.hash_key(),
+            _ => {
+                return new_error(format!("unusable as hash key: {}", key._type()));
+            }
+        };
+
+        let value = eval(value_node, env);
+        if is_error(&value) {
+            return value;
+        }
+
+        pairs.insert(hash_key, HashPair { key, value });
+    }
+
+    ObjectTypes::Hash(Hash { pairs })
+}
+
+fn eval_hash_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {
+    let hash_object: &Hash = match left {
+        ObjectTypes::Hash(h) => h,
+        _ => return new_error("left is not a hash".to_string()),
+    };
+
+    let key = match index {
+        ObjectTypes::StringLiteral(s) => s.hash_key(),
+        ObjectTypes::Integer(i) => i.hash_key(),
+        ObjectTypes::Boolean(b) => b.hash_key(),
+        _ => {
+            return new_error(format!("unusable as hash key: {}", index._type()));
+        }
+    };
+
+    match hash_object.pairs.get(&key) {
+        Some(pair) => pair.value.clone(),
+        None => ObjectTypes::Null(Null {}),
+    }
 }

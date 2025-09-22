@@ -71,6 +71,7 @@ impl Parser {
         parser.register_prefix(TokenType::LBRACKET, Self::parse_array_literal);
         parser.register_prefix(TokenType::IF, Self::parse_if_expression);
         parser.register_prefix(TokenType::FUNCTION, Self::parse_function_literal);
+        parser.register_prefix(TokenType::LBRACE, Self::parse_hash_literal);
 
         parser.register_infix(TokenType::PLUS, Self::parse_infix_expression);
         parser.register_infix(TokenType::MINUS, Self::parse_infix_expression);
@@ -490,6 +491,44 @@ impl Parser {
             arguments: self.parse_expression_list(TokenType::RPAREN)?,
         };
         Some(Box::new(Node::Expression(Expression::CallExpression(exp))))
+    }
+
+    fn parse_hash_literal(&mut self) -> Option<Box<Node>> {
+        let mut hash = ast::ast::HashLiteral {
+            token: self.cur_token.clone(),
+            pairs: HashMap::new(),
+        };
+
+        while !self.peek_token_is(TokenType::RBRACE) {
+            self.next_token();
+            let key = match self.parse_expression(Precedence::LOWEST) {
+                Some(n) => n,
+                None => return None,
+            };
+
+            if !self.expect_peek(TokenType::COLON) {
+                return None;
+            }
+
+            self.next_token();
+
+            let value = match self.parse_expression(Precedence::LOWEST) {
+                Some(v) => v,
+                None => return None,
+            };
+
+            hash.pairs.insert(key, value);
+
+            if !self.peek_token_is(TokenType::RBRACE) && !self.expect_peek(TokenType::COMMA) {
+                return None;
+            }
+        }
+
+        if !self.expect_peek(TokenType::RBRACE) {
+            return None;
+        }
+
+        Some(Box::new(Node::Expression(Expression::HashLiteral(hash))))
     }
 
     fn cur_token_is(&self, tok: TokenType) -> bool {

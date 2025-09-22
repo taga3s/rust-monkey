@@ -1,5 +1,9 @@
 //! AST for the Monkey programming language
+use std::collections::HashMap;
+
 use token::token;
+
+use std::hash::{Hash, Hasher};
 
 #[derive(PartialEq, Clone)]
 pub enum Node {
@@ -15,6 +19,14 @@ impl Node {
             Node::Statement(s) => s.to_string(),
             Node::Expression(e) => e.to_string(),
         }
+    }
+}
+
+impl Eq for Node {}
+
+impl Hash for Node {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.to_string().hash(state); //FIXME: This is not a good hash function
     }
 }
 
@@ -50,6 +62,7 @@ pub enum Expression {
     IfExpression(IfExpression),
     FunctionLiteral(FunctionLiteral),
     CallExpression(CallExpression),
+    HashLiteral(HashLiteral),
 }
 
 impl Expression {
@@ -66,6 +79,7 @@ impl Expression {
             Expression::IfExpression(e) => e.to_string(),
             Expression::FunctionLiteral(e) => e.to_string(),
             Expression::CallExpression(e) => e.to_string(),
+            Expression::HashLiteral(e) => e.to_string(),
         }
     }
 }
@@ -526,6 +540,36 @@ impl TNode for CallExpression {
             .join(", ");
         out.push_str(&args);
         out.push(')');
+        out
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub struct HashLiteral {
+    pub token: token::Token,
+    pub pairs: HashMap<Box<Node>, Box<Node>>,
+}
+
+impl TExpression for HashLiteral {
+    fn expression_node(&self) {}
+}
+
+impl TNode for HashLiteral {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn to_string(&self) -> String {
+        let mut out = String::new();
+        out.push('{');
+        let pairs = self
+            .pairs
+            .iter()
+            .map(|(k, v)| format!("{}: {}", k.to_string(), v.to_string()))
+            .collect::<Vec<String>>()
+            .join(", ");
+        out.push_str(&pairs);
+        out.push('}');
         out
     }
 }

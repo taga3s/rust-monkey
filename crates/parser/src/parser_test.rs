@@ -1,5 +1,8 @@
-use ast::ast::{Expression, Node, Statement, TNode};
+use std::vec;
+
+use ast::ast::{Expression, Node, Statement, StringLiteral, TNode};
 use lexer::lexer::Lexer;
+use token::token::{Token, TokenType};
 
 use crate::parser::Parser;
 
@@ -1241,5 +1244,202 @@ fn test_call_expression_parsing() {
 
     if !test_infix_expression(exp2, TestingLiteral::Int(4), "+", TestingLiteral::Int(5)) {
         return;
+    }
+}
+
+#[test]
+fn test_parsing_hash_literals_string_keys() {
+    let input = r#"{"one": 1, "two": 2, "three": 3}"#;
+
+    let lexer = Lexer::new(input.to_string());
+    let mut parser = Parser::new(lexer);
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
+    check_parser_errors(&parser);
+
+    if program.statements.len() != 1 {
+        panic!(
+            "program.statements does not contain 1 statement. got={}",
+            program.statements.len()
+        );
+    }
+    let stmt = match &program.statements[0] {
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
+        _ => panic!("program.statements[0] is not ExpressionStatement."),
+    };
+    let hash = match stmt.expression.as_ref().unwrap().as_ref() {
+        Node::Expression(Expression::HashLiteral(hash)) => hash,
+        _ => panic!("stmt.expression is not HashLiteral."),
+    };
+
+    if hash.pairs.len() != 3 {
+        panic!(
+            "hash.pairs does not contain 3 pairs. got={}",
+            hash.pairs.len()
+        );
+    }
+
+    let expected = vec![
+        (TestingLiteral::Str("one"), TestingLiteral::Int(1)),
+        (TestingLiteral::Str("two"), TestingLiteral::Int(2)),
+        (TestingLiteral::Str("three"), TestingLiteral::Int(3)),
+    ];
+
+    for (key, expected_value) in expected {
+        let _key = match key {
+            TestingLiteral::Str(s) => {
+                Box::new(Node::Expression(Expression::StringLiteral(StringLiteral {
+                    token: Token {
+                        _type: TokenType::STRING,
+                        literal: s.to_string(),
+                    },
+                    value: s.to_string(),
+                })))
+            }
+            _ => {
+                panic!("key is not StringLiteral.");
+            }
+        };
+        let value = match hash.pairs.get(&_key) {
+            Some(e) => match e.as_ref() {
+                Node::Expression(e) => e,
+                _ => {
+                    panic!("hash.pairs key is not Expression.");
+                }
+            },
+            None => {
+                panic!("hash.pairs does not contain key.");
+            }
+        };
+        if !test_literal_expression(value, expected_value) {
+            return;
+        }
+    }
+}
+
+#[test]
+fn test_parsing_empty_hash_literal() {
+    let input = "{}";
+
+    let lexer = Lexer::new(input.to_string());
+    let mut parser = Parser::new(lexer);
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
+    check_parser_errors(&parser);
+
+    if program.statements.len() != 1 {
+        panic!(
+            "program.statements does not contain 1 statement. got={}",
+            program.statements.len()
+        );
+    }
+    let stmt = match &program.statements[0] {
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
+        _ => panic!("program.statements[0] is not ExpressionStatement."),
+    };
+    let hash = match stmt.expression.as_ref().unwrap().as_ref() {
+        Node::Expression(Expression::HashLiteral(hash)) => hash,
+        _ => panic!("stmt.expression is not HashLiteral."),
+    };
+
+    if hash.pairs.len() != 0 {
+        panic!("hash.pairs is not empty. got={}", hash.pairs.len());
+    }
+}
+
+#[test]
+fn test_parsing_hash_literals_with_expressions() {
+    let input = r#"{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}"#;
+
+    let lexer = Lexer::new(input.to_string());
+    let mut parser = Parser::new(lexer);
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
+    check_parser_errors(&parser);
+
+    if program.statements.len() != 1 {
+        panic!(
+            "program.statements does not contain 1 statement. got={}",
+            program.statements.len()
+        );
+    }
+    let stmt = match &program.statements[0] {
+        Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
+        _ => panic!("program.statements[0] is not ExpressionStatement."),
+    };
+    let hash = match stmt.expression.as_ref().unwrap().as_ref() {
+        Node::Expression(Expression::HashLiteral(hash)) => hash,
+        _ => panic!("stmt.expression is not HashLiteral."),
+    };
+
+    if hash.pairs.len() != 3 {
+        panic!(
+            "hash.pairs does not contain 3 pairs. got={}",
+            hash.pairs.len()
+        );
+    }
+
+    let expected = vec![
+        (
+            TestingLiteral::Str("one"),
+            TestingLiteral::Int(0),
+            "+",
+            TestingLiteral::Int(1),
+        ),
+        (
+            TestingLiteral::Str("two"),
+            TestingLiteral::Int(10),
+            "-",
+            TestingLiteral::Int(8),
+        ),
+        (
+            TestingLiteral::Str("three"),
+            TestingLiteral::Int(15),
+            "/",
+            TestingLiteral::Int(5),
+        ),
+    ];
+
+    for (key, left, operator, right) in expected {
+        let _key = match key {
+            TestingLiteral::Str(s) => {
+                Box::new(Node::Expression(Expression::StringLiteral(StringLiteral {
+                    token: Token {
+                        _type: TokenType::STRING,
+                        literal: s.to_string(),
+                    },
+                    value: s.to_string(),
+                })))
+            }
+            _ => {
+                panic!("key is not StringLiteral.");
+            }
+        };
+        let value = match hash.pairs.get(&_key) {
+            Some(e) => match e.as_ref() {
+                Node::Expression(e) => e,
+                _ => {
+                    panic!("hash.pairs key is not Expression.");
+                }
+            },
+            None => {
+                panic!("hash.pairs does not contain key.");
+            }
+        };
+        if !test_infix_expression(value, left, operator, right) {
+            return;
+        }
     }
 }

@@ -1,5 +1,8 @@
 //! Object of Evaluation for the Monkey interpreter.
 
+use core::str;
+use std::collections::HashMap;
+
 use ast::ast::{BlockStatement, Identifier, TNode};
 
 use crate::environment::Environment;
@@ -14,6 +17,7 @@ const NULL_OBJ: &str = "NULL";
 pub const RETURN_VALUE_OBJ: &str = "RETURN_VALUE";
 const FUNCTION_OBJ: &str = "FUNCTION";
 const BUILTIN_OBJ: &str = "BUILTIN";
+pub const HASH_OBJ: &str = "HASH";
 pub const ERROR_OBJ: &str = "ERROR";
 
 #[derive(PartialEq, Clone)]
@@ -27,6 +31,7 @@ pub enum ObjectTypes {
     Error(Error),
     Function(Function),
     Builtin(Builtin),
+    Hash(Hash),
 }
 
 impl ObjectTypes {
@@ -41,6 +46,7 @@ impl ObjectTypes {
             ObjectTypes::Error(error) => error._type(),
             ObjectTypes::Function(function) => function._type(),
             ObjectTypes::Builtin(builtin) => builtin._type(),
+            ObjectTypes::Hash(hash) => hash._type(),
         }
     }
 
@@ -55,6 +61,7 @@ impl ObjectTypes {
             ObjectTypes::Error(error) => error.inspect(),
             ObjectTypes::Function(function) => function.inspect(),
             ObjectTypes::Builtin(builtin) => builtin.inspect(),
+            ObjectTypes::Hash(hash) => hash.inspect(),
         }
     }
 }
@@ -62,6 +69,12 @@ impl ObjectTypes {
 trait Object {
     fn _type(&self) -> ObjectType;
     fn inspect(&self) -> String;
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+pub struct HashKey {
+    type_: ObjectType,
+    value: u64,
 }
 
 #[derive(PartialEq, Clone)]
@@ -76,6 +89,15 @@ impl Object for Integer {
 
     fn inspect(&self) -> String {
         format!("{}", self.value)
+    }
+}
+
+impl Integer {
+    pub fn hash_key(&self) -> HashKey {
+        HashKey {
+            type_: self._type(),
+            value: self.value as u64,
+        }
     }
 }
 
@@ -94,6 +116,21 @@ impl Object for StringLiteral {
     }
 }
 
+impl StringLiteral {
+    pub fn hash_key(&self) -> HashKey {
+        // FIXME: djb2 algorithm, but fix to change to use fnv
+        // TODO: Apply open addressing or separate chaining for collision handling
+        let mut hash: u64 = 5381;
+        for byte in self.value.as_bytes() {
+            hash = ((hash << 5).wrapping_add(hash)).wrapping_add(*byte as u64);
+        }
+        HashKey {
+            type_: self._type(),
+            value: hash,
+        }
+    }
+}
+
 #[derive(PartialEq, Clone)]
 pub struct Boolean {
     pub value: bool,
@@ -106,6 +143,16 @@ impl Object for Boolean {
 
     fn inspect(&self) -> String {
         format!("{}", self.value)
+    }
+}
+
+impl Boolean {
+    pub fn hash_key(&self) -> HashKey {
+        let value = if self.value { 1 } else { 0 };
+        HashKey {
+            type_: self._type(),
+            value,
+        }
     }
 }
 
@@ -204,5 +251,30 @@ impl Object for Builtin {
 
     fn inspect(&self) -> String {
         "builtin function".to_string()
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub struct HashPair {
+    pub key: ObjectTypes,
+    pub value: ObjectTypes,
+}
+
+#[derive(PartialEq, Clone)]
+pub struct Hash {
+    pub pairs: HashMap<HashKey, HashPair>,
+}
+
+impl Object for Hash {
+    fn _type(&self) -> ObjectType {
+        HASH_OBJ.to_string()
+    }
+
+    fn inspect(&self) -> String {
+        let mut pairs: Vec<String> = Vec::new();
+        for pair in self.pairs.values() {
+            pairs.push(format!("{}: {}", pair.key.inspect(), pair.value.inspect()));
+        }
+        format!("{{{}}}", pairs.join(", "))
     }
 }
