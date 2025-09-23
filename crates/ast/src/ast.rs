@@ -163,18 +163,14 @@ impl TNode for LetStatement {
     }
 
     fn to_string(&self) -> String {
-        let mut out = String::new();
-        out.push_str(&self.token_literal());
-        out.push(' ');
-        if let Some(name) = &self.name {
-            out.push_str(&name.to_string());
-        }
-        out.push_str(" = ");
-        if let Some(value) = &self.value {
-            out.push_str(&value.to_string());
-        }
-        out.push(';');
-        out
+        format!(
+            "{} {} = {};",
+            self.token_literal(),
+            self.name.as_ref().map_or("".to_string(), |n| n.to_string()),
+            self.value
+                .as_ref()
+                .map_or("".to_string(), |v| v.to_string())
+        )
     }
 }
 
@@ -194,15 +190,13 @@ impl TNode for ReturnStatement {
     }
 
     fn to_string(&self) -> String {
-        let mut out = String::new();
-        out.push_str(&self.token_literal());
-        out.push(' ');
-
-        if let Some(value) = &self.return_value {
-            out.push_str(&value.to_string());
-        }
-        out.push(';');
-        out
+        format!(
+            "{} {};",
+            self.token_literal(),
+            self.return_value
+                .as_ref()
+                .map_or("".to_string(), |v| v.to_string())
+        )
     }
 }
 
@@ -222,11 +216,9 @@ impl TNode for ExpressionStatement {
     }
 
     fn to_string(&self) -> String {
-        if let Some(expression) = &self.expression {
-            expression.to_string()
-        } else {
-            "".to_string()
-        }
+        self.expression
+            .as_ref()
+            .map_or("".to_string(), |e| e.to_string())
     }
 }
 
@@ -287,14 +279,13 @@ impl TNode for PrefixExpression {
     }
 
     fn to_string(&self) -> String {
-        let mut out = String::new();
-        out.push('(');
-        out.push_str(&self.operator);
-        if let Some(right) = &self.right {
-            out.push_str(&right.to_string());
-        }
-        out.push(')');
-        out
+        format!(
+            "({}{})",
+            self.operator,
+            self.right
+                .as_ref()
+                .map_or("".to_string(), |r| r.to_string())
+        )
     }
 }
 
@@ -316,19 +307,14 @@ impl TNode for InfixExpression {
     }
 
     fn to_string(&self) -> String {
-        let mut out = String::new();
-        out.push('(');
-        if let Some(left) = &self.left {
-            out.push_str(&left.to_string());
-        }
-        out.push(' ');
-        out.push_str(&self.operator);
-        out.push(' ');
-        if let Some(right) = &self.right {
-            out.push_str(&right.to_string());
-        }
-        out.push(')');
-        out
+        format!(
+            "({} {} {})",
+            self.left.as_ref().map_or("".to_string(), |l| l.to_string()),
+            self.operator,
+            self.right
+                .as_ref()
+                .map_or("".to_string(), |r| r.to_string())
+        )
     }
 }
 
@@ -368,17 +354,13 @@ impl TNode for ArrayLiteral {
     }
 
     fn to_string(&self) -> String {
-        let mut out = String::new();
-        out.push('[');
         let elems = self
             .elements
             .iter()
             .map(|e| e.to_string())
             .collect::<Vec<String>>()
             .join(", ");
-        out.push_str(&elems);
-        out.push(']');
-        out
+        format!("[{}]", elems)
     }
 }
 
@@ -399,18 +381,13 @@ impl TNode for IndexExpression {
     }
 
     fn to_string(&self) -> String {
-        let mut out = String::new();
-        out.push('(');
-        if let Some(left) = &self.left {
-            out.push_str(&left.to_string());
-        }
-        out.push('[');
-        if let Some(index) = &self.index {
-            out.push_str(&index.to_string());
-        }
-        out.push(']');
-        out.push(')');
-        out
+        format!(
+            "({}[{}])",
+            self.left.as_ref().map_or("".to_string(), |l| l.to_string()),
+            self.index
+                .as_ref()
+                .map_or("".to_string(), |i| i.to_string())
+        )
     }
 }
 
@@ -432,19 +409,18 @@ impl TNode for IfExpression {
     }
 
     fn to_string(&self) -> String {
-        let mut out = String::new();
-        out.push_str("if");
-        if let Some(condition) = &self.condition {
-            out.push_str(&condition.to_string());
-        }
-        if let Some(consequence) = &self.consequence {
-            out.push_str(&consequence.to_string());
-        }
-        if let Some(alternative) = &self.alternative {
-            out.push_str("else");
-            out.push_str(&alternative.to_string());
-        }
-        out
+        format!(
+            "if{}{}{}",
+            self.condition
+                .as_ref()
+                .map_or("".to_string(), |c| c.to_string()),
+            self.consequence
+                .as_ref()
+                .map_or("".to_string(), |c| c.to_string()),
+            self.alternative
+                .as_ref()
+                .map_or("".to_string(), |a| format!("else{}", a.to_string()))
+        )
     }
 }
 
@@ -464,11 +440,11 @@ impl TNode for BlockStatement {
     }
 
     fn to_string(&self) -> String {
-        let mut out = String::new();
-        for statement in &self.statements {
-            out.push_str(&statement.to_string());
-        }
-        out
+        self.statements
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>()
+            .join("")
     }
 }
 
@@ -489,26 +465,14 @@ impl TNode for FunctionLiteral {
     }
 
     fn to_string(&self) -> String {
-        let mut out = String::new();
-        out.push_str(&self.token_literal());
-        out.push('(');
         let params = self
             .parameters
             .iter()
-            .map(|p| match p.as_ref() {
-                Node::Expression(Expression::Identifier(ident)) => ident.to_string(),
-                _ => "".to_string(),
-            })
+            .map(|p| p.to_string())
             .collect::<Vec<String>>()
             .join(", ");
-        out.push_str(&params);
-        out.push(')');
-        out.push('{');
-        if let Some(body) = &self.body {
-            out.push_str(&body.to_string());
-        }
-        out.push('}');
-        out
+        let body = self.body.as_ref().map_or("".to_string(), |b| b.to_string());
+        format!("{}({}){{{}}}", self.token_literal(), params, body)
     }
 }
 
@@ -529,18 +493,14 @@ impl TNode for CallExpression {
     }
 
     fn to_string(&self) -> String {
-        let mut out = String::new();
-        out.push_str(&self.function.to_string());
-        out.push('(');
+        let func = &self.function.to_string();
         let args = self
             .arguments
             .iter()
             .map(|a| a.to_string())
             .collect::<Vec<String>>()
             .join(", ");
-        out.push_str(&args);
-        out.push(')');
-        out
+        format!("{}({})", func, args)
     }
 }
 
@@ -560,16 +520,12 @@ impl TNode for HashLiteral {
     }
 
     fn to_string(&self) -> String {
-        let mut out = String::new();
-        out.push('{');
         let pairs = self
             .pairs
             .iter()
             .map(|(k, v)| format!("{}: {}", k.to_string(), v.to_string()))
             .collect::<Vec<String>>()
             .join(", ");
-        out.push_str(&pairs);
-        out.push('}');
-        out
+        format!("{{{}}}", pairs)
     }
 }
