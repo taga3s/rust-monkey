@@ -51,10 +51,9 @@ pub enum TokenType {
     IF,
     ELSE,
     RETURN,
-    MACRO,
 }
 
-const KEYWORDS: [(&str, TokenType); 8] = [
+const KEYWORDS: [(&str, TokenType); 7] = [
     ("fn", TokenType::FUNCTION),
     ("let", TokenType::LET),
     ("true", TokenType::TRUE),
@@ -62,7 +61,6 @@ const KEYWORDS: [(&str, TokenType); 8] = [
     ("if", TokenType::IF),
     ("else", TokenType::ELSE),
     ("return", TokenType::RETURN),
-    ("macro", TokenType::MACRO),
 ];
 
 pub fn lookup_ident(ident: &str) -> TokenType {

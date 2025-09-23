@@ -62,7 +62,6 @@ fn test_next_token2() {
       "foo bar"
       [1, 2];
       {"foo": "bar"};
-      macro(x, y) { x + y };
       "#;
 
     let tests = vec![
@@ -150,18 +149,6 @@ fn test_next_token2() {
         (TokenType::STRING, "foo"),
         (TokenType::COLON, ":"),
         (TokenType::STRING, "bar"),
-        (TokenType::RBRACE, "}"),
-        (TokenType::SEMICOLON, ";"),
-        (TokenType::MACRO, "macro"),
-        (TokenType::LPAREN, "("),
-        (TokenType::IDENT, "x"),
-        (TokenType::COMMA, ","),
-        (TokenType::IDENT, "y"),
-        (TokenType::RPAREN, ")"),
-        (TokenType::LBRACE, "{"),
-        (TokenType::IDENT, "x"),
-        (TokenType::PLUS, "+"),
-        (TokenType::IDENT, "y"),
         (TokenType::RBRACE, "}"),
         (TokenType::SEMICOLON, ";"),
         (TokenType::EOF, ""),
