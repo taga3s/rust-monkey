@@ -237,7 +237,7 @@ impl Object for Function {
     }
 }
 
-pub type BuiltinFunction = fn(Vec<ObjectTypes>) -> ObjectTypes;
+pub type BuiltinFunction = fn(&Vec<ObjectTypes>) -> ObjectTypes;
 
 #[derive(PartialEq, Clone)]
 pub struct Builtin {

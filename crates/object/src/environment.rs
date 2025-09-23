@@ -30,8 +30,7 @@ impl Environment {
         obj
     }
 
-    pub fn set(&mut self, name: String, val: ObjectTypes) -> ObjectTypes {
-        self.store.insert(name, val.clone());
-        val
+    pub fn set(&mut self, name: String, val: ObjectTypes) {
+        self.store.insert(name, val);
     }
 }

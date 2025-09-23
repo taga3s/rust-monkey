@@ -7,6 +7,7 @@ use utils::test::TestLiteral;
 
 use crate::parser::Parser;
 
+//-- Helpers for tests --//
 fn test_literal_expression(exp: &Expression, expected: TestLiteral) -> bool {
     match expected {
         TestLiteral::Int(value) => return test_integer_literal(exp, value),
@@ -20,7 +21,7 @@ fn test_literal_expression(exp: &Expression, expected: TestLiteral) -> bool {
 
 fn test_integer_literal(il: &Expression, value: i64) -> bool {
     let integer = match il {
-        Expression::IntegerLiteral(integer) => integer,
+        Expression::IntegerLiteral(il) => il,
         _ => {
             panic!("il is not IntegerLiteral.");
         }
@@ -94,7 +95,7 @@ fn test_infix_expression(
     right: TestLiteral,
 ) -> bool {
     let op_exp = match exp {
-        Expression::Infix(op_exp) => op_exp,
+        Expression::Infix(oe) => oe,
         _ => {
             panic!("exp is not InfixExpression.");
         }
@@ -141,6 +142,7 @@ fn check_parser_errors(parser: &Parser) {
     }
 }
 
+// -- Tests -- //
 #[test]
 fn test_let_statements() {
     let tests = vec![
@@ -973,19 +975,19 @@ fn test_function_literal_parsing() {
         _ => panic!("program.statements[0] is not ExpressionStatement."),
     };
 
-    let function = match stmt.expression.as_ref().unwrap().as_ref() {
+    let func = match stmt.expression.as_ref().unwrap().as_ref() {
         Node::Expression(Expression::FunctionLiteral(function)) => function,
         _ => panic!("stmt.expression is not FunctionLiteral."),
     };
 
-    if function.parameters.len() != 2 {
+    if func.parameters.len() != 2 {
         panic!(
             "function.parameters does not contain 2 parameters. got={}",
-            function.parameters.len()
+            func.parameters.len()
         );
     }
 
-    let param0 = match function.parameters[0].as_ref() {
+    let param0 = match func.parameters[0].as_ref() {
         Node::Expression(e) => e,
         _ => {
             panic!("function.parameters[0] is not Expression.");
@@ -996,7 +998,7 @@ fn test_function_literal_parsing() {
         return;
     }
 
-    let param1 = match function.parameters[1].as_ref() {
+    let param1 = match func.parameters[1].as_ref() {
         Node::Expression(e) => e,
         _ => {
             panic!("function.parameters[1] is not Expression.");
@@ -1007,23 +1009,23 @@ fn test_function_literal_parsing() {
         return;
     }
 
-    let function_body = match function.body.as_ref().unwrap().as_ref() {
+    let func_body = match func.body.as_ref().unwrap().as_ref() {
         Node::Statement(Statement::BlockStatement(b)) => b,
         _ => {
-            panic!("function.body is not BlockStatement.");
+            panic!("func.body is not BlockStatement.");
         }
     };
 
-    if function_body.statements.len() != 1 {
+    if func_body.statements.len() != 1 {
         panic!(
-            "function.body.statements does not contain 1 statement. got={}",
-            function_body.statements.len()
+            "func_body.statements does not contain 1 statement. got={}",
+            func_body.statements.len()
         );
     }
 
-    let body_stmt = match &function_body.statements[0] {
+    let body_stmt = match &func_body.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
-        _ => panic!("function.body.statements[0] is not ExpressionStatement."),
+        _ => panic!("func_body.statements[0] is not ExpressionStatement."),
     };
 
     let exp = match body_stmt.expression.as_ref().unwrap().as_ref() {
@@ -1077,24 +1079,24 @@ fn test_function_parameter_parsing() {
             _ => panic!("program.statements[0] is not ExpressionStatement."),
         };
 
-        let function = match stmt.expression.as_ref().unwrap().as_ref() {
+        let func = match stmt.expression.as_ref().unwrap().as_ref() {
             Node::Expression(Expression::FunctionLiteral(function)) => function,
             _ => panic!("stmt.expression is not FunctionLiteral."),
         };
 
-        if function.parameters.len() != expected_params.len() {
+        if func.parameters.len() != expected_params.len() {
             panic!(
-                "function.parameters does not contain {} parameters. got={}",
+                "func.parameters does not contain {} parameters. got={}",
                 expected_params.len(),
-                function.parameters.len()
+                func.parameters.len()
             );
         }
 
         for (i, ident) in expected_params.iter().enumerate() {
-            let param = match function.parameters[i].as_ref() {
+            let param = match func.parameters[i].as_ref() {
                 Node::Expression(e) => e,
                 _ => {
-                    panic!("function.parameters[{}] is not Expression.", i);
+                    panic!("func.parameters[{}] is not Expression.", i);
                 }
             };
             if !test_literal_expression(param, ident.clone()) {
@@ -1136,14 +1138,14 @@ fn test_call_expression_parsing() {
         _ => panic!("stmt.expression is not CallExpression."),
     };
 
-    let function = match exp.function.as_ref() {
+    let func = match exp.function.as_ref() {
         Node::Expression(e) => e,
         _ => {
             panic!("exp.function is not Expression.");
         }
     };
 
-    if !test_identifier(function, "add") {
+    if !test_identifier(func, "add") {
         return;
     }
 
@@ -1157,7 +1159,7 @@ fn test_call_expression_parsing() {
     let exp0 = match &exp.arguments[0].as_ref() {
         Node::Expression(exps) => exps,
         _ => {
-            panic!("exp.arguments is not Expressions.");
+            panic!("exp.arguments[0] is not Expression.");
         }
     };
 
@@ -1168,7 +1170,7 @@ fn test_call_expression_parsing() {
     let exp1 = match &exp.arguments[1].as_ref() {
         Node::Expression(exps) => exps,
         _ => {
-            panic!("exp.arguments is not Expressions.");
+            panic!("exp.arguments[1] is not Expression.");
         }
     };
 
@@ -1179,7 +1181,7 @@ fn test_call_expression_parsing() {
     let exp2 = match &exp.arguments[2].as_ref() {
         Node::Expression(exps) => exps,
         _ => {
-            panic!("exp.arguments is not Expressions.");
+            panic!("exp.arguments[2] is not Expression.");
         }
     };
 

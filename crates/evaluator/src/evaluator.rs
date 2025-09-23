@@ -13,7 +13,9 @@ use object::{
     },
 };
 
-// const NULL: ObjectTypes = ObjectTypes::Null(Null {});
+use crate::builtins::BUILTINS;
+
+const NULL: ObjectTypes = ObjectTypes::Null(Null {});
 const TRUE: ObjectTypes = ObjectTypes::Boolean(Boolean { value: true });
 const FALSE: ObjectTypes = ObjectTypes::Boolean(Boolean { value: false });
 
@@ -34,11 +36,11 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
                 ObjectTypes::Array(Array { elements })
             }
             Expression::IndexExpression(ie) => {
-                let left = eval(ie.left.clone().unwrap().as_ref(), env);
+                let left = eval(ie.left.as_ref().unwrap(), env);
                 if is_error(&left) {
                     return left;
                 }
-                let index = eval(ie.index.clone().unwrap().as_ref(), env);
+                let index = eval(ie.index.as_ref().unwrap(), env);
                 if is_error(&index) {
                     return index;
                 }
@@ -110,7 +112,8 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
                 if is_error(&val) {
                     return val;
                 }
-                return env.set(ls.name.as_ref().unwrap().value.clone(), val);
+                env.set(ls.name.as_ref().unwrap().value.clone(), val);
+                NULL
             }
             Statement::Return(rs) => {
                 let val = eval(rs.return_value.as_ref().unwrap(), env);
@@ -128,7 +131,7 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
 }
 
 fn eval_program(program: &Program, env: &mut Environment) -> ObjectTypes {
-    let mut result = ObjectTypes::Null(Null {}); //FIXME: handle other object types
+    let mut result = NULL; //FIXME: handle other object types
 
     for stmt in &program.statements {
         result = eval(&stmt, env);
@@ -145,7 +148,7 @@ fn eval_program(program: &Program, env: &mut Environment) -> ObjectTypes {
 }
 
 fn eval_block_statement(bs: &BlockStatement, env: &mut Environment) -> ObjectTypes {
-    let mut result = ObjectTypes::Null(Null {});
+    let mut result = NULL;
 
     for stmt in &bs.statements {
         result = eval(&stmt, env);
@@ -186,10 +189,7 @@ fn eval_identifier(node: &Identifier, env: &mut Environment) -> ObjectTypes {
         return val.clone();
     }
 
-    if let Some((_, builtin)) = crate::builtins::BUILTINS
-        .iter()
-        .find(|(name, _)| *name == node.value)
-    {
+    if let Some((_, builtin)) = BUILTINS.iter().find(|(name, _)| *name == node.value) {
         return builtin.clone();
     }
 
@@ -335,7 +335,7 @@ fn eval_if_expression(ie: &IfExpression, env: &mut Environment) -> ObjectTypes {
     } else if let Some(alt) = &ie.alternative {
         return eval(alt, env);
     }
-    return ObjectTypes::Null(Null {});
+    NULL
 }
 
 fn eval_expressions(exps: &Vec<Box<Node>>, env: &mut Environment) -> Vec<ObjectTypes> {
@@ -362,7 +362,7 @@ fn apply_function(func: &ObjectTypes, args: &Vec<ObjectTypes>) -> ObjectTypes {
     }
 
     if let ObjectTypes::Builtin(builtin) = func {
-        return (builtin.fn_)(args.clone());
+        return (builtin.fn_)(args);
     }
 
     new_error(format!("not a function: {}", func.type_()))
@@ -410,7 +410,7 @@ fn eval_array_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes
     let max = array.elements.len() as i64 - 1;
 
     if idx < 0 || idx > max {
-        return ObjectTypes::Null(Null {});
+        return NULL;
     }
 
     array.elements[idx as usize].clone()
@@ -462,6 +462,6 @@ fn eval_hash_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> Object
 
     match hash_object.pairs.get(&key) {
         Some(pair) => pair.value.clone(),
-        None => ObjectTypes::Null(Null {}),
+        None => NULL,
     }
 }

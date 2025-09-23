@@ -552,7 +552,7 @@ impl Parser {
     fn peek_precedence(&self) -> Precedence {
         match PRECEDENCES
             .iter()
-            .find(|(t, _)| t.clone() == self.peek_token.type_)
+            .find(|(t, _)| *t == self.peek_token.type_)
         {
             Some((_, p)) => p.clone(),
             None => Precedence::LOWEST,
