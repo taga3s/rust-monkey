@@ -64,8 +64,8 @@ const KEYWORDS: [(&str, TokenType); 7] = [
 ];
 
 pub fn lookup_ident(ident: &str) -> TokenType {
-    if let Some((_, tokentype_)) = KEYWORDS.iter().find(|(key, _)| *key == ident) {
-        return tokentype_.clone();
+    if let Some((_, token_type)) = KEYWORDS.iter().find(|(key, _)| *key == ident) {
+        return token_type.clone();
     }
     TokenType::IDENT
 }

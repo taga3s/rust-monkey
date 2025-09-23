@@ -19,19 +19,19 @@ fn test_next_token() {
 
     let mut lexer = Lexer::new(input.to_string());
 
-    for (i, case) in tests.iter().enumerate() {
+    for (i, (token_type, literal)) in tests.iter().enumerate() {
         let tok = lexer.next_token();
 
         assert_eq!(
-            &tok.type_, &case.0,
-            "tests[{}] - tokentype wrong. expected={:?}, got={:?}",
-            i, case.0, tok.type_
+            &tok.type_, token_type,
+            "tests[{}] - token type wrong. expected={:?}, got={:?}",
+            i, token_type, tok.type_
         );
 
         assert_eq!(
-            &tok.literal, &case.1,
+            &tok.literal, literal,
             "tests[{}] - literal wrong. expected={}, got={}",
-            i, case.1, tok.literal
+            i, literal, tok.literal
         );
     }
 }
@@ -156,19 +156,19 @@ fn test_next_token2() {
 
     let mut lexer = Lexer::new(input.to_string());
 
-    for (i, case) in tests.iter().enumerate() {
+    for (i, (token_type, literal)) in tests.iter().enumerate() {
         let tok = lexer.next_token();
 
         assert_eq!(
-            &tok.type_, &case.0,
-            "tests[{}] - tokentype wrong. expected={:?}, got={:?}",
-            i, case.0, tok.type_
+            &tok.type_, token_type,
+            "tests[{}] - token type is wrong. expected={:?}, got={:?}",
+            i, token_type, tok.type_
         );
 
         assert_eq!(
-            &tok.literal, &case.1,
-            "tests[{}] - literal wrong. expected={}, got={}",
-            i, case.1, tok.literal
+            &tok.literal, literal,
+            "tests[{}] - literal is wrong. expected={}, got={}",
+            i, literal, tok.literal
         );
     }
 }
