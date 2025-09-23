@@ -3,22 +3,18 @@ use std::vec;
 use ast::ast::{Expression, Node, Statement, StringLiteral, TNode};
 use lexer::lexer::Lexer;
 use token::token::{Token, TokenType};
+use utils::test::TestLiteral;
 
 use crate::parser::Parser;
 
-// -- Test Helpers -- //
-#[derive(Clone)]
-enum TestingLiteral {
-    Int(i64),
-    Str(&'static str),
-    Bool(bool),
-}
-
-fn test_literal_expression(exp: &Expression, expected: TestingLiteral) -> bool {
+fn test_literal_expression(exp: &Expression, expected: TestLiteral) -> bool {
     match expected {
-        TestingLiteral::Int(value) => return test_integer_literal(exp, value),
-        TestingLiteral::Str(value) => return test_identifier(exp, value),
-        TestingLiteral::Bool(value) => return test_boolean_literal(exp, value),
+        TestLiteral::Int(value) => return test_integer_literal(exp, value),
+        TestLiteral::Str(value) => return test_identifier(exp, value),
+        TestLiteral::Bool(value) => return test_boolean_literal(exp, value),
+        _ => {
+            panic!("type of exp not handled. got={:?}", exp);
+        }
     }
 }
 
@@ -93,9 +89,9 @@ fn test_boolean_literal(exp: &Expression, value: bool) -> bool {
 
 fn test_infix_expression(
     exp: &Expression,
-    left: TestingLiteral,
+    left: TestLiteral,
     operator: &str,
-    right: TestingLiteral,
+    right: TestLiteral,
 ) -> bool {
     let op_exp = match exp {
         Expression::Infix(op_exp) => op_exp,
@@ -148,9 +144,9 @@ fn check_parser_errors(parser: &Parser) {
 #[test]
 fn test_let_statements() {
     let tests = vec![
-        ("let x = 5;", "x", TestingLiteral::Int(5)),
-        ("let y = true;", "y", TestingLiteral::Bool(true)),
-        ("let foobar = y;", "foobar", TestingLiteral::Str("y")),
+        ("let x = 5;", "x", TestLiteral::Int(5)),
+        ("let y = true;", "y", TestLiteral::Bool(true)),
+        ("let foobar = y;", "foobar", TestLiteral::Str("y")),
     ];
 
     for test in tests {
@@ -513,18 +509,8 @@ fn test_parsing_array_literals() {
     };
 
     test_integer_literal(index_0_exp, 1);
-    test_infix_expression(
-        index_1_exp,
-        TestingLiteral::Int(2),
-        "*",
-        TestingLiteral::Int(2),
-    );
-    test_infix_expression(
-        index_2_exp,
-        TestingLiteral::Int(3),
-        "+",
-        TestingLiteral::Int(3),
-    );
+    test_infix_expression(index_1_exp, TestLiteral::Int(2), "*", TestLiteral::Int(2));
+    test_infix_expression(index_2_exp, TestLiteral::Int(3), "+", TestLiteral::Int(3));
 }
 
 #[test]
@@ -573,16 +559,16 @@ fn test_parsing_index_expressions() {
             panic!("index_exp.index is not Expression.");
         }
     };
-    test_infix_expression(index, TestingLiteral::Int(1), "+", TestingLiteral::Int(1));
+    test_infix_expression(index, TestLiteral::Int(1), "+", TestLiteral::Int(1));
 }
 
 #[test]
 fn test_parsing_prefix_expressions() {
     let prefix_tests = vec![
-        ("!5;", "!", TestingLiteral::Int(5)),
-        ("-15;", "-", TestingLiteral::Int(15)),
-        ("!true;", "!", TestingLiteral::Bool(true)),
-        ("!false;", "!", TestingLiteral::Bool(false)),
+        ("!5;", "!", TestLiteral::Int(5)),
+        ("-15;", "-", TestLiteral::Int(15)),
+        ("!true;", "!", TestLiteral::Bool(true)),
+        ("!false;", "!", TestLiteral::Bool(false)),
     ];
 
     for test in prefix_tests {
@@ -639,72 +625,32 @@ fn test_parsing_prefix_expressions() {
 
 #[test]
 fn test_parsing_infix_expressions() {
-    let infix_tests: Vec<(&'static str, TestingLiteral, &'static str, TestingLiteral)> = vec![
-        (
-            "5 + 5;",
-            TestingLiteral::Int(5),
-            "+",
-            TestingLiteral::Int(5),
-        ),
-        (
-            "5 - 5;",
-            TestingLiteral::Int(5),
-            "-",
-            TestingLiteral::Int(5),
-        ),
-        (
-            "5 * 5;",
-            TestingLiteral::Int(5),
-            "*",
-            TestingLiteral::Int(5),
-        ),
-        (
-            "5 / 5;",
-            TestingLiteral::Int(5),
-            "/",
-            TestingLiteral::Int(5),
-        ),
-        (
-            "5 > 5;",
-            TestingLiteral::Int(5),
-            ">",
-            TestingLiteral::Int(5),
-        ),
-        (
-            "5 < 5;",
-            TestingLiteral::Int(5),
-            "<",
-            TestingLiteral::Int(5),
-        ),
-        (
-            "5 == 5;",
-            TestingLiteral::Int(5),
-            "==",
-            TestingLiteral::Int(5),
-        ),
-        (
-            "5 != 5;",
-            TestingLiteral::Int(5),
-            "!=",
-            TestingLiteral::Int(5),
-        ),
+    let infix_tests: Vec<(&'static str, TestLiteral, &'static str, TestLiteral)> = vec![
+        ("5 + 5;", TestLiteral::Int(5), "+", TestLiteral::Int(5)),
+        ("5 - 5;", TestLiteral::Int(5), "-", TestLiteral::Int(5)),
+        ("5 * 5;", TestLiteral::Int(5), "*", TestLiteral::Int(5)),
+        ("5 / 5;", TestLiteral::Int(5), "/", TestLiteral::Int(5)),
+        ("5 > 5;", TestLiteral::Int(5), ">", TestLiteral::Int(5)),
+        ("5 < 5;", TestLiteral::Int(5), "<", TestLiteral::Int(5)),
+        ("5 == 5;", TestLiteral::Int(5), "==", TestLiteral::Int(5)),
+        ("5 != 5;", TestLiteral::Int(5), "!=", TestLiteral::Int(5)),
         (
             "true == true",
-            TestingLiteral::Bool(true),
+            TestLiteral::Bool(true),
             "==",
-            TestingLiteral::Bool(true),
+            TestLiteral::Bool(true),
         ),
         (
             "true != false",
-            TestingLiteral::Bool(true),
+            TestLiteral::Bool(true),
             "!=",
-            TestingLiteral::Bool(false),
+            TestLiteral::Bool(false),
         ),
         (
             "false == false",
-            TestingLiteral::Bool(false),
+            TestLiteral::Bool(false),
             "==",
-            TestingLiteral::Bool(false),
+            TestLiteral::Bool(false),
         ),
     ];
 
@@ -852,7 +798,7 @@ fn test_if_expression() {
         }
     };
 
-    if !test_infix_expression(exp, TestingLiteral::Str("x"), "<", TestingLiteral::Str("y")) {
+    if !test_infix_expression(exp, TestLiteral::Str("x"), "<", TestLiteral::Str("y")) {
         return;
     }
 
@@ -931,12 +877,7 @@ fn test_if_else_expression() {
         }
     };
 
-    if !test_infix_expression(
-        condition,
-        TestingLiteral::Str("x"),
-        "<",
-        TestingLiteral::Str("y"),
-    ) {
+    if !test_infix_expression(condition, TestLiteral::Str("x"), "<", TestLiteral::Str("y")) {
         return;
     }
 
@@ -1051,7 +992,7 @@ fn test_function_literal_parsing() {
         }
     };
 
-    if !test_literal_expression(param0, TestingLiteral::Str("x")) {
+    if !test_literal_expression(param0, TestLiteral::Str("x")) {
         return;
     }
 
@@ -1062,7 +1003,7 @@ fn test_function_literal_parsing() {
         }
     };
 
-    if !test_literal_expression(param1, TestingLiteral::Str("y")) {
+    if !test_literal_expression(param1, TestLiteral::Str("y")) {
         return;
     }
 
@@ -1090,7 +1031,7 @@ fn test_function_literal_parsing() {
         _ => panic!("body_stmt.expression is not InfixExpression."),
     };
 
-    if !test_infix_expression(exp, TestingLiteral::Str("x"), "+", TestingLiteral::Str("y")) {
+    if !test_infix_expression(exp, TestLiteral::Str("x"), "+", TestLiteral::Str("y")) {
         return;
     }
 }
@@ -1099,13 +1040,13 @@ fn test_function_literal_parsing() {
 fn test_function_parameter_parsing() {
     let tests = vec![
         ("fn() {};", vec![]),
-        ("fn(x) {};", vec![TestingLiteral::Str("x")]),
+        ("fn(x) {};", vec![TestLiteral::Str("x")]),
         (
             "fn(x, y, z) {};",
             vec![
-                TestingLiteral::Str("x"),
-                TestingLiteral::Str("y"),
-                TestingLiteral::Str("z"),
+                TestLiteral::Str("x"),
+                TestLiteral::Str("y"),
+                TestLiteral::Str("z"),
             ],
         ),
     ];
@@ -1220,7 +1161,7 @@ fn test_call_expression_parsing() {
         }
     };
 
-    if !test_literal_expression(exp0, TestingLiteral::Int(1)) {
+    if !test_literal_expression(exp0, TestLiteral::Int(1)) {
         return;
     }
 
@@ -1231,7 +1172,7 @@ fn test_call_expression_parsing() {
         }
     };
 
-    if !test_infix_expression(exp1, TestingLiteral::Int(2), "*", TestingLiteral::Int(3)) {
+    if !test_infix_expression(exp1, TestLiteral::Int(2), "*", TestLiteral::Int(3)) {
         return;
     }
 
@@ -1242,7 +1183,7 @@ fn test_call_expression_parsing() {
         }
     };
 
-    if !test_infix_expression(exp2, TestingLiteral::Int(4), "+", TestingLiteral::Int(5)) {
+    if !test_infix_expression(exp2, TestLiteral::Int(4), "+", TestLiteral::Int(5)) {
         return;
     }
 }
@@ -1284,14 +1225,14 @@ fn test_parsing_hash_literals_string_keys() {
     }
 
     let expected = vec![
-        (TestingLiteral::Str("one"), TestingLiteral::Int(1)),
-        (TestingLiteral::Str("two"), TestingLiteral::Int(2)),
-        (TestingLiteral::Str("three"), TestingLiteral::Int(3)),
+        (TestLiteral::Str("one"), TestLiteral::Int(1)),
+        (TestLiteral::Str("two"), TestLiteral::Int(2)),
+        (TestLiteral::Str("three"), TestLiteral::Int(3)),
     ];
 
     for (key, expected_value) in expected {
         let _key = match key {
-            TestingLiteral::Str(s) => {
+            TestLiteral::Str(s) => {
                 Box::new(Node::Expression(Expression::StringLiteral(StringLiteral {
                     token: Token {
                         _type: TokenType::STRING,
@@ -1393,28 +1334,28 @@ fn test_parsing_hash_literals_with_expressions() {
 
     let expected = vec![
         (
-            TestingLiteral::Str("one"),
-            TestingLiteral::Int(0),
+            TestLiteral::Str("one"),
+            TestLiteral::Int(0),
             "+",
-            TestingLiteral::Int(1),
+            TestLiteral::Int(1),
         ),
         (
-            TestingLiteral::Str("two"),
-            TestingLiteral::Int(10),
+            TestLiteral::Str("two"),
+            TestLiteral::Int(10),
             "-",
-            TestingLiteral::Int(8),
+            TestLiteral::Int(8),
         ),
         (
-            TestingLiteral::Str("three"),
-            TestingLiteral::Int(15),
+            TestLiteral::Str("three"),
+            TestLiteral::Int(15),
             "/",
-            TestingLiteral::Int(5),
+            TestLiteral::Int(5),
         ),
     ];
 
     for (key, left, operator, right) in expected {
         let _key = match key {
-            TestingLiteral::Str(s) => {
+            TestLiteral::Str(s) => {
                 Box::new(Node::Expression(Expression::StringLiteral(StringLiteral {
                     token: Token {
                         _type: TokenType::STRING,

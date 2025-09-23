@@ -9,3 +9,4 @@ lexer = { path = "../lexer" }
 ast = { path = "../ast" }
 parser = { path = "../parser" }
 object = { path = "../object" }
+utils = { path = "../utils" }

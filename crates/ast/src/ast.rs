@@ -5,7 +5,7 @@ use token::token;
 
 use std::hash::{Hash, Hasher};
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Node {
     Program(Program),
     Statement(Statement),
@@ -30,7 +30,7 @@ impl Hash for Node {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Statement {
     Let(LetStatement),
     Return(ReturnStatement),
@@ -49,7 +49,7 @@ impl Statement {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Expression {
     IntegerLiteral(IntegerLiteral),
     StringLiteral(StringLiteral),
@@ -103,7 +103,7 @@ where
     fn expression_node(&self);
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Program {
     pub statements: Vec<Node>,
 }
@@ -126,7 +126,7 @@ impl TNode for Program {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Identifier {
     pub token: token::Token,
     pub value: String,
@@ -146,7 +146,7 @@ impl TNode for Identifier {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct LetStatement {
     pub token: token::Token,
     pub name: Option<Identifier>,
@@ -178,7 +178,7 @@ impl TNode for LetStatement {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct ReturnStatement {
     pub token: token::Token,
     pub return_value: Option<Box<Node>>,
@@ -206,7 +206,7 @@ impl TNode for ReturnStatement {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct ExpressionStatement {
     pub token: token::Token,
     pub expression: Option<Box<Node>>,
@@ -230,7 +230,7 @@ impl TNode for ExpressionStatement {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct IntegerLiteral {
     pub token: token::Token,
     pub value: i64,
@@ -250,7 +250,7 @@ impl TNode for IntegerLiteral {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct StringLiteral {
     pub token: token::Token,
     pub value: String,
@@ -270,7 +270,7 @@ impl TNode for StringLiteral {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct PrefixExpression {
     pub token: token::Token,
     pub operator: String,
@@ -298,7 +298,7 @@ impl TNode for PrefixExpression {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct InfixExpression {
     pub token: token::Token,
     pub left: Option<Box<Node>>,
@@ -332,7 +332,7 @@ impl TNode for InfixExpression {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Boolean {
     pub token: token::Token,
     pub value: bool,
@@ -352,7 +352,7 @@ impl TNode for Boolean {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct ArrayLiteral {
     pub token: token::Token,
     pub elements: Vec<Box<Node>>,
@@ -382,7 +382,7 @@ impl TNode for ArrayLiteral {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct IndexExpression {
     pub token: token::Token,
     pub left: Option<Box<Node>>,
@@ -414,7 +414,7 @@ impl TNode for IndexExpression {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct IfExpression {
     pub token: token::Token,
     pub condition: Option<Box<Node>>,
@@ -448,7 +448,7 @@ impl TNode for IfExpression {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct BlockStatement {
     pub token: token::Token,
     pub statements: Vec<Node>,
@@ -472,7 +472,7 @@ impl TNode for BlockStatement {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct FunctionLiteral {
     pub token: token::Token,
     pub parameters: Vec<Box<Node>>,
@@ -512,7 +512,7 @@ impl TNode for FunctionLiteral {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct CallExpression {
     pub token: token::Token,
     pub function: Box<Node>,
@@ -544,7 +544,7 @@ impl TNode for CallExpression {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct HashLiteral {
     pub token: token::Token,
     pub pairs: HashMap<Box<Node>, Box<Node>>,

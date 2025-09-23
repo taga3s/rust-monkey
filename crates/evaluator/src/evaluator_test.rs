@@ -5,18 +5,11 @@ use object::{
     object::{Boolean, Integer, Null, ObjectTypes, StringLiteral},
 };
 use parser::parser::Parser;
+use utils::test::TestLiteral;
 
 use crate::evaluator::eval;
 
 // -- Test Helpers -- //
-#[derive(Clone)]
-enum TestingLiteral {
-    Int(i64),
-    Str(&'static str),
-    Bool(bool),
-    Array(Vec<TestingLiteral>),
-}
-
 fn test_eval(input: &str) -> ObjectTypes {
     let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
@@ -305,31 +298,31 @@ fn test_closures() {
 #[test]
 fn test_builtin_functions() {
     let tests = vec![
-        (r#"len("")"#, TestingLiteral::Int(0)),
-        (r#"len("four")"#, TestingLiteral::Int(4)),
-        (r#"len("hello world")"#, TestingLiteral::Int(11)),
+        (r#"len("")"#, TestLiteral::Int(0)),
+        (r#"len("four")"#, TestLiteral::Int(4)),
+        (r#"len("hello world")"#, TestLiteral::Int(11)),
         (
             "len(1)",
-            TestingLiteral::Str("argument to `len` not supported, got INTEGER"),
+            TestLiteral::Str("argument to `len` not supported, got INTEGER"),
         ),
         (
             r#"len("one", "two")"#,
-            TestingLiteral::Str("wrong number of arguments. got=2, want=1"),
+            TestLiteral::Str("wrong number of arguments. got=2, want=1"),
         ),
-        ("len([1, 2, 3])", TestingLiteral::Int(3)),
-        ("len([])", TestingLiteral::Int(0)),
-        ("first([1, 2, 3])", TestingLiteral::Int(1)),
-        ("last([1, 2, 3])", TestingLiteral::Int(3)),
+        ("len([1, 2, 3])", TestLiteral::Int(3)),
+        ("len([])", TestLiteral::Int(0)),
+        ("first([1, 2, 3])", TestLiteral::Int(1)),
+        ("last([1, 2, 3])", TestLiteral::Int(3)),
         (
             "rest([1, 2, 3])",
-            TestingLiteral::Array(vec![TestingLiteral::Int(2), TestingLiteral::Int(3)]),
+            TestLiteral::Array(vec![TestLiteral::Int(2), TestLiteral::Int(3)]),
         ),
         (
             "push([1, 2], 3)",
-            TestingLiteral::Array(vec![
-                TestingLiteral::Int(1),
-                TestingLiteral::Int(2),
-                TestingLiteral::Int(3),
+            TestLiteral::Array(vec![
+                TestLiteral::Int(1),
+                TestLiteral::Int(2),
+                TestLiteral::Int(3),
             ]),
         ),
     ];
@@ -338,10 +331,10 @@ fn test_builtin_functions() {
         let evaluated = test_eval(input);
 
         match expected {
-            TestingLiteral::Int(expected) => {
+            TestLiteral::Int(expected) => {
                 test_integer_object(evaluated, expected);
             }
-            TestingLiteral::Str(expected) => match evaluated {
+            TestLiteral::Str(expected) => match evaluated {
                 ObjectTypes::Error(error) => {
                     assert_eq!(error.message, expected);
                 }
@@ -349,17 +342,17 @@ fn test_builtin_functions() {
                     panic!("object is not Error. got={}", evaluated.inspect());
                 }
             },
-            TestingLiteral::Array(expected) => match evaluated {
+            TestLiteral::Array(expected) => match evaluated {
                 ObjectTypes::Array(array) => {
                     for (i, elem) in expected.iter().enumerate() {
                         match elem {
-                            TestingLiteral::Int(v) => {
+                            TestLiteral::Int(v) => {
                                 test_integer_object(array.elements[i].clone(), *v);
                             }
-                            TestingLiteral::Bool(v) => {
+                            TestLiteral::Bool(v) => {
                                 test_boolean_object(array.elements[i].clone(), *v);
                             }
-                            TestingLiteral::Str(v) => match array.elements[i].clone() {
+                            TestLiteral::Str(v) => match array.elements[i].clone() {
                                 ObjectTypes::StringLiteral(s) => {
                                     assert_eq!(s.value, *v);
                                 }
@@ -368,7 +361,7 @@ fn test_builtin_functions() {
                                     array.elements[i].inspect()
                                 ),
                             },
-                            TestingLiteral::Array(_) => {
+                            TestLiteral::Array(_) => {
                                 panic!("nested arrays not supported in test")
                             }
                         }

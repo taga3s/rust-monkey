@@ -17,6 +17,7 @@ dependencies = [
  "lexer",
  "object",
  "parser",
+ "utils",
 ]
 
 [[package]]
@@ -40,6 +41,7 @@ dependencies = [
  "ast",
  "lexer",
  "token",
+ "utils",
 ]
 
 [[package]]
@@ -56,4 +58,8 @@ dependencies = [
 
 [[package]]
 name = "token"
+version = "0.1.0"
+
+[[package]]
+name = "utils"
 version = "0.1.0"

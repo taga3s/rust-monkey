@@ -8,3 +8,4 @@ edition.workspace = true
 token = { path = "../token" }
 lexer = { path = "../lexer" }
 ast = { path = "../ast" }
+utils = { path = "../utils" }
