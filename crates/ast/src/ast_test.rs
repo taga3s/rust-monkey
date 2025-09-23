@@ -7,12 +7,12 @@ fn test_to_string() {
     let program = Program {
         statements: vec![Node::Statement(Statement::Let(LetStatement {
             token: Token {
-                _type: TokenType::LET,
+                type_: TokenType::LET,
                 literal: "let".to_string(),
             },
             name: Some(Identifier {
                 token: Token {
-                    _type: TokenType::IDENT,
+                    type_: TokenType::IDENT,
                     literal: "myVar".to_string(),
                 },
                 value: "myVar".to_string(),
@@ -20,7 +20,7 @@ fn test_to_string() {
             value: Some(Box::new(Node::Expression(Expression::Identifier(
                 Identifier {
                     token: Token {
-                        _type: TokenType::IDENT,
+                        type_: TokenType::IDENT,
                         literal: "anotherVar".to_string(),
                     },
                     value: "anotherVar".to_string(),

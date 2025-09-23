@@ -150,7 +150,7 @@ fn eval_block_statement(bs: &BlockStatement, env: &mut Environment) -> ObjectTyp
     for stmt in &bs.statements {
         result = eval(&stmt, env);
 
-        if result._type() == RETURN_VALUE_OBJ || result._type() == ERROR_OBJ {
+        if result.type_() == RETURN_VALUE_OBJ || result.type_() == ERROR_OBJ {
             return result;
         }
     }
@@ -162,7 +162,7 @@ fn new_error(message: String) -> ObjectTypes {
 }
 
 fn is_error(obj: &ObjectTypes) -> bool {
-    obj._type() == ERROR_OBJ
+    obj.type_() == ERROR_OBJ
 }
 
 fn native_bool_to_boolean_object(input: bool) -> ObjectTypes {
@@ -177,7 +177,7 @@ fn eval_prefix_expression(operator: &str, right: &ObjectTypes) -> ObjectTypes {
     match operator {
         "!" => eval_bang_operator_expression(right),
         "-" => eval_minus_prefix_operator_expression(right),
-        _ => new_error(format!("unknown operator: {}{}", operator, right._type())),
+        _ => new_error(format!("unknown operator: {}{}", operator, right.type_())),
     }
 }
 
@@ -211,31 +211,31 @@ fn eval_bang_operator_expression(right: &ObjectTypes) -> ObjectTypes {
 }
 
 fn eval_minus_prefix_operator_expression(right: &ObjectTypes) -> ObjectTypes {
-    if right._type() != INTEGER_OBJ {
-        return new_error(format!("unknown operator: -{}", right._type()));
+    if right.type_() != INTEGER_OBJ {
+        return new_error(format!("unknown operator: -{}", right.type_()));
     }
 
     match right {
         ObjectTypes::Integer(integer) => ObjectTypes::Integer(Integer {
             value: -integer.value,
         }),
-        _ => new_error(format!("unknown operator: -{}", right._type())),
+        _ => new_error(format!("unknown operator: -{}", right.type_())),
     }
 }
 
 fn eval_infix_expression(operator: &str, left: &ObjectTypes, right: &ObjectTypes) -> ObjectTypes {
-    if &left._type() == INTEGER_OBJ && &right._type() == INTEGER_OBJ {
+    if &left.type_() == INTEGER_OBJ && &right.type_() == INTEGER_OBJ {
         return eval_integer_infix_expression(operator, left, right);
     };
-    if &left._type() == STRING_OBJ && &right._type() == STRING_OBJ {
+    if &left.type_() == STRING_OBJ && &right.type_() == STRING_OBJ {
         return eval_string_infix_expression(operator, left, right);
     };
-    if &left._type() != &right._type() {
+    if &left.type_() != &right.type_() {
         return new_error(format!(
             "type mismatch: {} {} {}",
-            left._type(),
+            left.type_(),
             operator,
-            right._type()
+            right.type_()
         ));
     }
     if operator == "==" {
@@ -247,9 +247,9 @@ fn eval_infix_expression(operator: &str, left: &ObjectTypes, right: &ObjectTypes
 
     new_error(format!(
         "unknown operator: {} {} {}",
-        left._type(),
+        left.type_(),
         operator,
-        right._type()
+        right.type_()
     ))
 }
 
@@ -286,9 +286,9 @@ fn eval_integer_infix_expression(
         "!=" => native_bool_to_boolean_object(left_val != right_val),
         _ => new_error(format!(
             "unknown operator: {} {} {}",
-            &left._type(),
+            &left.type_(),
             operator,
-            &right._type()
+            &right.type_()
         )),
     }
 }
@@ -313,9 +313,9 @@ fn eval_string_infix_expression(
         }),
         _ => new_error(format!(
             "unknown operator: {} {} {}",
-            &left._type(),
+            &left.type_(),
             operator,
-            &right._type()
+            &right.type_()
         )),
     }
 }
@@ -362,10 +362,10 @@ fn apply_function(func: &ObjectTypes, args: &Vec<ObjectTypes>) -> ObjectTypes {
     }
 
     if let ObjectTypes::Builtin(builtin) = func {
-        return (builtin._fn)(args.clone());
+        return (builtin.fn_)(args.clone());
     }
 
-    new_error(format!("not a function: {}", func._type()))
+    new_error(format!("not a function: {}", func.type_()))
 }
 
 fn extend_function_env(func: &Function, args: &Vec<ObjectTypes>) -> Environment {
@@ -379,7 +379,7 @@ fn extend_function_env(func: &Function, args: &Vec<ObjectTypes>) -> Environment 
 }
 
 fn unwrap_return_value(obj: ObjectTypes) -> ObjectTypes {
-    if obj._type() == RETURN_VALUE_OBJ {
+    if obj.type_() == RETURN_VALUE_OBJ {
         if let ObjectTypes::ReturnValue(rv) = obj {
             return *rv.value;
         }
@@ -388,14 +388,14 @@ fn unwrap_return_value(obj: ObjectTypes) -> ObjectTypes {
 }
 
 fn eval_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {
-    if left._type() == ARRAY_OBJ && index._type() == INTEGER_OBJ {
+    if left.type_() == ARRAY_OBJ && index.type_() == INTEGER_OBJ {
         return eval_array_expression(left, index);
     }
-    if left._type() == HASH_OBJ {
+    if left.type_() == HASH_OBJ {
         return eval_hash_index_expression(left, index);
     }
 
-    return new_error(format!("index operator not supported: {}", left._type()));
+    return new_error(format!("index operator not supported: {}", left.type_()));
 }
 
 fn eval_array_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {
@@ -430,7 +430,7 @@ fn eval_hash_literal(hl: &HashLiteral, env: &mut Environment) -> ObjectTypes {
             ObjectTypes::Integer(i) => i.hash_key(),
             ObjectTypes::Boolean(b) => b.hash_key(),
             _ => {
-                return new_error(format!("unusable as hash key: {}", key._type()));
+                return new_error(format!("unusable as hash key: {}", key.type_()));
             }
         };
 
@@ -456,7 +456,7 @@ fn eval_hash_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> Object
         ObjectTypes::Integer(i) => i.hash_key(),
         ObjectTypes::Boolean(b) => b.hash_key(),
         _ => {
-            return new_error(format!("unusable as hash key: {}", index._type()));
+            return new_error(format!("unusable as hash key: {}", index.type_()));
         }
     };
 

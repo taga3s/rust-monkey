@@ -23,9 +23,9 @@ fn test_next_token() {
         let tok = lexer.next_token();
 
         assert_eq!(
-            &tok._type, &case.0,
+            &tok.type_, &case.0,
             "tests[{}] - tokentype wrong. expected={:?}, got={:?}",
-            i, case.0, tok._type
+            i, case.0, tok.type_
         );
 
         assert_eq!(
@@ -160,9 +160,9 @@ fn test_next_token2() {
         let tok = lexer.next_token();
 
         assert_eq!(
-            &tok._type, &case.0,
+            &tok.type_, &case.0,
             "tests[{}] - tokentype wrong. expected={:?}, got={:?}",
-            i, case.0, tok._type
+            i, case.0, tok.type_
         );
 
         assert_eq!(

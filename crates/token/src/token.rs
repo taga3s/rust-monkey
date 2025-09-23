@@ -2,14 +2,14 @@
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Token {
-    pub _type: TokenType,
+    pub type_: TokenType,
     pub literal: String,
 }
 
 impl Token {
     pub fn new() -> Self {
         Token {
-            _type: TokenType::ILLEGAL,
+            type_: TokenType::ILLEGAL,
             literal: String::new(),
         }
     }
@@ -64,8 +64,8 @@ const KEYWORDS: [(&str, TokenType); 7] = [
 ];
 
 pub fn lookup_ident(ident: &str) -> TokenType {
-    if let Some((_, token_type)) = KEYWORDS.iter().find(|(key, _)| *key == ident) {
-        return token_type.clone();
+    if let Some((_, tokentype_)) = KEYWORDS.iter().find(|(key, _)| *key == ident) {
+        return tokentype_.clone();
     }
     TokenType::IDENT
 }

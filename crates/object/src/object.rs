@@ -35,18 +35,18 @@ pub enum ObjectTypes {
 }
 
 impl ObjectTypes {
-    pub fn _type(&self) -> ObjectType {
+    pub fn type_(&self) -> ObjectType {
         match self {
-            ObjectTypes::Integer(integer) => integer._type(),
-            ObjectTypes::StringLiteral(string) => string._type(),
-            ObjectTypes::Boolean(boolean) => boolean._type(),
-            ObjectTypes::Array(array) => array._type(),
-            ObjectTypes::Null(null) => null._type(),
-            ObjectTypes::ReturnValue(return_value) => return_value._type(),
-            ObjectTypes::Error(error) => error._type(),
-            ObjectTypes::Function(function) => function._type(),
-            ObjectTypes::Builtin(builtin) => builtin._type(),
-            ObjectTypes::Hash(hash) => hash._type(),
+            ObjectTypes::Integer(integer) => integer.type_(),
+            ObjectTypes::StringLiteral(string) => string.type_(),
+            ObjectTypes::Boolean(boolean) => boolean.type_(),
+            ObjectTypes::Array(array) => array.type_(),
+            ObjectTypes::Null(null) => null.type_(),
+            ObjectTypes::ReturnValue(return_value) => return_value.type_(),
+            ObjectTypes::Error(error) => error.type_(),
+            ObjectTypes::Function(function) => function.type_(),
+            ObjectTypes::Builtin(builtin) => builtin.type_(),
+            ObjectTypes::Hash(hash) => hash.type_(),
         }
     }
 
@@ -67,7 +67,7 @@ impl ObjectTypes {
 }
 
 trait Object {
-    fn _type(&self) -> ObjectType;
+    fn type_(&self) -> ObjectType;
     fn inspect(&self) -> String;
 }
 
@@ -83,7 +83,7 @@ pub struct Integer {
 }
 
 impl Object for Integer {
-    fn _type(&self) -> ObjectType {
+    fn type_(&self) -> ObjectType {
         INTEGER_OBJ.to_string()
     }
 
@@ -95,7 +95,7 @@ impl Object for Integer {
 impl Integer {
     pub fn hash_key(&self) -> HashKey {
         HashKey {
-            type_: self._type(),
+            type_: self.type_(),
             value: self.value as u64,
         }
     }
@@ -107,7 +107,7 @@ pub struct StringLiteral {
 }
 
 impl Object for StringLiteral {
-    fn _type(&self) -> ObjectType {
+    fn type_(&self) -> ObjectType {
         STRING_OBJ.to_string()
     }
 
@@ -125,7 +125,7 @@ impl StringLiteral {
             hash = ((hash << 5).wrapping_add(hash)).wrapping_add(*byte as u64);
         }
         HashKey {
-            type_: self._type(),
+            type_: self.type_(),
             value: hash,
         }
     }
@@ -137,7 +137,7 @@ pub struct Boolean {
 }
 
 impl Object for Boolean {
-    fn _type(&self) -> ObjectType {
+    fn type_(&self) -> ObjectType {
         BOOLEAN_OBJ.to_string()
     }
 
@@ -150,7 +150,7 @@ impl Boolean {
     pub fn hash_key(&self) -> HashKey {
         let value = if self.value { 1 } else { 0 };
         HashKey {
-            type_: self._type(),
+            type_: self.type_(),
             value,
         }
     }
@@ -162,7 +162,7 @@ pub struct Array {
 }
 
 impl Object for Array {
-    fn _type(&self) -> ObjectType {
+    fn type_(&self) -> ObjectType {
         ARRAY_OBJ.to_string()
     }
 
@@ -176,7 +176,7 @@ impl Object for Array {
 pub struct Null;
 
 impl Object for Null {
-    fn _type(&self) -> ObjectType {
+    fn type_(&self) -> ObjectType {
         NULL_OBJ.to_string()
     }
 
@@ -191,7 +191,7 @@ pub struct ReturnValue {
 }
 
 impl Object for ReturnValue {
-    fn _type(&self) -> ObjectType {
+    fn type_(&self) -> ObjectType {
         RETURN_VALUE_OBJ.to_string()
     }
 
@@ -206,7 +206,7 @@ pub struct Error {
 }
 
 impl Object for Error {
-    fn _type(&self) -> ObjectType {
+    fn type_(&self) -> ObjectType {
         ERROR_OBJ.to_string()
     }
 
@@ -223,7 +223,7 @@ pub struct Function {
 }
 
 impl Object for Function {
-    fn _type(&self) -> ObjectType {
+    fn type_(&self) -> ObjectType {
         FUNCTION_OBJ.to_string()
     }
 
@@ -241,11 +241,11 @@ pub type BuiltinFunction = fn(Vec<ObjectTypes>) -> ObjectTypes;
 
 #[derive(PartialEq, Clone)]
 pub struct Builtin {
-    pub _fn: BuiltinFunction,
+    pub fn_: BuiltinFunction,
 }
 
 impl Object for Builtin {
-    fn _type(&self) -> ObjectType {
+    fn type_(&self) -> ObjectType {
         BUILTIN_OBJ.to_string()
     }
 
@@ -266,7 +266,7 @@ pub struct Hash {
 }
 
 impl Object for Hash {
-    fn _type(&self) -> ObjectType {
+    fn type_(&self) -> ObjectType {
         HASH_OBJ.to_string()
     }
 

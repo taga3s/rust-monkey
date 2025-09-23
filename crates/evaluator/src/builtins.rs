@@ -1,15 +1,15 @@
 use object::object::{Builtin, ObjectTypes};
 
 pub const BUILTINS: [(&str, ObjectTypes); 6] = [
-    ("len", ObjectTypes::Builtin(Builtin { _fn: len_builtin })),
+    ("len", ObjectTypes::Builtin(Builtin { fn_: len_builtin })),
     (
         "first",
-        ObjectTypes::Builtin(Builtin { _fn: first_builtin }),
+        ObjectTypes::Builtin(Builtin { fn_: first_builtin }),
     ),
-    ("last", ObjectTypes::Builtin(Builtin { _fn: last_builtin })),
-    ("rest", ObjectTypes::Builtin(Builtin { _fn: rest_builtin })),
-    ("push", ObjectTypes::Builtin(Builtin { _fn: push_builtin })),
-    ("puts", ObjectTypes::Builtin(Builtin { _fn: puts_builtin })),
+    ("last", ObjectTypes::Builtin(Builtin { fn_: last_builtin })),
+    ("rest", ObjectTypes::Builtin(Builtin { fn_: rest_builtin })),
+    ("push", ObjectTypes::Builtin(Builtin { fn_: push_builtin })),
+    ("puts", ObjectTypes::Builtin(Builtin { fn_: puts_builtin })),
 ];
 
 fn len_builtin(args: Vec<ObjectTypes>) -> ObjectTypes {
@@ -27,7 +27,7 @@ fn len_builtin(args: Vec<ObjectTypes>) -> ObjectTypes {
             value: array.elements.len() as i64,
         }),
         _ => ObjectTypes::Error(object::object::Error {
-            message: format!("argument to `len` not supported, got {}", args[0]._type()),
+            message: format!("argument to `len` not supported, got {}", args[0].type_()),
         }),
     }
 }
@@ -48,7 +48,7 @@ fn first_builtin(args: Vec<ObjectTypes>) -> ObjectTypes {
             }
         }
         _ => ObjectTypes::Error(object::object::Error {
-            message: format!("argument to `first` must be ARRAY, got {}", args[0]._type()),
+            message: format!("argument to `first` must be ARRAY, got {}", args[0].type_()),
         }),
     }
 }
@@ -69,7 +69,7 @@ fn last_builtin(args: Vec<ObjectTypes>) -> ObjectTypes {
             }
         }
         _ => ObjectTypes::Error(object::object::Error {
-            message: format!("argument to `last` must be ARRAY, got {}", args[0]._type()),
+            message: format!("argument to `last` must be ARRAY, got {}", args[0].type_()),
         }),
     }
 }
@@ -93,7 +93,7 @@ fn rest_builtin(args: Vec<ObjectTypes>) -> ObjectTypes {
             }
         }
         _ => ObjectTypes::Error(object::object::Error {
-            message: format!("argument to `rest` must be ARRAY, got {}", args[0]._type()),
+            message: format!("argument to `rest` must be ARRAY, got {}", args[0].type_()),
         }),
     }
 }
@@ -114,7 +114,7 @@ fn push_builtin(args: Vec<ObjectTypes>) -> ObjectTypes {
             })
         }
         _ => ObjectTypes::Error(object::object::Error {
-            message: format!("argument to `push` must be ARRAY, got {}", args[0]._type()),
+            message: format!("argument to `push` must be ARRAY, got {}", args[0].type_()),
         }),
     }
 }

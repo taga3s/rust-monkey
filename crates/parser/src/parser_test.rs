@@ -1235,7 +1235,7 @@ fn test_parsing_hash_literals_string_keys() {
             TestLiteral::Str(s) => {
                 Box::new(Node::Expression(Expression::StringLiteral(StringLiteral {
                     token: Token {
-                        _type: TokenType::STRING,
+                        type_: TokenType::STRING,
                         literal: s.to_string(),
                     },
                     value: s.to_string(),
@@ -1358,7 +1358,7 @@ fn test_parsing_hash_literals_with_expressions() {
             TestLiteral::Str(s) => {
                 Box::new(Node::Expression(Expression::StringLiteral(StringLiteral {
                     token: Token {
-                        _type: TokenType::STRING,
+                        type_: TokenType::STRING,
                         literal: s.to_string(),
                     },
                     value: s.to_string(),
