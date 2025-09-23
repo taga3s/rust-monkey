@@ -22,15 +22,15 @@ pub struct Environment {
 }
 
 impl Environment {
-    pub fn get(&self, name: &str) -> Option<&ObjectTypes> {
+    pub fn get(&self, name: &str) -> Option<ObjectTypes> {
         let obj = self.store.get(name);
         if obj.is_none() && self.outer.is_some() {
             return self.outer.as_ref().unwrap().get(name);
         }
-        obj
+        obj.cloned()
     }
 
-    pub fn set(&mut self, name: String, val: ObjectTypes) {
-        self.store.insert(name, val);
+    pub fn set(&mut self, name: &str, val: ObjectTypes) {
+        self.store.insert(name.to_string(), val);
     }
 }

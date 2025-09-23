@@ -138,11 +138,11 @@ impl TExpression for Identifier {
 
 impl TNode for Identifier {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
-        self.value.clone()
+        self.value.to_string()
     }
 }
 
@@ -159,7 +159,7 @@ impl TStatement for LetStatement {
 
 impl TNode for LetStatement {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -186,7 +186,7 @@ impl TStatement for ReturnStatement {
 
 impl TNode for ReturnStatement {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -212,7 +212,7 @@ impl TStatement for ExpressionStatement {
 
 impl TNode for ExpressionStatement {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -234,7 +234,7 @@ impl TExpression for IntegerLiteral {
 
 impl TNode for IntegerLiteral {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -254,11 +254,11 @@ impl TExpression for StringLiteral {
 
 impl TNode for StringLiteral {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
-        self.value.clone()
+        self.value.to_string()
     }
 }
 
@@ -275,7 +275,7 @@ impl TExpression for PrefixExpression {
 
 impl TNode for PrefixExpression {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -303,7 +303,7 @@ impl TExpression for InfixExpression {
 
 impl TNode for InfixExpression {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -330,7 +330,7 @@ impl TExpression for Boolean {
 
 impl TNode for Boolean {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -350,7 +350,7 @@ impl TExpression for ArrayLiteral {
 
 impl TNode for ArrayLiteral {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -377,7 +377,7 @@ impl TExpression for IndexExpression {
 
 impl TNode for IndexExpression {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -405,7 +405,7 @@ impl TExpression for IfExpression {
 
 impl TNode for IfExpression {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -436,7 +436,7 @@ impl TStatement for BlockStatement {
 
 impl TNode for BlockStatement {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -461,7 +461,7 @@ impl TExpression for FunctionLiteral {
 
 impl TNode for FunctionLiteral {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -489,7 +489,7 @@ impl TExpression for CallExpression {
 
 impl TNode for CallExpression {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {
@@ -516,7 +516,7 @@ impl TExpression for HashLiteral {
 
 impl TNode for HashLiteral {
     fn token_literal(&self) -> String {
-        self.token.literal.clone()
+        self.token.literal.to_string()
     }
 
     fn to_string(&self) -> String {

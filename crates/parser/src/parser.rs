@@ -94,7 +94,7 @@ impl Parser {
         &self.errors
     }
 
-    fn peek_error(&mut self, tok: TokenType) {
+    fn peek_error(&mut self, tok: &TokenType) {
         let msg = format!(
             "expected next token to be {:?}, got {:?} instead",
             tok, self.peek_token.type_
@@ -136,7 +136,7 @@ impl Parser {
             value: None,
         };
 
-        if !self.expect_peek(TokenType::IDENT) {
+        if !self.expect_peek(&TokenType::IDENT) {
             return None;
         }
 
@@ -145,7 +145,7 @@ impl Parser {
             value: self.cur_token.literal.clone(),
         });
 
-        if !self.expect_peek(TokenType::ASSIGN) {
+        if !self.expect_peek(&TokenType::ASSIGN) {
             return None;
         }
 
@@ -153,7 +153,7 @@ impl Parser {
 
         stmt.value = self.parse_expression(Precedence::LOWEST);
 
-        if self.peek_token_is(TokenType::SEMICOLON) {
+        if self.peek_token_is(&TokenType::SEMICOLON) {
             self.next_token();
         }
 
@@ -183,7 +183,7 @@ impl Parser {
             expression: self.parse_expression(Precedence::LOWEST),
         };
 
-        if self.peek_token_is(TokenType::SEMICOLON) {
+        if self.peek_token_is(&TokenType::SEMICOLON) {
             self.next_token();
         }
 
@@ -202,7 +202,7 @@ impl Parser {
         let mut left_exp = prefix_parsefn_(self);
 
         // 右結合力が高い場合、 left_exp が次の演算子に関連づけられている infix_parsefn_ に渡されることはない。
-        while !self.peek_token_is(TokenType::SEMICOLON) && precedence < self.peek_precedence() {
+        while !self.peek_token_is(&TokenType::SEMICOLON) && precedence < self.peek_precedence() {
             let infix_parsefn_ = match self.infix_parsefn_s.get(&self.peek_token.type_) {
                 Some(f) => f.clone(),
                 None => return left_exp,
@@ -293,7 +293,7 @@ impl Parser {
 
         let exp = self.parse_expression(Precedence::LOWEST);
 
-        if !self.expect_peek(TokenType::RPAREN) {
+        if !self.expect_peek(&TokenType::RPAREN) {
             return None;
         }
 
@@ -311,7 +311,7 @@ impl Parser {
     fn parse_expression_list(&mut self, end: TokenType) -> Option<Vec<Box<Node>>> {
         let mut list = vec![];
 
-        if self.peek_token_is(end.clone()) {
+        if self.peek_token_is(&end) {
             self.next_token();
             return Some(list);
         }
@@ -319,13 +319,13 @@ impl Parser {
         self.next_token();
         list.push(self.parse_expression(Precedence::LOWEST)?);
 
-        while self.peek_token_is(TokenType::COMMA) {
+        while self.peek_token_is(&TokenType::COMMA) {
             self.next_token();
             self.next_token();
             list.push(self.parse_expression(Precedence::LOWEST)?);
         }
 
-        if !self.expect_peek(end) {
+        if !self.expect_peek(&end) {
             return None;
         }
 
@@ -342,7 +342,7 @@ impl Parser {
         self.next_token();
         exp.index = self.parse_expression(Precedence::LOWEST);
 
-        if !self.expect_peek(TokenType::RBRACKET) {
+        if !self.expect_peek(&TokenType::RBRACKET) {
             return None;
         }
 
@@ -375,7 +375,7 @@ impl Parser {
             body: None,
         };
 
-        if !self.expect_peek(TokenType::LPAREN) {
+        if !self.expect_peek(&TokenType::LPAREN) {
             return None;
         }
 
@@ -384,7 +384,7 @@ impl Parser {
             None => return None,
         };
 
-        if !self.expect_peek(TokenType::LBRACE) {
+        if !self.expect_peek(&TokenType::LBRACE) {
             return None;
         }
 
@@ -396,7 +396,7 @@ impl Parser {
     fn parse_function_parameters(&mut self) -> Option<Vec<Box<Node>>> {
         let mut identifiers: Vec<Box<Node>> = vec![];
 
-        if self.peek_token_is(TokenType::RPAREN) {
+        if self.peek_token_is(&TokenType::RPAREN) {
             self.next_token();
             return Some(identifiers);
         }
@@ -409,7 +409,7 @@ impl Parser {
         };
         identifiers.push(Box::new(Node::Expression(Expression::Identifier(ident))));
 
-        while self.peek_token_is(TokenType::COMMA) {
+        while self.peek_token_is(&TokenType::COMMA) {
             self.next_token();
             self.next_token();
             let ident = Identifier {
@@ -419,7 +419,7 @@ impl Parser {
             identifiers.push(Box::new(Node::Expression(Expression::Identifier(ident))));
         }
 
-        if !self.expect_peek(TokenType::RPAREN) {
+        if !self.expect_peek(&TokenType::RPAREN) {
             return None;
         }
 
@@ -434,27 +434,27 @@ impl Parser {
             alternative: None,
         };
 
-        if !self.expect_peek(TokenType::LPAREN) {
+        if !self.expect_peek(&TokenType::LPAREN) {
             return None;
         }
 
         self.next_token();
         expression.condition = self.parse_expression(Precedence::LOWEST);
 
-        if !self.expect_peek(TokenType::RPAREN) {
+        if !self.expect_peek(&TokenType::RPAREN) {
             return None;
         }
 
-        if !self.expect_peek(TokenType::LBRACE) {
+        if !self.expect_peek(&TokenType::LBRACE) {
             return None;
         }
 
         expression.consequence = self.parse_block_statement();
 
-        if self.peek_token_is(TokenType::ELSE) {
+        if self.peek_token_is(&TokenType::ELSE) {
             self.next_token();
 
-            if !self.expect_peek(TokenType::LBRACE) {
+            if !self.expect_peek(&TokenType::LBRACE) {
                 return None;
             }
 
@@ -499,14 +499,14 @@ impl Parser {
             pairs: HashMap::new(),
         };
 
-        while !self.peek_token_is(TokenType::RBRACE) {
+        while !self.peek_token_is(&TokenType::RBRACE) {
             self.next_token();
             let key = match self.parse_expression(Precedence::LOWEST) {
                 Some(n) => n,
                 None => return None,
             };
 
-            if !self.expect_peek(TokenType::COLON) {
+            if !self.expect_peek(&TokenType::COLON) {
                 return None;
             }
 
@@ -519,12 +519,12 @@ impl Parser {
 
             hash.pairs.insert(key, value);
 
-            if !self.peek_token_is(TokenType::RBRACE) && !self.expect_peek(TokenType::COMMA) {
+            if !self.peek_token_is(&TokenType::RBRACE) && !self.expect_peek(&TokenType::COMMA) {
                 return None;
             }
         }
 
-        if !self.expect_peek(TokenType::RBRACE) {
+        if !self.expect_peek(&TokenType::RBRACE) {
             return None;
         }
 
@@ -535,12 +535,12 @@ impl Parser {
         self.cur_token.type_ == tok
     }
 
-    fn peek_token_is(&self, tok: TokenType) -> bool {
-        self.peek_token.type_ == tok
+    fn peek_token_is(&self, tok: &TokenType) -> bool {
+        self.peek_token.type_ == *tok
     }
 
-    fn expect_peek(&mut self, tok: TokenType) -> bool {
-        if self.peek_token_is(tok.clone()) {
+    fn expect_peek(&mut self, tok: &TokenType) -> bool {
+        if self.peek_token_is(tok) {
             self.next_token();
             true
         } else {

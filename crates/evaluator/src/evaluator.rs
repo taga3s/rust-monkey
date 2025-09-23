@@ -74,16 +74,14 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
                             parameters.push(ident.clone())
                         }
                         _ => {
-                            return new_error(
-                                "function parameter is not an identifier".to_string(),
-                            );
+                            return new_error("function parameter is not an identifier");
                         }
                     }
                 }
                 let body = match fl.body.as_ref().unwrap().as_ref() {
                     Node::Statement(Statement::BlockStatement(bs)) => bs,
                     _ => {
-                        return new_error("function body is not a block statement".to_string());
+                        return new_error("function body is not a block statement");
                     }
                 };
                 return ObjectTypes::Function(Function {
@@ -112,7 +110,7 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
                 if is_error(&val) {
                     return val;
                 }
-                env.set(ls.name.as_ref().unwrap().value.clone(), val);
+                env.set(&ls.name.as_ref().unwrap().value, val);
                 NULL
             }
             Statement::Return(rs) => {
@@ -160,8 +158,10 @@ fn eval_block_statement(bs: &BlockStatement, env: &mut Environment) -> ObjectTyp
     result
 }
 
-fn new_error(message: String) -> ObjectTypes {
-    ObjectTypes::Error(object::object::Error { message })
+fn new_error(message: &str) -> ObjectTypes {
+    ObjectTypes::Error(object::object::Error {
+        message: message.to_string(),
+    })
 }
 
 fn is_error(obj: &ObjectTypes) -> bool {
@@ -180,20 +180,20 @@ fn eval_prefix_expression(operator: &str, right: &ObjectTypes) -> ObjectTypes {
     match operator {
         "!" => eval_bang_operator_expression(right),
         "-" => eval_minus_prefix_operator_expression(right),
-        _ => new_error(format!("unknown operator: {}{}", operator, right.type_())),
+        _ => new_error(&format!("unknown operator: {}{}", operator, right.type_())),
     }
 }
 
 fn eval_identifier(node: &Identifier, env: &mut Environment) -> ObjectTypes {
     if let Some(val) = env.get(&node.value) {
-        return val.clone();
+        return val;
     }
 
     if let Some((_, builtin)) = BUILTINS.iter().find(|(name, _)| *name == node.value) {
         return builtin.clone();
     }
 
-    return new_error(format!("identifier not found: {}", node.value));
+    return new_error(&format!("identifier not found: {}", node.value));
 }
 
 fn eval_bang_operator_expression(right: &ObjectTypes) -> ObjectTypes {
@@ -212,14 +212,14 @@ fn eval_bang_operator_expression(right: &ObjectTypes) -> ObjectTypes {
 
 fn eval_minus_prefix_operator_expression(right: &ObjectTypes) -> ObjectTypes {
     if right.type_() != INTEGER_OBJ {
-        return new_error(format!("unknown operator: -{}", right.type_()));
+        return new_error(&format!("unknown operator: -{}", right.type_()));
     }
 
     match right {
         ObjectTypes::Integer(integer) => ObjectTypes::Integer(Integer {
             value: -integer.value,
         }),
-        _ => new_error(format!("unknown operator: -{}", right.type_())),
+        _ => new_error(&format!("unknown operator: -{}", right.type_())),
     }
 }
 
@@ -231,7 +231,7 @@ fn eval_infix_expression(operator: &str, left: &ObjectTypes, right: &ObjectTypes
         return eval_string_infix_expression(operator, left, right);
     };
     if &left.type_() != &right.type_() {
-        return new_error(format!(
+        return new_error(&format!(
             "type mismatch: {} {} {}",
             left.type_(),
             operator,
@@ -245,7 +245,7 @@ fn eval_infix_expression(operator: &str, left: &ObjectTypes, right: &ObjectTypes
         return native_bool_to_boolean_object(left.inspect() != right.inspect());
     }
 
-    new_error(format!(
+    new_error(&format!(
         "unknown operator: {} {} {}",
         left.type_(),
         operator,
@@ -260,11 +260,11 @@ fn eval_integer_infix_expression(
 ) -> ObjectTypes {
     let left_val = match &left {
         ObjectTypes::Integer(integer) => integer.value,
-        _ => return new_error("left is not an integer".to_string()),
+        _ => return new_error("left is not an integer"),
     };
     let right_val = match &right {
         ObjectTypes::Integer(integer) => integer.value,
-        _ => return new_error("right is not an integer".to_string()),
+        _ => return new_error("right is not an integer"),
     };
 
     match operator {
@@ -284,7 +284,7 @@ fn eval_integer_infix_expression(
         ">" => native_bool_to_boolean_object(left_val > right_val),
         "==" => native_bool_to_boolean_object(left_val == right_val),
         "!=" => native_bool_to_boolean_object(left_val != right_val),
-        _ => new_error(format!(
+        _ => new_error(&format!(
             "unknown operator: {} {} {}",
             &left.type_(),
             operator,
@@ -300,18 +300,18 @@ fn eval_string_infix_expression(
 ) -> ObjectTypes {
     let left_val = match &left {
         ObjectTypes::StringLiteral(string) => string.value.clone(),
-        _ => return new_error("left is not a string".to_string()),
+        _ => return new_error("left is not a string"),
     };
     let right_val = match &right {
         ObjectTypes::StringLiteral(string) => string.value.clone(),
-        _ => return new_error("right is not a string".to_string()),
+        _ => return new_error("right is not a string"),
     };
 
     match operator {
         "+" => ObjectTypes::StringLiteral(StringLiteral {
             value: format!("{}{}", left_val, right_val),
         }),
-        _ => new_error(format!(
+        _ => new_error(&format!(
             "unknown operator: {} {} {}",
             &left.type_(),
             operator,
@@ -365,14 +365,14 @@ fn apply_function(func: &ObjectTypes, args: &Vec<ObjectTypes>) -> ObjectTypes {
         return (builtin.fn_)(args);
     }
 
-    new_error(format!("not a function: {}", func.type_()))
+    new_error(&format!("not a function: {}", func.type_()))
 }
 
 fn extend_function_env(func: &Function, args: &Vec<ObjectTypes>) -> Environment {
     let mut env = new_enclosed_environment(func.env.clone());
 
     for (param_idx, param) in func.parameters.iter().enumerate() {
-        env.set(param.value.clone(), args[param_idx].clone());
+        env.set(&param.value, args[param_idx].clone());
     }
 
     env
@@ -395,17 +395,17 @@ fn eval_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes
         return eval_hash_index_expression(left, index);
     }
 
-    return new_error(format!("index operator not supported: {}", left.type_()));
+    return new_error(&format!("index operator not supported: {}", left.type_()));
 }
 
 fn eval_array_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {
     let array = match left {
         ObjectTypes::Array(array) => array,
-        _ => return new_error("left is not an array".to_string()),
+        _ => return new_error("left is not an array"),
     };
     let idx = match index {
         ObjectTypes::Integer(integer) => integer.value,
-        _ => return new_error("index is not an integer".to_string()),
+        _ => return new_error("index is not an integer"),
     };
     let max = array.elements.len() as i64 - 1;
 
@@ -430,7 +430,7 @@ fn eval_hash_literal(hl: &HashLiteral, env: &mut Environment) -> ObjectTypes {
             ObjectTypes::Integer(i) => i.hash_key(),
             ObjectTypes::Boolean(b) => b.hash_key(),
             _ => {
-                return new_error(format!("unusable as hash key: {}", key.type_()));
+                return new_error(&format!("unusable as hash key: {}", key.type_()));
             }
         };
 
@@ -448,7 +448,7 @@ fn eval_hash_literal(hl: &HashLiteral, env: &mut Environment) -> ObjectTypes {
 fn eval_hash_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {
     let hash_object: &Hash = match left {
         ObjectTypes::Hash(h) => h,
-        _ => return new_error("left is not a hash".to_string()),
+        _ => return new_error("left is not a hash"),
     };
 
     let key = match index {
@@ -456,7 +456,7 @@ fn eval_hash_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> Object
         ObjectTypes::Integer(i) => i.hash_key(),
         ObjectTypes::Boolean(b) => b.hash_key(),
         _ => {
-            return new_error(format!("unusable as hash key: {}", index.type_()));
+            return new_error(&format!("unusable as hash key: {}", index.type_()));
         }
     };
 
