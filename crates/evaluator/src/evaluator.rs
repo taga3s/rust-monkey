@@ -67,7 +67,7 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
             }
             Expression::IfExpression(ifexp) => eval_if_expression(ifexp, env),
             Expression::FunctionLiteral(fl) => {
-                let mut parameters = Vec::new();
+                let mut parameters = vec![];
                 for p in &fl.parameters {
                     match p.as_ref() {
                         Node::Expression(Expression::Identifier(ident)) => {
@@ -133,10 +133,9 @@ fn eval_program(program: &Program, env: &mut Environment) -> ObjectTypes {
 
     for stmt in &program.statements {
         result = eval(&stmt, env);
-
         match result {
             ObjectTypes::ReturnValue(return_value) => {
-                return *return_value.value.clone();
+                return *return_value.value;
             }
             ObjectTypes::Error(_) => return result,
             _ => {}
@@ -150,7 +149,6 @@ fn eval_block_statement(bs: &BlockStatement, env: &mut Environment) -> ObjectTyp
 
     for stmt in &bs.statements {
         result = eval(&stmt, env);
-
         if result.type_() == RETURN_VALUE_OBJ || result.type_() == ERROR_OBJ {
             return result;
         }
@@ -332,14 +330,15 @@ fn eval_if_expression(ie: &IfExpression, env: &mut Environment) -> ObjectTypes {
     let condition = eval(ie.condition.as_ref().unwrap(), env);
     if is_truthy(&condition) {
         return eval(ie.consequence.as_ref().unwrap(), env);
-    } else if let Some(alt) = &ie.alternative {
+    }
+    if let Some(alt) = &ie.alternative {
         return eval(alt, env);
     }
     NULL
 }
 
 fn eval_expressions(exps: &Vec<Box<Node>>, env: &mut Environment) -> Vec<ObjectTypes> {
-    let mut result = Vec::new();
+    let mut result = vec![];
 
     for e in exps {
         let evaluated = eval(e.as_ref(), env);

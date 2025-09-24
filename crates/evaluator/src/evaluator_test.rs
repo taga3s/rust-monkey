@@ -41,6 +41,7 @@ fn test_boolean_object(obj: ObjectTypes, expected: bool) {
     true;
 }
 
+// -- Tests -- //
 #[test]
 fn test_eval_integer_expression() {
     let tests = vec![

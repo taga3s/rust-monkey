@@ -11,12 +11,12 @@ type ObjectType = String;
 
 pub const INTEGER_OBJ: &str = "INTEGER";
 pub const STRING_OBJ: &str = "STRING";
-const BOOLEAN_OBJ: &str = "BOOLEAN";
+pub const BOOLEAN_OBJ: &str = "BOOLEAN";
 pub const ARRAY_OBJ: &str = "ARRAY";
-const NULL_OBJ: &str = "NULL";
+pub const NULL_OBJ: &str = "NULL";
 pub const RETURN_VALUE_OBJ: &str = "RETURN_VALUE";
-const FUNCTION_OBJ: &str = "FUNCTION";
-const BUILTIN_OBJ: &str = "BUILTIN";
+pub const FUNCTION_OBJ: &str = "FUNCTION";
+pub const BUILTIN_OBJ: &str = "BUILTIN";
 pub const HASH_OBJ: &str = "HASH";
 pub const ERROR_OBJ: &str = "ERROR";
 
@@ -271,7 +271,7 @@ impl Object for Hash {
     }
 
     fn inspect(&self) -> String {
-        let mut pairs: Vec<String> = Vec::new();
+        let mut pairs: Vec<String> = vec![];
         for pair in self.pairs.values() {
             pairs.push(format!("{}: {}", pair.key.inspect(), pair.value.inspect()));
         }
