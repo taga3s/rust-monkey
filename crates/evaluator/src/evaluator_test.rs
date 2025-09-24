@@ -11,7 +11,7 @@ use crate::evaluator::eval;
 
 // -- Test Helpers -- //
 fn test_eval(input: &str) -> ObjectTypes {
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
     let mut env = new_environment();

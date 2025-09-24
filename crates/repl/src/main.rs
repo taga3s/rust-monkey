@@ -22,7 +22,7 @@ fn start() -> io::Result<()> {
             break;
         }
 
-        let lexer = Lexer::new(trimmed.to_string());
+        let lexer = Lexer::new(trimmed);
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program();
         if parser.errors().len() != 0 {

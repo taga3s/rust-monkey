@@ -154,7 +154,7 @@ fn test_let_statements() {
     for test in tests {
         let (input, ident, expected) = test;
 
-        let lexer = Lexer::new(input.to_string());
+        let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
 
         let program = match parser.parse_program() {
@@ -238,7 +238,7 @@ fn test_return_statements() {
       return 838383;
     "#;
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
 
     let program = match parser.parse_program() {
@@ -277,7 +277,7 @@ fn test_return_statements() {
 fn test_identifier_expression() {
     let input = "foobar;";
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
 
     let program = match parser.parse_program() {
@@ -321,7 +321,7 @@ fn test_identifier_expression() {
 fn test_integer_literal_expression() {
     let input = "5;";
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
 
     let program = match parser.parse_program() {
@@ -366,7 +366,7 @@ fn test_integer_literal_expression() {
 fn test_string_literal_expression() {
     let input = r#""hello world";"#;
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     let program = match parser.parse_program() {
         Node::Program(p) => p,
@@ -403,7 +403,7 @@ fn test_boolean_expression() {
     for test in tests {
         let (input, value) = test;
 
-        let lexer = Lexer::new(input.to_string());
+        let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
 
         let program = match parser.parse_program() {
@@ -449,7 +449,7 @@ fn test_boolean_expression() {
 fn test_parsing_array_literals() {
     let input = "[1, 2 * 2, 3 + 3]";
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     let program = match parser.parse_program() {
         Node::Program(p) => p,
@@ -519,7 +519,7 @@ fn test_parsing_array_literals() {
 fn test_parsing_index_expressions() {
     let input = "myArray[1 + 1]";
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     let program = match parser.parse_program() {
         Node::Program(p) => p,
@@ -576,7 +576,7 @@ fn test_parsing_prefix_expressions() {
     for test in prefix_tests {
         let (input, operator, value) = test;
 
-        let lexer = Lexer::new(input.to_string());
+        let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
 
         let program = match parser.parse_program() {
@@ -659,7 +659,7 @@ fn test_parsing_infix_expressions() {
     for test in infix_tests {
         let (input, left_value, operator, right_value) = test;
 
-        let lexer = Lexer::new(input.to_string());
+        let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
 
         let program = match parser.parse_program() {
@@ -743,7 +743,7 @@ fn test_operator_precedence_parsing() {
     for test in tests {
         let (input, expected) = test;
 
-        let lexer = Lexer::new(input.to_string());
+        let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
 
         let program = match parser.parse_program() {
@@ -765,7 +765,7 @@ fn test_operator_precedence_parsing() {
 fn test_if_expression() {
     let input = "if (x < y) { x }";
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
 
     let program = match parser.parse_program() {
@@ -844,7 +844,7 @@ fn test_if_expression() {
 fn test_if_else_expression() {
     let input = "if (x < y) { x } else { y }";
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
 
     let program = match parser.parse_program() {
@@ -952,7 +952,7 @@ fn test_if_else_expression() {
 fn test_function_literal_parsing() {
     let input = "fn(x, y) { x + y; }";
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
 
     let program = match parser.parse_program() {
@@ -1056,7 +1056,7 @@ fn test_function_parameter_parsing() {
     for test in tests {
         let (input, expected_params) = test;
 
-        let lexer = Lexer::new(input.to_string());
+        let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
 
         let program = match parser.parse_program() {
@@ -1110,7 +1110,7 @@ fn test_function_parameter_parsing() {
 fn test_call_expression_parsing() {
     let input = "add(1, 2 * 3, 4 + 5);";
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
 
     let program = match parser.parse_program() {
@@ -1194,7 +1194,7 @@ fn test_call_expression_parsing() {
 fn test_parsing_hash_literals_string_keys() {
     let input = r#"{"one": 1, "two": 2, "three": 3}"#;
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     let program = match parser.parse_program() {
         Node::Program(p) => p,
@@ -1268,7 +1268,7 @@ fn test_parsing_hash_literals_string_keys() {
 fn test_parsing_empty_hash_literal() {
     let input = "{}";
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     let program = match parser.parse_program() {
         Node::Program(p) => p,
@@ -1302,7 +1302,7 @@ fn test_parsing_empty_hash_literal() {
 fn test_parsing_hash_literals_with_expressions() {
     let input = r#"{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}"#;
 
-    let lexer = Lexer::new(input.to_string());
+    let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     let program = match parser.parse_program() {
         Node::Program(p) => p,

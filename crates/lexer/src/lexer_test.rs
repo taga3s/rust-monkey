@@ -17,7 +17,7 @@ fn test_next_token() {
         (TokenType::EOF, ""),
     ];
 
-    let mut lexer = Lexer::new(input.to_string());
+    let mut lexer = Lexer::new(input);
 
     for (i, (token_type, literal)) in tests.iter().enumerate() {
         let tok = lexer.next_token();
@@ -154,7 +154,7 @@ fn test_next_token2() {
         (TokenType::EOF, ""),
     ];
 
-    let mut lexer = Lexer::new(input.to_string());
+    let mut lexer = Lexer::new(input);
 
     for (i, (token_type, literal)) in tests.iter().enumerate() {
         let tok = lexer.next_token();
