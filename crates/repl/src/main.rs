@@ -1,3 +1,4 @@
+use core::panic;
 use std::io::{self, Write};
 
 use ::lexer::lexer::Lexer;
@@ -18,8 +19,21 @@ fn start() -> io::Result<()> {
 
         let trimmed = input.trim();
 
-        if trimmed == "/exit" {
-            break;
+        if trimmed.starts_with('/') {
+            match trimmed {
+                "/quit" => {
+                    println!("Goodbye!");
+                    break;
+                }
+                _ => {
+                    println!("Unknown command: {}", trimmed);
+                    continue;
+                }
+            }
+        }
+
+        if trimmed.is_empty() {
+            continue;
         }
 
         let lexer = Lexer::new(trimmed);
@@ -39,14 +53,14 @@ fn start() -> io::Result<()> {
 
 fn print_parse_errors(errors: &Vec<String>) {
     for msg in errors {
-        eprintln!("\t{}", msg);
+        eprintln!("Error: {}", msg);
     }
 }
 
 fn main() {
-    println!("Feel free to type in commands\n");
+    println!("Welcome to rust-monkey REPL! Feel free to type in commands.\nType /quit to exit.");
 
     if let Err(e) = start() {
-        eprintln!("Error: {}", e);
+        panic!("Error: {}", e);
     }
 }
