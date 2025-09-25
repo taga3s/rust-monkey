@@ -1,6 +1,6 @@
 use std::vec;
 
-use ast::ast::{Expression, Node, Statement, StringLiteral, TNode};
+use ast::ast::{Expression, Node, Program, Statement, StringLiteral, TNode};
 use lexer::lexer::Lexer;
 use token::token::{Token, TokenType};
 use utils::test::TestLiteral;
@@ -8,7 +8,21 @@ use utils::test::TestLiteral;
 use crate::parser::Parser;
 
 //-- Helpers for tests --//
-fn test_literal_expression(exp: &Expression, expected: TestLiteral) -> bool {
+fn init_program(input: &str) -> Program {
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+
+    let program = match parser.parse_program() {
+        Node::Program(p) => p,
+        _ => {
+            panic!("parser.parse_program() did not return Program.");
+        }
+    };
+    check_parser_errors(&parser);
+    program
+}
+
+fn test_literal_expression(exp: &Expression, expected: &TestLiteral) -> bool {
     match expected {
         TestLiteral::Int(value) => return test_integer_literal(exp, value),
         TestLiteral::Str(value) => return test_identifier(exp, value),
@@ -19,7 +33,7 @@ fn test_literal_expression(exp: &Expression, expected: TestLiteral) -> bool {
     }
 }
 
-fn test_integer_literal(il: &Expression, value: i64) -> bool {
+fn test_integer_literal(il: &Expression, value: &i64) -> bool {
     let integer = match il {
         Expression::IntegerLiteral(il) => il,
         _ => {
@@ -27,7 +41,7 @@ fn test_integer_literal(il: &Expression, value: i64) -> bool {
         }
     };
 
-    if integer.value != value {
+    if integer.value != *value {
         panic!("integer.value is not {}. got={}", value, integer.value);
     }
 
@@ -65,7 +79,7 @@ fn test_identifier(ident: &Expression, value: &str) -> bool {
     true
 }
 
-fn test_boolean_literal(exp: &Expression, value: bool) -> bool {
+fn test_boolean_literal(exp: &Expression, value: &bool) -> bool {
     let boolean = match exp {
         Expression::Boolean(boolean) => boolean,
         _ => {
@@ -73,7 +87,7 @@ fn test_boolean_literal(exp: &Expression, value: bool) -> bool {
         }
     };
 
-    if boolean.value != value {
+    if boolean.value != *value {
         panic!("boolean.value is not {}. got={}", value, boolean.value);
     }
 
@@ -108,7 +122,7 @@ fn test_infix_expression(
         }
     };
 
-    if !test_literal_expression(left_exp, left) {
+    if !test_literal_expression(left_exp, &left) {
         return false;
     }
 
@@ -123,7 +137,7 @@ fn test_infix_expression(
         }
     };
 
-    if !test_literal_expression(right_exp, right) {
+    if !test_literal_expression(right_exp, &right) {
         return false;
     }
 
@@ -154,17 +168,7 @@ fn test_let_statements() {
     for test in tests {
         let (input, ident, expected) = test;
 
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-
-        let program = match parser.parse_program() {
-            Node::Program(p) => p,
-            _ => {
-                panic!("parser.parse_program() did not return Program.");
-            }
-        };
-        check_parser_errors(&parser);
-
+        let program = init_program(input);
         if program.statements.len() != 1 {
             panic!(
                 "program.statements does not contain 1 statement. got={}",
@@ -193,7 +197,7 @@ fn test_let_statements() {
                 panic!("stmt is not LetStatement.");
             }
         };
-        if !test_literal_expression(let_stmt_value, expected) {
+        if !test_literal_expression(let_stmt_value, &expected) {
             return;
         }
     }
@@ -238,17 +242,7 @@ fn test_return_statements() {
       return 838383;
     "#;
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 3 {
         panic!(
             "program.statements does not contain 3 statements. got={}",
@@ -277,17 +271,7 @@ fn test_return_statements() {
 fn test_identifier_expression() {
     let input = "foobar;";
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
@@ -321,17 +305,7 @@ fn test_identifier_expression() {
 fn test_integer_literal_expression() {
     let input = "5;";
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
@@ -366,16 +340,7 @@ fn test_integer_literal_expression() {
 fn test_string_literal_expression() {
     let input = r#""hello world";"#;
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
@@ -403,17 +368,7 @@ fn test_boolean_expression() {
     for test in tests {
         let (input, value) = test;
 
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-
-        let program = match parser.parse_program() {
-            Node::Program(p) => p,
-            _ => {
-                panic!("parser.parse_program() did not return Program.");
-            }
-        };
-        check_parser_errors(&parser);
-
+        let program = init_program(input);
         if program.statements.len() != 1 {
             panic!(
                 "program.statements does not contain 1 statement. got={}",
@@ -449,16 +404,7 @@ fn test_boolean_expression() {
 fn test_parsing_array_literals() {
     let input = "[1, 2 * 2, 3 + 3]";
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
@@ -485,7 +431,6 @@ fn test_parsing_array_literals() {
             panic!("array.elements does not contain 1 element.");
         }
     };
-
     let index_1_exp = match array.elements.get(1) {
         Some(e) => match e.as_ref() {
             Node::Expression(e) => e,
@@ -497,7 +442,6 @@ fn test_parsing_array_literals() {
             panic!("array.elements does not contain 2 elements.");
         }
     };
-
     let index_2_exp = match array.elements.get(2) {
         Some(e) => match e.as_ref() {
             Node::Expression(e) => e,
@@ -510,7 +454,7 @@ fn test_parsing_array_literals() {
         }
     };
 
-    test_integer_literal(index_0_exp, 1);
+    test_literal_expression(index_0_exp, &TestLiteral::Int(1));
     test_infix_expression(index_1_exp, TestLiteral::Int(2), "*", TestLiteral::Int(2));
     test_infix_expression(index_2_exp, TestLiteral::Int(3), "+", TestLiteral::Int(3));
 }
@@ -519,16 +463,7 @@ fn test_parsing_array_literals() {
 fn test_parsing_index_expressions() {
     let input = "myArray[1 + 1]";
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
@@ -576,17 +511,7 @@ fn test_parsing_prefix_expressions() {
     for test in prefix_tests {
         let (input, operator, value) = test;
 
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-
-        let program = match parser.parse_program() {
-            Node::Program(p) => p,
-            _ => {
-                panic!("parser.parse_program() did not return Program.");
-            }
-        };
-        check_parser_errors(&parser);
-
+        let program = init_program(input);
         if program.statements.len() != 1 {
             panic!(
                 "program.statements does not contain {} statement. got={}",
@@ -619,7 +544,7 @@ fn test_parsing_prefix_expressions() {
             }
         };
 
-        if !test_literal_expression(right_exp, value) {
+        if !test_literal_expression(right_exp, &value) {
             return;
         }
     }
@@ -659,17 +584,7 @@ fn test_parsing_infix_expressions() {
     for test in infix_tests {
         let (input, left_value, operator, right_value) = test;
 
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-
-        let program = match parser.parse_program() {
-            Node::Program(p) => p,
-            _ => {
-                panic!("parser.parse_program() did not return Program.");
-            }
-        };
-        check_parser_errors(&parser);
-
+        let program = init_program(input);
         if program.statements.len() != 1 {
             panic!(
                 "program.statements does not contain {} statement. got={}",
@@ -743,17 +658,7 @@ fn test_operator_precedence_parsing() {
     for test in tests {
         let (input, expected) = test;
 
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-
-        let program = match parser.parse_program() {
-            Node::Program(p) => p,
-            _ => {
-                panic!("parser.parse_program() did not return Program.");
-            }
-        };
-        check_parser_errors(&parser);
-
+        let program = init_program(input);
         let actual = program.to_string();
         if actual != expected {
             panic!("expected={}, got={}", expected, actual);
@@ -765,17 +670,7 @@ fn test_operator_precedence_parsing() {
 fn test_if_expression() {
     let input = "if (x < y) { x }";
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
@@ -844,17 +739,7 @@ fn test_if_expression() {
 fn test_if_else_expression() {
     let input = "if (x < y) { x } else { y }";
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
@@ -952,17 +837,7 @@ fn test_if_else_expression() {
 fn test_function_literal_parsing() {
     let input = "fn(x, y) { x + y; }";
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
@@ -994,7 +869,7 @@ fn test_function_literal_parsing() {
         }
     };
 
-    if !test_literal_expression(param0, TestLiteral::Str("x")) {
+    if !test_literal_expression(param0, &TestLiteral::Str("x")) {
         return;
     }
 
@@ -1005,7 +880,7 @@ fn test_function_literal_parsing() {
         }
     };
 
-    if !test_literal_expression(param1, TestLiteral::Str("y")) {
+    if !test_literal_expression(param1, &TestLiteral::Str("y")) {
         return;
     }
 
@@ -1056,17 +931,7 @@ fn test_function_parameter_parsing() {
     for test in tests {
         let (input, expected_params) = test;
 
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-
-        let program = match parser.parse_program() {
-            Node::Program(p) => p,
-            _ => {
-                panic!("parser.parse_program() did not return Program.");
-            }
-        };
-        check_parser_errors(&parser);
-
+        let program = init_program(input);
         if program.statements.len() != 1 {
             panic!(
                 "program.statements does not contain 1 statement. got={}",
@@ -1099,7 +964,7 @@ fn test_function_parameter_parsing() {
                     panic!("func.parameters[{}] is not Expression.", i);
                 }
             };
-            if !test_literal_expression(param, ident.clone()) {
+            if !test_literal_expression(param, ident) {
                 return;
             }
         }
@@ -1110,17 +975,7 @@ fn test_function_parameter_parsing() {
 fn test_call_expression_parsing() {
     let input = "add(1, 2 * 3, 4 + 5);";
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
@@ -1163,7 +1018,7 @@ fn test_call_expression_parsing() {
         }
     };
 
-    if !test_literal_expression(exp0, TestLiteral::Int(1)) {
+    if !test_literal_expression(exp0, &TestLiteral::Int(1)) {
         return;
     }
 
@@ -1194,16 +1049,7 @@ fn test_call_expression_parsing() {
 fn test_parsing_hash_literals_string_keys() {
     let input = r#"{"one": 1, "two": 2, "three": 3}"#;
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
@@ -1258,7 +1104,7 @@ fn test_parsing_hash_literals_string_keys() {
                 panic!("hash.pairs does not contain key.");
             }
         };
-        if !test_literal_expression(value, expected_value) {
+        if !test_literal_expression(value, &expected_value) {
             return;
         }
     }
@@ -1268,16 +1114,7 @@ fn test_parsing_hash_literals_string_keys() {
 fn test_parsing_empty_hash_literal() {
     let input = "{}";
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
@@ -1302,16 +1139,7 @@ fn test_parsing_empty_hash_literal() {
 fn test_parsing_hash_literals_with_expressions() {
     let input = r#"{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}"#;
 
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-    let program = match parser.parse_program() {
-        Node::Program(p) => p,
-        _ => {
-            panic!("parser.parse_program() did not return Program.");
-        }
-    };
-    check_parser_errors(&parser);
-
+    let program = init_program(input);
     if program.statements.len() != 1 {
         panic!(
             "program.statements does not contain 1 statement. got={}",
