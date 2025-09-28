@@ -57,6 +57,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "runner"
+version = "0.1.0"
+dependencies = [
+ "ast",
+ "evaluator",
+ "lexer",
+ "object",
+ "parser",
+ "token",
+]
+
+[[package]]
 name = "token"
 version = "0.1.0"
 

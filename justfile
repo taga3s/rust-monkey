@@ -10,6 +10,9 @@
 repl:
     cargo run -p repl
 
+run FILE_PATH:
+    cargo run -p runner {{FILE_PATH}}
+
 test:
     cargo test
 
