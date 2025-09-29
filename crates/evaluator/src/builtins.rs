@@ -9,7 +9,7 @@ pub const BUILTINS: [(&str, ObjectTypes); 6] = [
     ("last", ObjectTypes::Builtin(Builtin { fn_: last_builtin })),
     ("rest", ObjectTypes::Builtin(Builtin { fn_: rest_builtin })),
     ("push", ObjectTypes::Builtin(Builtin { fn_: push_builtin })),
-    ("puts", ObjectTypes::Builtin(Builtin { fn_: puts_builtin })),
+    ("log", ObjectTypes::Builtin(Builtin { fn_: puts_log })),
 ];
 
 fn len_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
@@ -119,7 +119,7 @@ fn push_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
     }
 }
 
-fn puts_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
+fn puts_log(args: &Vec<ObjectTypes>) -> ObjectTypes {
     for arg in args {
         println!("{}", arg.inspect());
     }

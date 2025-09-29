@@ -2,7 +2,7 @@ use std::{env, fs::File, io::Read, path::Path};
 
 use evaluator::evaluator;
 use lexer::lexer::Lexer;
-use object::environment;
+use object::{environment, object::ObjectTypes};
 use parser::parser::Parser;
 
 fn main() {
@@ -49,6 +49,9 @@ fn run(input: &str) {
     }
 
     let evaluated = evaluator::eval(&program, &mut env);
+    if ObjectTypes::Null(object::object::Null {}) == evaluated {
+        return;
+    }
     println!("{}", evaluated.inspect());
 }
 
