@@ -1,7 +1,7 @@
 //! Object of Evaluation for the Monkey interpreter.
 
 use core::str;
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use ast::ast::{BlockStatement, Identifier, TNode};
 
@@ -219,7 +219,7 @@ impl Object for Error {
 pub struct Function {
     pub parameters: Vec<Identifier>,
     pub body: BlockStatement,
-    pub env: Environment,
+    pub env: Rc<RefCell<Environment>>,
 }
 
 impl Object for Function {

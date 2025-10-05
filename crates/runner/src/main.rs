@@ -38,7 +38,7 @@ fn main() {
 }
 
 fn run(input: &str) {
-    let mut env = environment::new_environment();
+    let env = environment::new_environment();
 
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -48,7 +48,7 @@ fn run(input: &str) {
         return;
     }
 
-    let evaluated = evaluator::eval(&program, &mut env);
+    let evaluated = evaluator::eval(&program, env);
     if ObjectTypes::Null(object::object::Null {}) == evaluated {
         return;
     }

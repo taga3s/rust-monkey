@@ -14,9 +14,9 @@ fn test_eval(input: &str) -> ObjectTypes {
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    let mut env = new_environment();
+    let env = new_environment();
 
-    eval(&program, &mut env)
+    eval(&program, env)
 }
 
 fn test_integer_object(obj: ObjectTypes, expected: i64) {

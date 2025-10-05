@@ -8,7 +8,7 @@ use parser::parser::Parser;
 
 fn start() -> io::Result<()> {
     let mut input = String::new();
-    let mut env = environment::new_environment();
+    let env = environment::new_environment();
 
     loop {
         input.clear();
@@ -44,7 +44,7 @@ fn start() -> io::Result<()> {
             continue;
         }
 
-        let evaluated = evaluator::eval(&program, &mut env);
+        let evaluated = evaluator::eval(&program, env.clone());
         println!("{}", evaluated.inspect());
     }
 

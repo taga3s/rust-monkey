@@ -1,6 +1,6 @@
 //! Evaluator for the Monkey programming language
 
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use ast::ast::{
     BlockStatement, Expression, HashLiteral, Identifier, IfExpression, Node, Program, Statement,
@@ -19,7 +19,7 @@ const NULL: ObjectTypes = ObjectTypes::Null(Null {});
 const TRUE: ObjectTypes = ObjectTypes::Boolean(Boolean { value: true });
 const FALSE: ObjectTypes = ObjectTypes::Boolean(Boolean { value: false });
 
-pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
+pub fn eval(node: &Node, env: Rc<RefCell<Environment>>) -> ObjectTypes {
     let result = match node {
         Node::Program(program) => eval_program(&program, env),
         Node::Expression(expr) => match expr {
@@ -36,23 +36,23 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
                 ObjectTypes::Array(Array { elements })
             }
             Expression::IndexExpression(ie) => {
-                let left = eval(ie.left.as_ref().unwrap(), env);
+                let left = eval(ie.left.as_ref().unwrap(), env.clone());
                 if is_error(&left) {
                     return left;
                 }
-                let index = eval(ie.index.as_ref().unwrap(), env);
+                let index = eval(ie.index.as_ref().unwrap(), env.clone());
                 if is_error(&index) {
                     return index;
                 }
                 return eval_index_expression(&left, &index);
             }
-            Expression::Identifier(ident) => eval_identifier(ident, env),
+            Expression::Identifier(ident) => eval_identifier(ident, env.clone()),
             Expression::Infix(infix) => {
-                let left = eval(infix.left.as_ref().unwrap(), env);
+                let left = eval(infix.left.as_ref().unwrap(), env.clone());
                 if is_error(&left) {
                     return left;
                 }
-                let right = eval(infix.right.as_ref().unwrap(), env);
+                let right = eval(infix.right.as_ref().unwrap(), env.clone());
                 if is_error(&right) {
                     return right;
                 }
@@ -87,15 +87,15 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
                 return ObjectTypes::Function(Function {
                     parameters,
                     body: body.clone(),
-                    env: env.clone(),
+                    env,
                 });
             }
             Expression::CallExpression(ce) => {
-                let func = eval(ce.function.as_ref(), env);
+                let func = eval(ce.function.as_ref(), env.clone());
                 if is_error(&func) {
                     return func;
                 }
-                let args = eval_expressions(&ce.arguments, env);
+                let args = eval_expressions(&ce.arguments, env.clone());
                 if args.len() == 1 && is_error(&args[0]) {
                     return args[0].clone();
                 }
@@ -106,11 +106,11 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
         Node::Statement(stmt) => match stmt {
             Statement::ExpressionStatement(es) => eval(es.expression.as_ref().unwrap(), env),
             Statement::Let(ls) => {
-                let val = eval(ls.value.as_ref().unwrap(), env);
+                let val = eval(ls.value.as_ref().unwrap(), env.clone());
                 if is_error(&val) {
                     return val;
                 }
-                env.set(&ls.name.as_ref().unwrap().value, val);
+                env.borrow_mut().set(&ls.name.as_ref().unwrap().value, val);
                 NULL
             }
             Statement::Return(rs) => {
@@ -128,11 +128,11 @@ pub fn eval(node: &Node, env: &mut Environment) -> ObjectTypes {
     result
 }
 
-fn eval_program(program: &Program, env: &mut Environment) -> ObjectTypes {
+fn eval_program(program: &Program, env: Rc<RefCell<Environment>>) -> ObjectTypes {
     let mut result = NULL; //FIXME: handle other object types
 
     for stmt in &program.statements {
-        result = eval(&stmt, env);
+        result = eval(&stmt, env.clone());
         match result {
             ObjectTypes::ReturnValue(return_value) => {
                 return *return_value.value;
@@ -144,11 +144,11 @@ fn eval_program(program: &Program, env: &mut Environment) -> ObjectTypes {
     result
 }
 
-fn eval_block_statement(bs: &BlockStatement, env: &mut Environment) -> ObjectTypes {
+fn eval_block_statement(bs: &BlockStatement, env: Rc<RefCell<Environment>>) -> ObjectTypes {
     let mut result = NULL;
 
     for stmt in &bs.statements {
-        result = eval(&stmt, env);
+        result = eval(&stmt, env.clone());
         if result.type_() == RETURN_VALUE_OBJ || result.type_() == ERROR_OBJ {
             return result;
         }
@@ -182,8 +182,8 @@ fn eval_prefix_expression(operator: &str, right: &ObjectTypes) -> ObjectTypes {
     }
 }
 
-fn eval_identifier(node: &Identifier, env: &mut Environment) -> ObjectTypes {
-    if let Some(val) = env.get(&node.value) {
+fn eval_identifier(node: &Identifier, env: Rc<RefCell<Environment>>) -> ObjectTypes {
+    if let Some(val) = env.borrow().get(&node.value) {
         return val;
     }
 
@@ -326,22 +326,22 @@ fn is_truthy(obj: &ObjectTypes) -> bool {
     }
 }
 
-fn eval_if_expression(ie: &IfExpression, env: &mut Environment) -> ObjectTypes {
-    let condition = eval(ie.condition.as_ref().unwrap(), env);
+fn eval_if_expression(ie: &IfExpression, env: Rc<RefCell<Environment>>) -> ObjectTypes {
+    let condition = eval(ie.condition.as_ref().unwrap(), env.clone());
     if is_truthy(&condition) {
-        return eval(ie.consequence.as_ref().unwrap(), env);
+        return eval(ie.consequence.as_ref().unwrap(), env.clone());
     }
     if let Some(alt) = &ie.alternative {
-        return eval(alt, env);
+        return eval(alt, env.clone());
     }
     NULL
 }
 
-fn eval_expressions(exps: &Vec<Box<Node>>, env: &mut Environment) -> Vec<ObjectTypes> {
+fn eval_expressions(exps: &Vec<Box<Node>>, env: Rc<RefCell<Environment>>) -> Vec<ObjectTypes> {
     let mut result = vec![];
 
     for e in exps {
-        let evaluated = eval(e.as_ref(), env);
+        let evaluated = eval(e.as_ref(), env.clone());
         if is_error(&evaluated) {
             return vec![evaluated];
         }
@@ -352,10 +352,10 @@ fn eval_expressions(exps: &Vec<Box<Node>>, env: &mut Environment) -> Vec<ObjectT
 
 fn apply_function(func: &ObjectTypes, args: &Vec<ObjectTypes>) -> ObjectTypes {
     if let ObjectTypes::Function(function) = func {
-        let mut extended_env = extend_function_env(&function, args);
+        let extended_env = extend_function_env(&function, args);
         let evaluated = eval(
             &Node::Statement(Statement::BlockStatement(function.body.clone())),
-            &mut extended_env,
+            extended_env,
         );
         return unwrap_return_value(evaluated);
     }
@@ -367,11 +367,11 @@ fn apply_function(func: &ObjectTypes, args: &Vec<ObjectTypes>) -> ObjectTypes {
     new_error(&format!("not a function: {}", func.type_()))
 }
 
-fn extend_function_env(func: &Function, args: &Vec<ObjectTypes>) -> Environment {
-    let mut env = new_enclosed_environment(func.env.clone());
+fn extend_function_env(func: &Function, args: &Vec<ObjectTypes>) -> Rc<RefCell<Environment>> {
+    let env = new_enclosed_environment(func.env.clone());
 
     for (param_idx, param) in func.parameters.iter().enumerate() {
-        env.set(&param.value, args[param_idx].clone());
+        env.borrow_mut().set(&param.value, args[param_idx].clone());
     }
 
     env
@@ -415,11 +415,11 @@ fn eval_array_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes
     array.elements[idx as usize].clone()
 }
 
-fn eval_hash_literal(hl: &HashLiteral, env: &mut Environment) -> ObjectTypes {
+fn eval_hash_literal(hl: &HashLiteral, env: Rc<RefCell<Environment>>) -> ObjectTypes {
     let mut pairs = HashMap::new();
 
     for (key_node, value_node) in &hl.pairs {
-        let key = eval(key_node, env);
+        let key = eval(key_node, env.clone());
         if is_error(&key) {
             return key;
         }
@@ -433,7 +433,7 @@ fn eval_hash_literal(hl: &HashLiteral, env: &mut Environment) -> ObjectTypes {
             }
         };
 
-        let value = eval(value_node, env);
+        let value = eval(value_node, env.clone());
         if is_error(&value) {
             return value;
         }
