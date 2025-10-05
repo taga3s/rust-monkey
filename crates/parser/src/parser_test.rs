@@ -8,7 +8,7 @@ use utils::test::TestLiteral;
 use crate::parser::Parser;
 
 //-- Helpers for tests --//
-fn init_program(input: &str) -> Program {
+fn test_parse_program(input: &str) -> Program {
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
 
@@ -20,6 +20,16 @@ fn init_program(input: &str) -> Program {
     };
     check_parser_errors(&parser);
     program
+}
+
+fn check_parsed_program_len(program: &Program, expected_len: usize) {
+    if program.statements.len() != expected_len {
+        panic!(
+            "program.statements does not contain {} statements. got={}",
+            expected_len,
+            program.statements.len()
+        );
+    }
 }
 
 fn test_literal_expression(exp: &Expression, expected: &TestLiteral) -> bool {
@@ -146,7 +156,7 @@ fn test_infix_expression(
 
 fn check_parser_errors(parser: &Parser) {
     let errors = parser.errors();
-    if errors.len() == 0 {
+    if errors.is_empty() {
         return;
     }
 
@@ -168,13 +178,8 @@ fn test_let_statements() {
     for test in tests {
         let (input, ident, expected) = test;
 
-        let program = init_program(input);
-        if program.statements.len() != 1 {
-            panic!(
-                "program.statements does not contain 1 statement. got={}",
-                program.statements.len()
-            );
-        }
+        let program = test_parse_program(input);
+        check_parsed_program_len(&program, 1);
 
         let stmt = match &program.statements[0] {
             Node::Statement(s) => s,
@@ -242,13 +247,8 @@ fn test_return_statements() {
       return 838383;
     "#;
 
-    let program = init_program(input);
-    if program.statements.len() != 3 {
-        panic!(
-            "program.statements does not contain 3 statements. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 3);
 
     for stmt in program.statements.iter() {
         let return_stmt = match stmt {
@@ -271,13 +271,8 @@ fn test_return_statements() {
 fn test_identifier_expression() {
     let input = "foobar;";
 
-    let program = init_program(input);
-    if program.statements.len() != 1 {
-        panic!(
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 1);
 
     let stmt = match &program.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
@@ -305,13 +300,8 @@ fn test_identifier_expression() {
 fn test_integer_literal_expression() {
     let input = "5;";
 
-    let program = init_program(input);
-    if program.statements.len() != 1 {
-        panic!(
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 1);
 
     let stmt = match &program.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
@@ -340,13 +330,8 @@ fn test_integer_literal_expression() {
 fn test_string_literal_expression() {
     let input = r#""hello world";"#;
 
-    let program = init_program(input);
-    if program.statements.len() != 1 {
-        panic!(
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 1);
 
     let stmt = match &program.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
@@ -368,13 +353,8 @@ fn test_boolean_expression() {
     for test in tests {
         let (input, value) = test;
 
-        let program = init_program(input);
-        if program.statements.len() != 1 {
-            panic!(
-                "program.statements does not contain 1 statement. got={}",
-                program.statements.len()
-            );
-        }
+        let program = test_parse_program(input);
+        check_parsed_program_len(&program, 1);
 
         let stmt = match &program.statements[0] {
             Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
@@ -404,13 +384,9 @@ fn test_boolean_expression() {
 fn test_parsing_array_literals() {
     let input = "[1, 2 * 2, 3 + 3]";
 
-    let program = init_program(input);
-    if program.statements.len() != 1 {
-        panic!(
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 1);
+
     let stmt = match &program.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("program.statements[0] is not ExpressionStatement."),
@@ -463,13 +439,9 @@ fn test_parsing_array_literals() {
 fn test_parsing_index_expressions() {
     let input = "myArray[1 + 1]";
 
-    let program = init_program(input);
-    if program.statements.len() != 1 {
-        panic!(
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 1);
+
     let stmt = match &program.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("program.statements[0] is not ExpressionStatement."),
@@ -511,14 +483,8 @@ fn test_parsing_prefix_expressions() {
     for test in prefix_tests {
         let (input, operator, value) = test;
 
-        let program = init_program(input);
-        if program.statements.len() != 1 {
-            panic!(
-                "program.statements does not contain {} statement. got={}",
-                1,
-                program.statements.len()
-            );
-        }
+        let program = test_parse_program(input);
+        check_parsed_program_len(&program, 1);
 
         let stmt = match &program.statements[0] {
             Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
@@ -584,14 +550,8 @@ fn test_parsing_infix_expressions() {
     for test in infix_tests {
         let (input, left_value, operator, right_value) = test;
 
-        let program = init_program(input);
-        if program.statements.len() != 1 {
-            panic!(
-                "program.statements does not contain {} statement. got={}",
-                1,
-                program.statements.len()
-            );
-        }
+        let program = test_parse_program(input);
+        check_parsed_program_len(&program, 1);
 
         let stmt = match &program.statements[0] {
             Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
@@ -658,7 +618,7 @@ fn test_operator_precedence_parsing() {
     for test in tests {
         let (input, expected) = test;
 
-        let program = init_program(input);
+        let program = test_parse_program(input);
         let actual = program.to_string();
         if actual != expected {
             panic!("expected={}, got={}", expected, actual);
@@ -670,13 +630,8 @@ fn test_operator_precedence_parsing() {
 fn test_if_expression() {
     let input = "if (x < y) { x }";
 
-    let program = init_program(input);
-    if program.statements.len() != 1 {
-        panic!(
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 1);
 
     let stmt = match &program.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
@@ -739,13 +694,8 @@ fn test_if_expression() {
 fn test_if_else_expression() {
     let input = "if (x < y) { x } else { y }";
 
-    let program = init_program(input);
-    if program.statements.len() != 1 {
-        panic!(
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 1);
 
     let stmt = match &program.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
@@ -837,13 +787,8 @@ fn test_if_else_expression() {
 fn test_function_literal_parsing() {
     let input = "fn(x, y) { x + y; }";
 
-    let program = init_program(input);
-    if program.statements.len() != 1 {
-        panic!(
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 1);
 
     let stmt = match &program.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
@@ -931,13 +876,8 @@ fn test_function_parameter_parsing() {
     for test in tests {
         let (input, expected_params) = test;
 
-        let program = init_program(input);
-        if program.statements.len() != 1 {
-            panic!(
-                "program.statements does not contain 1 statement. got={}",
-                program.statements.len()
-            );
-        }
+        let program = test_parse_program(input);
+        check_parsed_program_len(&program, 1);
 
         let stmt = match &program.statements[0] {
             Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
@@ -975,13 +915,8 @@ fn test_function_parameter_parsing() {
 fn test_call_expression_parsing() {
     let input = "add(1, 2 * 3, 4 + 5);";
 
-    let program = init_program(input);
-    if program.statements.len() != 1 {
-        panic!(
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 1);
 
     let stmt = match &program.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
@@ -1049,13 +984,9 @@ fn test_call_expression_parsing() {
 fn test_parsing_hash_literals_string_keys() {
     let input = r#"{"one": 1, "two": 2, "three": 3}"#;
 
-    let program = init_program(input);
-    if program.statements.len() != 1 {
-        panic!(
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 1);
+
     let stmt = match &program.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("program.statements[0] is not ExpressionStatement."),
@@ -1114,13 +1045,9 @@ fn test_parsing_hash_literals_string_keys() {
 fn test_parsing_empty_hash_literal() {
     let input = "{}";
 
-    let program = init_program(input);
-    if program.statements.len() != 1 {
-        panic!(
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 1);
+
     let stmt = match &program.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("program.statements[0] is not ExpressionStatement."),
@@ -1130,7 +1057,7 @@ fn test_parsing_empty_hash_literal() {
         _ => panic!("stmt.expression is not HashLiteral."),
     };
 
-    if hash.pairs.len() != 0 {
+    if !hash.pairs.is_empty() {
         panic!("hash.pairs is not empty. got={}", hash.pairs.len());
     }
 }
@@ -1139,13 +1066,9 @@ fn test_parsing_empty_hash_literal() {
 fn test_parsing_hash_literals_with_expressions() {
     let input = r#"{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}"#;
 
-    let program = init_program(input);
-    if program.statements.len() != 1 {
-        panic!(
-            "program.statements does not contain 1 statement. got={}",
-            program.statements.len()
-        );
-    }
+    let program = test_parse_program(input);
+    check_parsed_program_len(&program, 1);
+
     let stmt = match &program.statements[0] {
         Node::Statement(Statement::ExpressionStatement(stmt)) => stmt,
         _ => panic!("program.statements[0] is not ExpressionStatement."),
