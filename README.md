@@ -24,3 +24,9 @@ just repl
 >> add(10, 15);
 25
 ```
+
+## Runner
+
+```bash
+just run fixtures/sample1.monkey
+```
