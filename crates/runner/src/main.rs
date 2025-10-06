@@ -2,7 +2,7 @@ use std::{env, fs::File, io::Read, path::Path};
 
 use evaluator::evaluator;
 use lexer::lexer::Lexer;
-use object::{environment, object::ObjectTypes};
+use object::{environment::Environment, object::ObjectTypes};
 use parser::parser::Parser;
 
 fn main() {
@@ -38,7 +38,7 @@ fn main() {
 }
 
 fn run(input: &str) {
-    let env = environment::new_environment();
+    let env = Environment::new();
 
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);

@@ -3,12 +3,12 @@ use std::io::{self, Write};
 
 use ::lexer::lexer::Lexer;
 use evaluator::evaluator;
-use object::environment;
+use object::environment::Environment;
 use parser::parser::Parser;
 
 fn start() -> io::Result<()> {
     let mut input = String::new();
-    let env = environment::new_environment();
+    let env = Environment::new();
 
     loop {
         input.clear();

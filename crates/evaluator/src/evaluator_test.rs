@@ -1,7 +1,7 @@
 use ast::ast::TNode;
 use lexer::lexer::Lexer;
 use object::{
-    environment::new_environment,
+    environment::Environment,
     object::{Boolean, Integer, Null, ObjectTypes, StringLiteral},
 };
 use parser::parser::Parser;
@@ -14,7 +14,7 @@ fn test_eval(input: &str) -> ObjectTypes {
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    let env = new_environment();
+    let env = Environment::new();
 
     eval(&program, env)
 }

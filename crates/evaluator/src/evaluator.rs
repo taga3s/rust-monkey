@@ -6,7 +6,7 @@ use ast::ast::{
     BlockStatement, Expression, HashLiteral, Identifier, IfExpression, Node, Program, Statement,
 };
 use object::{
-    environment::{new_enclosed_environment, Environment},
+    environment::Environment,
     object::{
         Array, Boolean, Function, Hash, HashPair, Integer, Null, ObjectTypes, ReturnValue,
         StringLiteral, ARRAY_OBJ, ERROR_OBJ, HASH_OBJ, INTEGER_OBJ, RETURN_VALUE_OBJ, STRING_OBJ,
@@ -368,7 +368,7 @@ fn apply_function(func: &ObjectTypes, args: &Vec<ObjectTypes>) -> ObjectTypes {
 }
 
 fn extend_function_env(func: &Function, args: &Vec<ObjectTypes>) -> Rc<RefCell<Environment>> {
-    let env = new_enclosed_environment(func.env.clone());
+    let env = Environment::new_enclosed(func.env.clone());
 
     for (param_idx, param) in func.parameters.iter().enumerate() {
         env.borrow_mut().set(&param.value, args[param_idx].clone());
