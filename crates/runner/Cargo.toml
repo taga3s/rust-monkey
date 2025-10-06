@@ -4,6 +4,9 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 token = { path = "../token" }
 lexer = { path = "../lexer" }
@@ -11,3 +14,4 @@ ast = { path = "../ast" }
 parser = { path = "../parser" }
 evaluator = { path = "../evaluator" }
 object = { path = "../object" }
+wasm-bindgen = { workspace = true }

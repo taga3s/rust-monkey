@@ -1,9 +1,6 @@
 use std::{env, fs::File, io::Read, path::Path};
 
-use evaluator::evaluator;
-use lexer::lexer::Lexer;
-use object::{environment::Environment, object::ObjectTypes};
-use parser::parser::Parser;
+use runner::runner::run;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -34,29 +31,8 @@ fn main() {
         std::process::exit(1);
     }
 
-    run(&s);
-}
-
-fn run(input: &str) {
-    let env = Environment::new();
-
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-    let program = parser.parse_program();
-    if parser.errors().len() != 0 {
-        print_parse_errors(parser.errors());
-        return;
-    }
-
-    let evaluated = evaluator::eval(&program, env);
-    if ObjectTypes::Null(object::object::Null {}) == evaluated {
-        return;
-    }
-    println!("{}", evaluated.inspect());
-}
-
-fn print_parse_errors(errors: &Vec<String>) {
-    for msg in errors {
-        eprintln!("Error: {}", msg);
+    let out = run(&s);
+    if let Some(result) = out {
+        println!("{}", result);
     }
 }

@@ -16,3 +16,5 @@ run FILE_PATH:
 test:
     cargo test
 
+build-wasm:
+    wasm-pack build crates/runner --target web
