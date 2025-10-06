@@ -116,14 +116,21 @@ impl Object for StringLiteral {
     }
 }
 
+// FNV-1a 64-bit hash function
+// ref: https://ssojet.com/hashing/fnv-1a-in-python/
+fn fnv1a_64(data: &str) -> u64 {
+    let fnv_prime: u64 = 0x100000001b3;
+    let mut hash_val: u64 = 0xcbf29ce484222325;
+    for byte in data.as_bytes() {
+        hash_val ^= *byte as u64;
+        hash_val = (hash_val.wrapping_mul(fnv_prime)) & 0xFFFFFFFFFFFFFFFF; // Ensure 64-bit
+    }
+    hash_val
+}
+
 impl StringLiteral {
     pub fn hash_key(&self) -> HashKey {
-        // FIXME: djb2 algorithm, but fix to change to use fnv
-        // TODO: Apply open addressing or separate chaining for collision handling
-        let mut hash: u64 = 5381;
-        for byte in self.value.as_bytes() {
-            hash = ((hash << 5).wrapping_add(hash)).wrapping_add(*byte as u64);
-        }
+        let hash = fnv1a_64(&self.value);
         HashKey {
             type_: self.type_(),
             value: hash,
@@ -271,10 +278,11 @@ impl Object for Hash {
     }
 
     fn inspect(&self) -> String {
-        let mut pairs: Vec<String> = vec![];
-        for pair in self.pairs.values() {
-            pairs.push(format!("{}: {}", pair.key.inspect(), pair.value.inspect()));
-        }
+        let pairs: Vec<String> = self
+            .pairs
+            .values()
+            .map(|pair| format!("{}: {}", pair.key.inspect(), pair.value.inspect()))
+            .collect();
         format!("{{{}}}", pairs.join(", "))
     }
 }
