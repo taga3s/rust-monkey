@@ -30,3 +30,9 @@ just repl
 ```bash
 just run fixtures/sample1.monkey
 ```
+
+## Convert to wasm
+
+```bash
+just build-wasm
+```

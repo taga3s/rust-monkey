@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <meta charset="utf-8">
+    <title>rust-monkey wasm</title>
+</head>
+
+<body>
+    See the console log for output.
+    <script type="module">
+        import init, { run } from "./pkg/runner.js";
+        const code = `let a = "hello";
+let b = "world!";
+let concat = fn(x, y) { return x + y; };
+concat(a, concat(" ", b));
+`;
+
+        init()
+            .then(() => {
+                const output = run(code);
+                if (output) {
+                    console.log(output);
+                }
+            });
+    </script>
+</body>
+
+</html>
