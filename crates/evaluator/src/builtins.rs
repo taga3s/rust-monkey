@@ -12,7 +12,7 @@ pub const BUILTINS: [(&str, ObjectTypes); 6] = [
     ("log", ObjectTypes::Builtin(Builtin { fn_: puts_log })),
 ];
 
-fn len_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
+fn len_builtin(args: &[ObjectTypes]) -> ObjectTypes {
     if args.len() != 1 {
         return ObjectTypes::Error(object::object::Error {
             message: format!("wrong number of arguments. got={}, want=1", args.len()),
@@ -32,7 +32,7 @@ fn len_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
     }
 }
 
-fn first_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
+fn first_builtin(args: &[ObjectTypes]) -> ObjectTypes {
     if args.len() != 1 {
         return ObjectTypes::Error(object::object::Error {
             message: format!("wrong number of arguments. got={}, want=1", args.len()),
@@ -53,7 +53,7 @@ fn first_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
     }
 }
 
-fn last_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
+fn last_builtin(args: &[ObjectTypes]) -> ObjectTypes {
     if args.len() != 1 {
         return ObjectTypes::Error(object::object::Error {
             message: format!("wrong number of arguments. got={}, want=1", args.len()),
@@ -74,7 +74,7 @@ fn last_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
     }
 }
 
-fn rest_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
+fn rest_builtin(args: &[ObjectTypes]) -> ObjectTypes {
     if args.len() != 1 {
         return ObjectTypes::Error(object::object::Error {
             message: format!("wrong number of arguments. got={}, want=1", args.len()),
@@ -98,7 +98,7 @@ fn rest_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
     }
 }
 
-fn push_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
+fn push_builtin(args: &[ObjectTypes]) -> ObjectTypes {
     if args.len() != 2 {
         return ObjectTypes::Error(object::object::Error {
             message: format!("wrong number of arguments. got={}, want=2", args.len()),
@@ -119,7 +119,7 @@ fn push_builtin(args: &Vec<ObjectTypes>) -> ObjectTypes {
     }
 }
 
-fn puts_log(args: &Vec<ObjectTypes>) -> ObjectTypes {
+fn puts_log(args: &[ObjectTypes]) -> ObjectTypes {
     for arg in args {
         println!("{}", arg.inspect());
     }

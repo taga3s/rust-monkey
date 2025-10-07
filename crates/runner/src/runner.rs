@@ -24,7 +24,7 @@ pub fn run(input: &str) -> Option<String> {
     Some(evaluated.inspect())
 }
 
-fn print_parse_errors(errors: &Vec<String>) {
+fn print_parse_errors(errors: &[String]) {
     for msg in errors {
         eprintln!("Error: {}", msg);
     }

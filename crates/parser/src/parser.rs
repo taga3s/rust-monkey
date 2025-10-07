@@ -90,7 +90,7 @@ impl Parser {
         parser
     }
 
-    pub fn errors(&self) -> &Vec<String> {
+    pub fn errors(&self) -> &[String] {
         &self.errors
     }
 

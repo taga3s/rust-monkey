@@ -337,7 +337,7 @@ fn eval_if_expression(ie: &IfExpression, env: Rc<RefCell<Environment>>) -> Objec
     NULL
 }
 
-fn eval_expressions(exps: &Vec<Box<Node>>, env: Rc<RefCell<Environment>>) -> Vec<ObjectTypes> {
+fn eval_expressions(exps: &[Box<Node>], env: Rc<RefCell<Environment>>) -> Vec<ObjectTypes> {
     let mut result = vec![];
 
     for e in exps {
@@ -350,7 +350,7 @@ fn eval_expressions(exps: &Vec<Box<Node>>, env: Rc<RefCell<Environment>>) -> Vec
     result
 }
 
-fn apply_function(func: &ObjectTypes, args: &Vec<ObjectTypes>) -> ObjectTypes {
+fn apply_function(func: &ObjectTypes, args: &[ObjectTypes]) -> ObjectTypes {
     if let ObjectTypes::Function(function) = func {
         let extended_env = extend_function_env(&function, args);
         let evaluated = eval(
@@ -367,7 +367,7 @@ fn apply_function(func: &ObjectTypes, args: &Vec<ObjectTypes>) -> ObjectTypes {
     new_error(&format!("not a function: {}", func.type_()))
 }
 
-fn extend_function_env(func: &Function, args: &Vec<ObjectTypes>) -> Rc<RefCell<Environment>> {
+fn extend_function_env(func: &Function, args: &[ObjectTypes]) -> Rc<RefCell<Environment>> {
     let env = Environment::new_enclosed(func.env.clone());
 
     for (param_idx, param) in func.parameters.iter().enumerate() {

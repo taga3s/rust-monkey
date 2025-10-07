@@ -51,7 +51,7 @@ fn start() -> io::Result<()> {
     Ok(())
 }
 
-fn print_parse_errors(errors: &Vec<String>) {
+fn print_parse_errors(errors: &[String]) {
     for msg in errors {
         eprintln!("Error: {}", msg);
     }
