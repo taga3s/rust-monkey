@@ -3,41 +3,6 @@ use token::token::TokenType;
 
 #[test]
 fn test_next_token() {
-    let input = "=+(){},;";
-
-    let tests = vec![
-        (TokenType::ASSIGN, "="),
-        (TokenType::PLUS, "+"),
-        (TokenType::LPAREN, "("),
-        (TokenType::RPAREN, ")"),
-        (TokenType::LBRACE, "{"),
-        (TokenType::RBRACE, "}"),
-        (TokenType::COMMA, ","),
-        (TokenType::SEMICOLON, ";"),
-        (TokenType::EOF, ""),
-    ];
-
-    let mut lexer = Lexer::new(input);
-
-    for (i, (token_type, literal)) in tests.iter().enumerate() {
-        let tok = lexer.next_token();
-
-        assert_eq!(
-            &tok.type_, token_type,
-            "tests[{}] - token type wrong. expected={:?}, got={:?}",
-            i, token_type, tok.type_
-        );
-
-        assert_eq!(
-            &tok.literal, literal,
-            "tests[{}] - literal wrong. expected={}, got={}",
-            i, literal, tok.literal
-        );
-    }
-}
-
-#[test]
-fn test_next_token2() {
     let input = r#"let five = 5;
       let ten = 10;
 

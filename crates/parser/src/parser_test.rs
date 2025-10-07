@@ -396,43 +396,21 @@ fn test_parsing_array_literals() {
         _ => panic!("stmt.expression is not ArrayLiteral."),
     };
 
-    let index_0_exp = match array.elements.get(0) {
-        Some(e) => match e.as_ref() {
-            Node::Expression(e) => e,
-            _ => {
-                panic!("array.elements[0] is not Expression.");
-            }
-        },
-        None => {
-            panic!("array.elements does not contain 1 element.");
-        }
-    };
-    let index_1_exp = match array.elements.get(1) {
-        Some(e) => match e.as_ref() {
-            Node::Expression(e) => e,
-            _ => {
-                panic!("array.elements[1] is not Expression.");
-            }
-        },
-        None => {
-            panic!("array.elements does not contain 2 elements.");
-        }
-    };
-    let index_2_exp = match array.elements.get(2) {
-        Some(e) => match e.as_ref() {
-            Node::Expression(e) => e,
-            _ => {
-                panic!("array.elements[2] is not Expression.");
-            }
-        },
-        None => {
-            panic!("array.elements does not contain 3 elements.");
-        }
-    };
+    let mut exprs: Vec<&Expression> = vec![];
 
-    test_literal_expression(index_0_exp, &TestLiteral::Int(1));
-    test_infix_expression(index_1_exp, TestLiteral::Int(2), "*", TestLiteral::Int(2));
-    test_infix_expression(index_2_exp, TestLiteral::Int(3), "+", TestLiteral::Int(3));
+    for element in array.elements.iter() {
+        let exp = match element.as_ref() {
+            Node::Expression(e) => e,
+            _ => {
+                panic!("array.elements[] is not Expression.");
+            }
+        };
+        exprs.push(exp);
+    }
+
+    test_literal_expression(exprs[0], &TestLiteral::Int(1));
+    test_infix_expression(exprs[1], TestLiteral::Int(2), "*", TestLiteral::Int(2));
+    test_infix_expression(exprs[2], TestLiteral::Int(3), "+", TestLiteral::Int(3));
 }
 
 #[test]

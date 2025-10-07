@@ -26,8 +26,6 @@ fn test_integer_object(obj: ObjectTypes, expected: i64) {
     };
 
     assert_eq!(value, expected);
-
-    true;
 }
 
 fn test_boolean_object(obj: ObjectTypes, expected: bool) {
@@ -37,8 +35,6 @@ fn test_boolean_object(obj: ObjectTypes, expected: bool) {
     };
 
     assert_eq!(value, expected);
-
-    true;
 }
 
 // -- Tests -- //
