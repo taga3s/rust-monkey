@@ -15,7 +15,7 @@ pub enum Node {
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Node::Program(p) => write!(f, "{}", p.to_string()),
+            Node::Program(p) => write!(f, "{}", p),
             Node::Statement(s) => write!(f, "{}", s),
             Node::Expression(e) => write!(f, "{}", e),
         }
@@ -41,10 +41,10 @@ pub enum Statement {
 impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Statement::Let(s) => write!(f, "{}", s.to_string()),
-            Statement::Return(s) => write!(f, "{}", s.to_string()),
-            Statement::ExpressionStatement(s) => write!(f, "{}", s.to_string()),
-            Statement::BlockStatement(s) => write!(f, "{}", s.to_string()),
+            Statement::Let(s) => write!(f, "{}", s),
+            Statement::Return(s) => write!(f, "{}", s),
+            Statement::ExpressionStatement(s) => write!(f, "{}", s),
+            Statement::BlockStatement(s) => write!(f, "{}", s),
         }
     }
 }
@@ -68,25 +68,24 @@ pub enum Expression {
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Expression::IntegerLiteral(e) => write!(f, "{}", e.to_string()),
-            Expression::StringLiteral(e) => write!(f, "{}", e.to_string()),
-            Expression::Boolean(e) => write!(f, "{}", e.to_string()),
-            Expression::ArrayLiteral(e) => write!(f, "{}", e.to_string()),
-            Expression::IndexExpression(e) => write!(f, "{}", e.to_string()),
-            Expression::Identifier(e) => write!(f, "{}", e.to_string()),
-            Expression::Prefix(e) => write!(f, "{}", e.to_string()),
-            Expression::Infix(e) => write!(f, "{}", e.to_string()),
-            Expression::IfExpression(e) => write!(f, "{}", e.to_string()),
-            Expression::FunctionLiteral(e) => write!(f, "{}", e.to_string()),
-            Expression::CallExpression(e) => write!(f, "{}", e.to_string()),
-            Expression::HashLiteral(e) => write!(f, "{}", e.to_string()),
+            Expression::IntegerLiteral(e) => write!(f, "{}", e),
+            Expression::StringLiteral(e) => write!(f, "{}", e),
+            Expression::Boolean(e) => write!(f, "{}", e),
+            Expression::ArrayLiteral(e) => write!(f, "{}", e),
+            Expression::IndexExpression(e) => write!(f, "{}", e),
+            Expression::Identifier(e) => write!(f, "{}", e),
+            Expression::Prefix(e) => write!(f, "{}", e),
+            Expression::Infix(e) => write!(f, "{}", e),
+            Expression::IfExpression(e) => write!(f, "{}", e),
+            Expression::FunctionLiteral(e) => write!(f, "{}", e),
+            Expression::CallExpression(e) => write!(f, "{}", e),
+            Expression::HashLiteral(e) => write!(f, "{}", e),
         }
     }
 }
 
 pub trait TNode {
     fn token_literal(&self) -> String;
-    fn to_string(&self) -> String;
 }
 
 pub trait TStatement
@@ -116,13 +115,17 @@ impl TNode for Program {
             "".to_string()
         }
     }
+}
 
-    fn to_string(&self) -> String {
-        self.statements
+impl fmt::Display for Program {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let out = self
+            .statements
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>()
-            .join("")
+            .join("");
+        write!(f, "{}", out)
     }
 }
 
@@ -140,9 +143,11 @@ impl TNode for Identifier {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        self.value.to_string()
+impl fmt::Display for Identifier {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.value)
     }
 }
 
@@ -161,16 +166,19 @@ impl TNode for LetStatement {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        format!(
+impl fmt::Display for LetStatement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let out = format!(
             "{} {} = {};",
             self.token_literal(),
             self.name.as_ref().map_or("".to_string(), |n| n.to_string()),
             self.value
                 .as_ref()
                 .map_or("".to_string(), |v| v.to_string())
-        )
+        );
+        write!(f, "{}", out)
     }
 }
 
@@ -188,15 +196,18 @@ impl TNode for ReturnStatement {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        format!(
+impl fmt::Display for ReturnStatement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let out = format!(
             "{} {};",
             self.token_literal(),
             self.return_value
                 .as_ref()
                 .map_or("".to_string(), |v| v.to_string())
-        )
+        );
+        write!(f, "{}", out)
     }
 }
 
@@ -214,11 +225,17 @@ impl TNode for ExpressionStatement {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        self.expression
-            .as_ref()
-            .map_or("".to_string(), |e| e.to_string())
+impl fmt::Display for ExpressionStatement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.expression
+                .as_ref()
+                .map_or("".to_string(), |e| e.to_string())
+        )
     }
 }
 
@@ -236,9 +253,11 @@ impl TNode for IntegerLiteral {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        self.value.to_string()
+impl fmt::Display for IntegerLiteral {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.value)
     }
 }
 
@@ -256,9 +275,11 @@ impl TNode for StringLiteral {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        self.value.to_string()
+impl fmt::Display for StringLiteral {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.value)
     }
 }
 
@@ -277,15 +298,18 @@ impl TNode for PrefixExpression {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        format!(
+impl fmt::Display for PrefixExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let out = format!(
             "({}{})",
             self.operator,
             self.right
                 .as_ref()
                 .map_or("".to_string(), |r| r.to_string())
-        )
+        );
+        write!(f, "{}", out)
     }
 }
 
@@ -305,16 +329,19 @@ impl TNode for InfixExpression {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        format!(
+impl fmt::Display for InfixExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let out = format!(
             "({} {} {})",
             self.left.as_ref().map_or("".to_string(), |l| l.to_string()),
             self.operator,
             self.right
                 .as_ref()
                 .map_or("".to_string(), |r| r.to_string())
-        )
+        );
+        write!(f, "{}", out)
     }
 }
 
@@ -332,9 +359,11 @@ impl TNode for Boolean {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        self.value.to_string()
+impl fmt::Display for Boolean {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.value)
     }
 }
 
@@ -352,15 +381,17 @@ impl TNode for ArrayLiteral {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        let elems = self
+impl fmt::Display for ArrayLiteral {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let out = self
             .elements
             .iter()
             .map(|e| e.to_string())
             .collect::<Vec<String>>()
             .join(", ");
-        format!("[{}]", elems)
+        write!(f, "{}", format!("[{}]", out))
     }
 }
 
@@ -379,15 +410,18 @@ impl TNode for IndexExpression {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        format!(
+impl fmt::Display for IndexExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let out = format!(
             "({}[{}])",
             self.left.as_ref().map_or("".to_string(), |l| l.to_string()),
             self.index
                 .as_ref()
                 .map_or("".to_string(), |i| i.to_string())
-        )
+        );
+        write!(f, "{}", out)
     }
 }
 
@@ -407,9 +441,11 @@ impl TNode for IfExpression {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        format!(
+impl fmt::Display for IfExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let out = format!(
             "if{}{}{}",
             self.condition
                 .as_ref()
@@ -420,7 +456,8 @@ impl TNode for IfExpression {
             self.alternative
                 .as_ref()
                 .map_or("".to_string(), |a| format!("else{}", a))
-        )
+        );
+        write!(f, "{}", out)
     }
 }
 
@@ -438,13 +475,17 @@ impl TNode for BlockStatement {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
-        self.statements
+impl fmt::Display for BlockStatement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let out = self
+            .statements
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>()
-            .join("")
+            .join("");
+        write!(f, "{}", out)
     }
 }
 
@@ -463,8 +504,10 @@ impl TNode for FunctionLiteral {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
+impl fmt::Display for FunctionLiteral {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let params = self
             .parameters
             .iter()
@@ -472,7 +515,8 @@ impl TNode for FunctionLiteral {
             .collect::<Vec<String>>()
             .join(", ");
         let body = self.body.as_ref().map_or("".to_string(), |b| b.to_string());
-        format!("{}({}){{{}}}", self.token_literal(), params, body)
+        let out = format!("{}({}){{{}}}", self.token_literal(), params, body);
+        write!(f, "{}", out)
     }
 }
 
@@ -491,8 +535,10 @@ impl TNode for CallExpression {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
+impl fmt::Display for CallExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let func = &self.function.to_string();
         let args = self
             .arguments
@@ -500,7 +546,8 @@ impl TNode for CallExpression {
             .map(|a| a.to_string())
             .collect::<Vec<String>>()
             .join(", ");
-        format!("{}({})", func, args)
+        let out = format!("{}({})", func, args);
+        write!(f, "{}", out)
     }
 }
 
@@ -518,14 +565,17 @@ impl TNode for HashLiteral {
     fn token_literal(&self) -> String {
         self.token.literal.to_string()
     }
+}
 
-    fn to_string(&self) -> String {
+impl fmt::Display for HashLiteral {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let pairs = self
             .pairs
             .iter()
             .map(|(k, v)| format!("{}: {}", k, v))
             .collect::<Vec<String>>()
             .join(", ");
-        format!("{{{}}}", pairs)
+        let out = format!("{{{}}}", pairs);
+        write!(f, "{}", out)
     }
 }

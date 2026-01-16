@@ -1,4 +1,3 @@
-use ast::ast::TNode;
 use lexer::lexer::Lexer;
 use object::{
     environment::Environment,

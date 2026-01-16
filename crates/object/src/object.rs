@@ -3,7 +3,7 @@
 use core::str;
 use std::{cell::RefCell, collections::HashMap, fmt, rc::Rc};
 
-use ast::ast::{BlockStatement, Identifier, TNode};
+use ast::ast::{BlockStatement, Identifier};
 
 use crate::environment::Environment;
 

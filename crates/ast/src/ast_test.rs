@@ -1,6 +1,6 @@
 use token::token::{Token, TokenType};
 
-use crate::ast::{Expression, Identifier, LetStatement, Node, Program, Statement, TNode};
+use crate::ast::{Expression, Identifier, LetStatement, Node, Program, Statement};
 
 #[test]
 fn test_to_string() {
