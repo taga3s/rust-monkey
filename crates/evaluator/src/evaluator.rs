@@ -8,8 +8,8 @@ use ast::ast::{
 use object::{
     environment::Environment,
     object::{
-        Array, Boolean, Function, Hash, HashPair, Integer, Null, ObjectTypes, ReturnValue,
-        StringLiteral, ARRAY_OBJ, ERROR_OBJ, HASH_OBJ, INTEGER_OBJ, RETURN_VALUE_OBJ, STRING_OBJ,
+        Array, Boolean, Function, Hash, HashPair, Integer, Null, ObjectType, ObjectTypes,
+        ReturnValue, StringLiteral,
     },
 };
 
@@ -149,7 +149,7 @@ fn eval_block_statement(bs: &BlockStatement, env: Rc<RefCell<Environment>>) -> O
 
     for stmt in &bs.statements {
         result = eval(&stmt, env.clone());
-        if result.type_() == RETURN_VALUE_OBJ || result.type_() == ERROR_OBJ {
+        if result.type_() == ObjectType::ReturnValueObj || result.type_() == ObjectType::ErrorObj {
             return result;
         }
     }
@@ -163,7 +163,7 @@ fn new_error(message: &str) -> ObjectTypes {
 }
 
 fn is_error(obj: &ObjectTypes) -> bool {
-    obj.type_() == ERROR_OBJ
+    obj.type_() == ObjectType::ErrorObj
 }
 
 fn native_bool_to_boolean_object(input: bool) -> ObjectTypes {
@@ -209,7 +209,7 @@ fn eval_bang_operator_expression(right: &ObjectTypes) -> ObjectTypes {
 }
 
 fn eval_minus_prefix_operator_expression(right: &ObjectTypes) -> ObjectTypes {
-    if right.type_() != INTEGER_OBJ {
+    if right.type_() != ObjectType::IntegerObj {
         return new_error(&format!("unknown operator: -{}", right.type_()));
     }
 
@@ -222,10 +222,10 @@ fn eval_minus_prefix_operator_expression(right: &ObjectTypes) -> ObjectTypes {
 }
 
 fn eval_infix_expression(operator: &str, left: &ObjectTypes, right: &ObjectTypes) -> ObjectTypes {
-    if &left.type_() == INTEGER_OBJ && &right.type_() == INTEGER_OBJ {
+    if &left.type_() == &ObjectType::IntegerObj && &right.type_() == &ObjectType::IntegerObj {
         return eval_integer_infix_expression(operator, left, right);
     };
-    if &left.type_() == STRING_OBJ && &right.type_() == STRING_OBJ {
+    if &left.type_() == &ObjectType::StringObj && &right.type_() == &ObjectType::StringObj {
         return eval_string_infix_expression(operator, left, right);
     };
     if &left.type_() != &right.type_() {
@@ -378,7 +378,7 @@ fn extend_function_env(func: &Function, args: &[ObjectTypes]) -> Rc<RefCell<Envi
 }
 
 fn unwrap_return_value(obj: ObjectTypes) -> ObjectTypes {
-    if obj.type_() == RETURN_VALUE_OBJ {
+    if obj.type_() == ObjectType::ReturnValueObj {
         if let ObjectTypes::ReturnValue(rv) = obj {
             return *rv.value;
         }
@@ -387,10 +387,10 @@ fn unwrap_return_value(obj: ObjectTypes) -> ObjectTypes {
 }
 
 fn eval_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {
-    if left.type_() == ARRAY_OBJ && index.type_() == INTEGER_OBJ {
+    if left.type_() == ObjectType::ArrayObj && index.type_() == ObjectType::IntegerObj {
         return eval_array_expression(left, index);
     }
-    if left.type_() == HASH_OBJ {
+    if left.type_() == ObjectType::HashObj {
         return eval_hash_index_expression(left, index);
     }
 

@@ -1,24 +1,43 @@
 //! Object of Evaluation for the Monkey interpreter.
 
 use core::str;
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, fmt, rc::Rc};
 
 use ast::ast::{BlockStatement, Identifier, TNode};
 
 use crate::environment::Environment;
 
-type ObjectType = String;
+#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+pub enum ObjectType {
+    IntegerObj,
+    StringObj,
+    BooleanObj,
+    ArrayObj,
+    NullObj,
+    ReturnValueObj,
+    FunctionObj,
+    BuiltinObj,
+    HashObj,
+    ErrorObj,
+}
 
-pub const INTEGER_OBJ: &str = "INTEGER";
-pub const STRING_OBJ: &str = "STRING";
-pub const BOOLEAN_OBJ: &str = "BOOLEAN";
-pub const ARRAY_OBJ: &str = "ARRAY";
-pub const NULL_OBJ: &str = "NULL";
-pub const RETURN_VALUE_OBJ: &str = "RETURN_VALUE";
-pub const FUNCTION_OBJ: &str = "FUNCTION";
-pub const BUILTIN_OBJ: &str = "BUILTIN";
-pub const HASH_OBJ: &str = "HASH";
-pub const ERROR_OBJ: &str = "ERROR";
+impl fmt::Display for ObjectType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let type_str = match self {
+            ObjectType::IntegerObj => "INTEGER",
+            ObjectType::StringObj => "STRING",
+            ObjectType::BooleanObj => "BOOLEAN",
+            ObjectType::ArrayObj => "ARRAY",
+            ObjectType::NullObj => "NULL",
+            ObjectType::ReturnValueObj => "RETURN_VALUE",
+            ObjectType::FunctionObj => "FUNCTION",
+            ObjectType::BuiltinObj => "BUILTIN",
+            ObjectType::HashObj => "HASH",
+            ObjectType::ErrorObj => "ERROR",
+        };
+        write!(f, "{}", type_str)
+    }
+}
 
 #[derive(PartialEq, Clone)]
 pub enum ObjectTypes {
@@ -84,7 +103,7 @@ pub struct Integer {
 
 impl Object for Integer {
     fn type_(&self) -> ObjectType {
-        INTEGER_OBJ.to_string()
+        ObjectType::IntegerObj
     }
 
     fn inspect(&self) -> String {
@@ -108,7 +127,7 @@ pub struct StringLiteral {
 
 impl Object for StringLiteral {
     fn type_(&self) -> ObjectType {
-        STRING_OBJ.to_string()
+        ObjectType::StringObj
     }
 
     fn inspect(&self) -> String {
@@ -145,7 +164,7 @@ pub struct Boolean {
 
 impl Object for Boolean {
     fn type_(&self) -> ObjectType {
-        BOOLEAN_OBJ.to_string()
+        ObjectType::BooleanObj
     }
 
     fn inspect(&self) -> String {
@@ -170,7 +189,7 @@ pub struct Array {
 
 impl Object for Array {
     fn type_(&self) -> ObjectType {
-        ARRAY_OBJ.to_string()
+        ObjectType::ArrayObj
     }
 
     fn inspect(&self) -> String {
@@ -184,7 +203,7 @@ pub struct Null;
 
 impl Object for Null {
     fn type_(&self) -> ObjectType {
-        NULL_OBJ.to_string()
+        ObjectType::NullObj
     }
 
     fn inspect(&self) -> String {
@@ -199,7 +218,7 @@ pub struct ReturnValue {
 
 impl Object for ReturnValue {
     fn type_(&self) -> ObjectType {
-        RETURN_VALUE_OBJ.to_string()
+        ObjectType::ReturnValueObj
     }
 
     fn inspect(&self) -> String {
@@ -214,7 +233,7 @@ pub struct Error {
 
 impl Object for Error {
     fn type_(&self) -> ObjectType {
-        ERROR_OBJ.to_string()
+        ObjectType::ErrorObj
     }
 
     fn inspect(&self) -> String {
@@ -231,7 +250,7 @@ pub struct Function {
 
 impl Object for Function {
     fn type_(&self) -> ObjectType {
-        FUNCTION_OBJ.to_string()
+        ObjectType::FunctionObj
     }
 
     fn inspect(&self) -> String {
@@ -253,7 +272,7 @@ pub struct Builtin {
 
 impl Object for Builtin {
     fn type_(&self) -> ObjectType {
-        BUILTIN_OBJ.to_string()
+        ObjectType::BuiltinObj
     }
 
     fn inspect(&self) -> String {
@@ -274,7 +293,7 @@ pub struct Hash {
 
 impl Object for Hash {
     fn type_(&self) -> ObjectType {
-        HASH_OBJ.to_string()
+        ObjectType::HashObj
     }
 
     fn inspect(&self) -> String {
