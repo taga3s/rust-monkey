@@ -126,7 +126,7 @@ impl Parser {
             TokenType::RETURN => self.parse_return_statement(),
             _ => self.parse_expression_statement(),
         };
-        stmt.map(|s| Node::Statement(s))
+        stmt.map(Node::Statement)
     }
 
     fn parse_let_statement(&mut self) -> Option<Statement> {
@@ -204,7 +204,7 @@ impl Parser {
         // 右結合力が高い場合、 left_exp が次の演算子に関連づけられている infix_parsefn_ に渡されることはない。
         while !self.peek_token_is(&TokenType::SEMICOLON) && precedence < self.peek_precedence() {
             let infix_parsefn_ = match self.infix_parsefn_s.get(&self.peek_token.type_) {
-                Some(f) => f.clone(),
+                Some(f) => *f,
                 None => return left_exp,
             };
 

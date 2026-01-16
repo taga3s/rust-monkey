@@ -21,7 +21,7 @@ const FALSE: ObjectTypes = ObjectTypes::Boolean(Boolean { value: false });
 
 pub fn eval(node: &Node, env: Rc<RefCell<Environment>>) -> ObjectTypes {
     let result = match node {
-        Node::Program(program) => eval_program(&program, env),
+        Node::Program(program) => eval_program(program, env),
         Node::Expression(expr) => match expr {
             Expression::IntegerLiteral(il) => ObjectTypes::Integer(Integer { value: il.value }),
             Expression::StringLiteral(sl) => ObjectTypes::StringLiteral(StringLiteral {
@@ -132,7 +132,7 @@ fn eval_program(program: &Program, env: Rc<RefCell<Environment>>) -> ObjectTypes
     let mut result = NULL; //FIXME: handle other object types
 
     for stmt in &program.statements {
-        result = eval(&stmt, env.clone());
+        result = eval(stmt, env.clone());
         match result {
             ObjectTypes::ReturnValue(return_value) => {
                 return *return_value.value;
@@ -148,7 +148,7 @@ fn eval_block_statement(bs: &BlockStatement, env: Rc<RefCell<Environment>>) -> O
     let mut result = NULL;
 
     for stmt in &bs.statements {
-        result = eval(&stmt, env.clone());
+        result = eval(stmt, env.clone());
         if result.type_() == ObjectType::ReturnValueObj || result.type_() == ObjectType::ErrorObj {
             return result;
         }
@@ -191,7 +191,7 @@ fn eval_identifier(node: &Identifier, env: Rc<RefCell<Environment>>) -> ObjectTy
         return builtin.clone();
     }
 
-    return new_error(&format!("identifier not found: {}", node.value));
+    new_error(&format!("identifier not found: {}", node.value))
 }
 
 fn eval_bang_operator_expression(right: &ObjectTypes) -> ObjectTypes {
@@ -222,13 +222,13 @@ fn eval_minus_prefix_operator_expression(right: &ObjectTypes) -> ObjectTypes {
 }
 
 fn eval_infix_expression(operator: &str, left: &ObjectTypes, right: &ObjectTypes) -> ObjectTypes {
-    if &left.type_() == &ObjectType::IntegerObj && &right.type_() == &ObjectType::IntegerObj {
+    if left.type_() == ObjectType::IntegerObj && right.type_() == ObjectType::IntegerObj {
         return eval_integer_infix_expression(operator, left, right);
     };
-    if &left.type_() == &ObjectType::StringObj && &right.type_() == &ObjectType::StringObj {
+    if left.type_() == ObjectType::StringObj && right.type_() == ObjectType::StringObj {
         return eval_string_infix_expression(operator, left, right);
     };
-    if &left.type_() != &right.type_() {
+    if left.type_() != right.type_() {
         return new_error(&format!(
             "type mismatch: {} {} {}",
             left.type_(),
@@ -352,7 +352,7 @@ fn eval_expressions(exps: &[Box<Node>], env: Rc<RefCell<Environment>>) -> Vec<Ob
 
 fn apply_function(func: &ObjectTypes, args: &[ObjectTypes]) -> ObjectTypes {
     if let ObjectTypes::Function(function) = func {
-        let extended_env = extend_function_env(&function, args);
+        let extended_env = extend_function_env(function, args);
         let evaluated = eval(
             &Node::Statement(Statement::BlockStatement(function.body.clone())),
             extended_env,
@@ -394,7 +394,7 @@ fn eval_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes
         return eval_hash_index_expression(left, index);
     }
 
-    return new_error(&format!("index operator not supported: {}", left.type_()));
+    new_error(&format!("index operator not supported: {}", left.type_()))
 }
 
 fn eval_array_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {

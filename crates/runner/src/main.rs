@@ -17,7 +17,7 @@ fn main() {
     let path = Path::new(file_path);
     let display = path.display();
 
-    let mut file = match File::open(&path) {
+    let mut file = match File::open(path) {
         Err(why) => {
             eprintln!("couldn't open {}: {}", display, why);
             std::process::exit(1);

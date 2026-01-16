@@ -131,7 +131,7 @@ impl Object for StringLiteral {
     }
 
     fn inspect(&self) -> String {
-        format!("{}", self.value)
+        self.value.to_string()
     }
 }
 

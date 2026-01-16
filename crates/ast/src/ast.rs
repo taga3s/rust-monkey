@@ -1,5 +1,5 @@
 //! AST for the Monkey programming language
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
 use token::token::Token;
 
@@ -12,12 +12,12 @@ pub enum Node {
     Expression(Expression),
 }
 
-impl Node {
-    pub fn to_string(&self) -> String {
+impl fmt::Display for Node {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Node::Program(p) => p.to_string(),
-            Node::Statement(s) => s.to_string(),
-            Node::Expression(e) => e.to_string(),
+            Node::Program(p) => write!(f, "{}", p.to_string()),
+            Node::Statement(s) => write!(f, "{}", s),
+            Node::Expression(e) => write!(f, "{}", e),
         }
     }
 }
@@ -38,13 +38,13 @@ pub enum Statement {
     BlockStatement(BlockStatement),
 }
 
-impl Statement {
-    pub fn to_string(&self) -> String {
+impl fmt::Display for Statement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Statement::Let(s) => s.to_string(),
-            Statement::Return(s) => s.to_string(),
-            Statement::ExpressionStatement(s) => s.to_string(),
-            Statement::BlockStatement(s) => s.to_string(),
+            Statement::Let(s) => write!(f, "{}", s.to_string()),
+            Statement::Return(s) => write!(f, "{}", s.to_string()),
+            Statement::ExpressionStatement(s) => write!(f, "{}", s.to_string()),
+            Statement::BlockStatement(s) => write!(f, "{}", s.to_string()),
         }
     }
 }
@@ -65,21 +65,21 @@ pub enum Expression {
     HashLiteral(HashLiteral),
 }
 
-impl Expression {
-    pub fn to_string(&self) -> String {
+impl fmt::Display for Expression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Expression::IntegerLiteral(e) => e.to_string(),
-            Expression::StringLiteral(e) => e.to_string(),
-            Expression::Boolean(e) => e.to_string(),
-            Expression::ArrayLiteral(e) => e.to_string(),
-            Expression::IndexExpression(e) => e.to_string(),
-            Expression::Identifier(e) => e.to_string(),
-            Expression::Prefix(e) => e.to_string(),
-            Expression::Infix(e) => e.to_string(),
-            Expression::IfExpression(e) => e.to_string(),
-            Expression::FunctionLiteral(e) => e.to_string(),
-            Expression::CallExpression(e) => e.to_string(),
-            Expression::HashLiteral(e) => e.to_string(),
+            Expression::IntegerLiteral(e) => write!(f, "{}", e.to_string()),
+            Expression::StringLiteral(e) => write!(f, "{}", e.to_string()),
+            Expression::Boolean(e) => write!(f, "{}", e.to_string()),
+            Expression::ArrayLiteral(e) => write!(f, "{}", e.to_string()),
+            Expression::IndexExpression(e) => write!(f, "{}", e.to_string()),
+            Expression::Identifier(e) => write!(f, "{}", e.to_string()),
+            Expression::Prefix(e) => write!(f, "{}", e.to_string()),
+            Expression::Infix(e) => write!(f, "{}", e.to_string()),
+            Expression::IfExpression(e) => write!(f, "{}", e.to_string()),
+            Expression::FunctionLiteral(e) => write!(f, "{}", e.to_string()),
+            Expression::CallExpression(e) => write!(f, "{}", e.to_string()),
+            Expression::HashLiteral(e) => write!(f, "{}", e.to_string()),
         }
     }
 }
@@ -110,8 +110,8 @@ pub struct Program {
 
 impl TNode for Program {
     fn token_literal(&self) -> String {
-        if self.statements.len() > 0 {
-            String::from(self.statements[0].to_string())
+        if !self.statements.is_empty() {
+            self.statements[0].to_string()
         } else {
             "".to_string()
         }
@@ -419,7 +419,7 @@ impl TNode for IfExpression {
                 .map_or("".to_string(), |c| c.to_string()),
             self.alternative
                 .as_ref()
-                .map_or("".to_string(), |a| format!("else{}", a.to_string()))
+                .map_or("".to_string(), |a| format!("else{}", a))
         )
     }
 }
@@ -523,7 +523,7 @@ impl TNode for HashLiteral {
         let pairs = self
             .pairs
             .iter()
-            .map(|(k, v)| format!("{}: {}", k.to_string(), v.to_string()))
+            .map(|(k, v)| format!("{}: {}", k, v))
             .collect::<Vec<String>>()
             .join(", ");
         format!("{{{}}}", pairs)

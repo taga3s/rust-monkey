@@ -41,7 +41,7 @@ fn first_builtin(args: &[ObjectTypes]) -> ObjectTypes {
 
     match &args[0] {
         ObjectTypes::Array(array) => {
-            if array.elements.len() > 0 {
+            if !array.elements.is_empty() {
                 array.elements[0].clone()
             } else {
                 ObjectTypes::Null(object::object::Null {})
@@ -62,7 +62,7 @@ fn last_builtin(args: &[ObjectTypes]) -> ObjectTypes {
 
     match &args[0] {
         ObjectTypes::Array(array) => {
-            if array.elements.len() > 0 {
+            if !array.elements.is_empty() {
                 array.elements[array.elements.len() - 1].clone()
             } else {
                 ObjectTypes::Null(object::object::Null {})
@@ -83,7 +83,7 @@ fn rest_builtin(args: &[ObjectTypes]) -> ObjectTypes {
 
     match &args[0] {
         ObjectTypes::Array(array) => {
-            if array.elements.len() > 0 {
+            if !array.elements.is_empty() {
                 let new_elements = array.elements[1..].to_vec();
                 ObjectTypes::Array(object::object::Array {
                     elements: new_elements,

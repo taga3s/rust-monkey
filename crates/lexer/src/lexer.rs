@@ -118,12 +118,8 @@ impl Lexer {
 
     fn read_identifier(&mut self) -> String {
         let position = self.position;
-        loop {
-            let cur_ch = match self.ch {
-                Some(c) => c,
-                None => break,
-            };
-            if !self.is_letter(cur_ch) {
+        while let Some(c) = self.ch {
+            if !self.is_letter(c) {
                 break;
             }
             self.read_char();
@@ -133,12 +129,8 @@ impl Lexer {
 
     fn read_number(&mut self) -> String {
         let position = self.position;
-        loop {
-            let cur_ch = match self.ch {
-                Some(c) => c,
-                None => break,
-            };
-            if !self.is_digit(cur_ch) {
+        while let Some(c) = self.ch {
+            if !self.is_digit(c) {
                 break;
             }
             self.read_char();
@@ -150,7 +142,7 @@ impl Lexer {
         let position = self.position + 1;
         loop {
             self.read_char();
-            if self.ch == Some('"') || self.ch == None {
+            if self.ch.is_some_and(|c| c == '"') || self.ch.is_none() {
                 break;
             }
         }
@@ -173,6 +165,6 @@ impl Lexer {
     }
 
     fn is_digit(&self, ch: char) -> bool {
-        ch.is_digit(10)
+        ch.is_ascii_digit()
     }
 }

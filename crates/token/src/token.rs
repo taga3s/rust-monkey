@@ -15,6 +15,12 @@ impl Token {
     }
 }
 
+impl Default for Token {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TokenType {
     ILLEGAL,
