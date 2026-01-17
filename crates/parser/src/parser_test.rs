@@ -785,7 +785,7 @@ fn test_function_literal_parsing() {
         );
     }
 
-    let param0 = match func.parameters[0].as_ref() {
+    let param0 = match &func.parameters[0] {
         Node::Expression(e) => e,
         _ => {
             panic!("function.parameters[0] is not Expression.");
@@ -796,7 +796,7 @@ fn test_function_literal_parsing() {
         return;
     }
 
-    let param1 = match func.parameters[1].as_ref() {
+    let param1 = match &func.parameters[1] {
         Node::Expression(e) => e,
         _ => {
             panic!("function.parameters[1] is not Expression.");
@@ -876,7 +876,7 @@ fn test_function_parameter_parsing() {
         }
 
         for (i, ident) in expected_params.iter().enumerate() {
-            let param = match func.parameters[i].as_ref() {
+            let param = match &func.parameters[i] {
                 Node::Expression(e) => e,
                 _ => {
                     panic!("func.parameters[{}] is not Expression.", i);

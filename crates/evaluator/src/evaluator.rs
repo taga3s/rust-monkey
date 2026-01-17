@@ -69,7 +69,7 @@ pub fn eval(node: &Node, env: Rc<RefCell<Environment>>) -> ObjectTypes {
             Expression::FunctionLiteral(fl) => {
                 let mut parameters = vec![];
                 for p in &fl.parameters {
-                    match p.as_ref() {
+                    match p {
                         Node::Expression(Expression::Identifier(ident)) => {
                             parameters.push(ident.clone())
                         }

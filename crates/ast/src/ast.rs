@@ -492,7 +492,7 @@ impl fmt::Display for BlockStatement {
 #[derive(PartialEq, Clone, Debug)]
 pub struct FunctionLiteral {
     pub token: Token,
-    pub parameters: Vec<Box<Node>>,
+    pub parameters: Vec<Node>,
     pub body: Option<Box<Node>>,
 }
 

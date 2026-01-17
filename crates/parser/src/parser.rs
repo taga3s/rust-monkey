@@ -393,8 +393,8 @@ impl Parser {
         Some(Box::new(Node::Expression(Expression::FunctionLiteral(lit))))
     }
 
-    fn parse_function_parameters(&mut self) -> Option<Vec<Box<Node>>> {
-        let mut identifiers: Vec<Box<Node>> = vec![];
+    fn parse_function_parameters(&mut self) -> Option<Vec<Node>> {
+        let mut identifiers: Vec<Node> = vec![];
 
         if self.peek_token_is(&TokenType::RPAREN) {
             self.next_token();
@@ -407,7 +407,7 @@ impl Parser {
             token: self.cur_token.clone(),
             value: self.cur_token.literal.clone(),
         };
-        identifiers.push(Box::new(Node::Expression(Expression::Identifier(ident))));
+        identifiers.push(Node::Expression(Expression::Identifier(ident)));
 
         while self.peek_token_is(&TokenType::COMMA) {
             self.next_token();
@@ -416,7 +416,7 @@ impl Parser {
                 token: self.cur_token.clone(),
                 value: self.cur_token.literal.clone(),
             };
-            identifiers.push(Box::new(Node::Expression(Expression::Identifier(ident))));
+            identifiers.push(Node::Expression(Expression::Identifier(ident)));
         }
 
         if !self.expect_peek(&TokenType::RPAREN) {
