@@ -1,8 +1,6 @@
 # rust-monkey
 
-Rust implementation of the Monkey programming language, based on the book *[Writing An Interpreter In Go](https://interpreterbook.com/)*.
-
-This project is work in progress.
+Rust implementation of the Monkey language, based on the book *[Writing An Interpreter In Go](https://interpreterbook.com/)*.
 
 ## features
 - Tree-Walking Interpreter
