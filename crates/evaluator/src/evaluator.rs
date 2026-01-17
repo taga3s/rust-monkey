@@ -275,9 +275,17 @@ fn eval_integer_infix_expression(
         "*" => ObjectTypes::Integer(Integer {
             value: left_val * right_val,
         }),
-        "/" => ObjectTypes::Integer(Integer {
-            value: left_val / right_val,
-        }),
+        "/" => {
+            if right_val == 0 {
+                return new_error(&format!(
+                    "attempt to divide by zero: {} {} {}",
+                    left_val, operator, right_val
+                ));
+            }
+            ObjectTypes::Integer(Integer {
+                value: left_val / right_val,
+            })
+        }
         "<" => native_bool_to_boolean_object(left_val < right_val),
         ">" => native_bool_to_boolean_object(left_val > right_val),
         "==" => native_bool_to_boolean_object(left_val == right_val),
