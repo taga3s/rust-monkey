@@ -45,8 +45,8 @@ pub struct Parser {
     cur_token: Token,
     peek_token: Token,
 
-    prefix_parsefn_s: HashMap<TokenType, PrefixParseFn>,
-    infix_parsefn_s: HashMap<TokenType, InfixParseFn>,
+    prefix_parsefns: HashMap<TokenType, PrefixParseFn>,
+    infix_parsefns: HashMap<TokenType, InfixParseFn>,
 }
 
 impl Parser {
@@ -56,8 +56,8 @@ impl Parser {
             errors: vec![],
             cur_token: Token::new(),
             peek_token: Token::new(),
-            prefix_parsefn_s: HashMap::new(),
-            infix_parsefn_s: HashMap::new(),
+            prefix_parsefns: HashMap::new(),
+            infix_parsefns: HashMap::new(),
         };
 
         parser.register_prefix(TokenType::IDENT, Self::parse_identifier);
@@ -191,7 +191,7 @@ impl Parser {
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Option<Box<Node>> {
-        let prefix_parsefn_ = match self.prefix_parsefn_s.get(&self.cur_token.type_) {
+        let prefix_parsefn_ = match self.prefix_parsefns.get(&self.cur_token.type_) {
             Some(p) => p,
             None => {
                 self.no_prefix_parse_fn_error(self.cur_token.type_.clone());
@@ -203,7 +203,7 @@ impl Parser {
 
         // 右結合力が高い場合、 left_exp が次の演算子に関連づけられている infix_parsefn_ に渡されることはない。
         while !self.peek_token_is(&TokenType::SEMICOLON) && precedence < self.peek_precedence() {
-            let infix_parsefn_ = match self.infix_parsefn_s.get(&self.peek_token.type_) {
+            let infix_parsefn_ = match self.infix_parsefns.get(&self.peek_token.type_) {
                 Some(f) => *f,
                 None => return left_exp,
             };
@@ -220,7 +220,7 @@ impl Parser {
     }
 
     fn register_prefix(&mut self, tok: TokenType, fn_: PrefixParseFn) {
-        self.prefix_parsefn_s.insert(tok, fn_);
+        self.prefix_parsefns.insert(tok, fn_);
     }
 
     fn no_prefix_parse_fn_error(&mut self, tok: TokenType) {
@@ -350,7 +350,7 @@ impl Parser {
     }
 
     fn register_infix(&mut self, tok: TokenType, fn_: InfixParseFn) {
-        self.infix_parsefn_s.insert(tok, fn_);
+        self.infix_parsefns.insert(tok, fn_);
     }
 
     fn parse_infix_expression(&mut self, left: Box<Node>) -> Option<Box<Node>> {
