@@ -21,7 +21,7 @@ impl Default for Token {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TokenType {
     ILLEGAL,
     EOF,
@@ -71,7 +71,7 @@ const KEYWORDS: [(&str, TokenType); 7] = [
 
 pub fn lookup_ident(ident: &str) -> TokenType {
     if let Some((_, token_type)) = KEYWORDS.iter().find(|(key, _)| *key == ident) {
-        return token_type.clone();
+        return *token_type;
     }
     TokenType::IDENT
 }
