@@ -16,5 +16,8 @@ run FILE_PATH:
 test:
     cargo test
 
+lint:
+    cargo clippy
+
 build-wasm:
     wasm-pack build crates/runner --target web
