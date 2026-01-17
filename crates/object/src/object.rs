@@ -142,7 +142,7 @@ fn fnv1a_64(data: &str) -> u64 {
     let mut hash_val: u64 = 0xcbf29ce484222325;
     for byte in data.as_bytes() {
         hash_val ^= *byte as u64;
-        hash_val = (hash_val.wrapping_mul(fnv_prime)) & 0xFFFFFFFFFFFFFFFF; // Ensure 64-bit
+        hash_val = hash_val.wrapping_mul(fnv_prime);
     }
     hash_val
 }
@@ -255,11 +255,7 @@ impl Object for Function {
 
     fn inspect(&self) -> String {
         let params: Vec<String> = self.parameters.iter().map(|p| p.to_string()).collect();
-        format!(
-            "fn({}) {{\n{}\n}}",
-            params.join(", "),
-            self.body.to_string()
-        )
+        format!("fn({}) {{\n{}\n}}", params.join(", "), self.body)
     }
 }
 

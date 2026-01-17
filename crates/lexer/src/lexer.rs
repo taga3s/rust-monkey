@@ -28,7 +28,7 @@ impl Lexer {
 
         match self.ch {
             Some('=') => {
-                if self.peek_char() == Some('=') {
+                if self.peek_char().is_some_and(|c| c == '=') {
                     let ch = self.ch.unwrap();
                     self.read_char();
                     tok.type_ = TokenType::EQ;
@@ -47,7 +47,7 @@ impl Lexer {
             Some('+') => tok = self.new_token(TokenType::PLUS, self.ch.unwrap()),
             Some('-') => tok = self.new_token(TokenType::MINUS, self.ch.unwrap()),
             Some('!') => {
-                if self.peek_char() == Some('=') {
+                if self.peek_char().is_some_and(|c| c == '=') {
                     let ch = self.ch.unwrap();
                     self.read_char();
                     tok.type_ = TokenType::NOTEQ;
@@ -107,10 +107,10 @@ impl Lexer {
     }
 
     fn skip_whitespaces(&mut self) {
-        while self.ch == Some(' ')
-            || self.ch == Some('\t')
-            || self.ch == Some('\n')
-            || self.ch == Some('\r')
+        while self.ch.is_some_and(|c| c == ' ')
+            || self.ch.is_some_and(|c| c == '\t')
+            || self.ch.is_some_and(|c| c == '\n')
+            || self.ch.is_some_and(|c| c == '\r')
         {
             self.read_char();
         }

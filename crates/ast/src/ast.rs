@@ -391,7 +391,7 @@ impl fmt::Display for ArrayLiteral {
             .map(|e| e.to_string())
             .collect::<Vec<String>>()
             .join(", ");
-        write!(f, "{}", format!("[{}]", out))
+        write!(f, "[{}]", out)
     }
 }
 
