@@ -3,7 +3,7 @@
 use ::token::token::{lookup_ident, Token, TokenType};
 
 pub struct Lexer {
-    input: String,
+    input_chars: Vec<char>,
     position: usize,
     read_position: usize,
     ch: Option<char>,
@@ -12,7 +12,7 @@ pub struct Lexer {
 impl Lexer {
     pub fn new(input: &str) -> Lexer {
         let mut lexer = Lexer {
-            input: input.to_string(),
+            input_chars: input.chars().collect(),
             position: 0,
             read_position: 0,
             ch: None,
@@ -104,20 +104,20 @@ impl Lexer {
     }
 
     fn read_char(&mut self) {
-        if self.read_position >= self.input.len() {
+        if self.read_position >= self.input_chars.len() {
             self.ch = None;
         } else {
-            self.ch = self.input.chars().nth(self.read_position);
+            self.ch = Some(self.input_chars[self.read_position]);
         }
         self.position = self.read_position;
         self.read_position += 1;
     }
 
     fn peek_char(&mut self) -> Option<char> {
-        if self.read_position >= self.input.len() {
+        if self.read_position >= self.input_chars.len() {
             None
         } else {
-            self.input.chars().nth(self.read_position)
+            Some(self.input_chars[self.read_position])
         }
     }
 
@@ -135,7 +135,7 @@ impl Lexer {
             }
             self.read_char();
         }
-        self.input[position..self.position].to_string()
+        self.input_chars[position..self.position].iter().collect()
     }
 
     fn read_number(&mut self) -> String {
@@ -146,7 +146,7 @@ impl Lexer {
             }
             self.read_char();
         }
-        self.input[position..self.position].to_string()
+        self.input_chars[position..self.position].iter().collect()
     }
 
     fn read_string(&mut self) -> String {
@@ -157,7 +157,7 @@ impl Lexer {
                 break;
             }
         }
-        self.input[position..self.position].to_string()
+        self.input_chars[position..self.position].iter().collect()
     }
 
     fn new_token(&self, token_type: TokenType, ch: char) -> Token {

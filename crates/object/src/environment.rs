@@ -24,8 +24,10 @@ impl Environment {
 
     pub fn get(&self, name: &str) -> Option<ObjectTypes> {
         let obj = self.store.get(name).cloned();
-        if obj.is_none() && self.outer.is_some() {
-            return self.outer.as_ref().unwrap().borrow().get(name);
+        if obj.is_none() {
+            if let Some(outer) = self.outer.as_ref() {
+                return outer.borrow().get(name);
+            }
         }
         obj
     }
