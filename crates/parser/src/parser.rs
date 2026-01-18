@@ -309,6 +309,7 @@ impl Parser {
         Some(Box::new(Node::Expression(Expression::ArrayLiteral(array))))
     }
 
+    #[allow(clippy::vec_box)]
     fn parse_expression_list(&mut self, end: TokenType) -> Option<Vec<Box<Node>>> {
         let mut list = vec![];
 
