@@ -14,7 +14,7 @@ use token::token::{Token, TokenType};
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<Node>>;
 type InfixParseFn = fn(&mut Parser, left: Box<Node>) -> Option<Box<Node>>;
 
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub enum Precedence {
     LOWEST,
     EQUALS,      // ==
@@ -97,7 +97,7 @@ impl Parser {
 
     fn peek_error(&mut self, tok: &TokenType) {
         let msg = format!(
-            "expected next token to be {:?}, got {:?} instead",
+            "expected next token to be \"{}\", got \"{}\" instead",
             tok, self.peek_token.type_
         );
         self.errors.push(msg);
@@ -224,7 +224,7 @@ impl Parser {
     }
 
     fn no_prefix_parse_fn_error(&mut self, tok: TokenType) {
-        let msg = format!("no prefix parse function for {:?} found", tok);
+        let msg = format!("no prefix parse function for \"{}\" found", tok);
         self.errors.push(msg);
     }
 
@@ -563,14 +563,14 @@ impl Parser {
             .iter()
             .find(|(t, _)| *t == self.peek_token.type_)
         {
-            Some((_, p)) => p.clone(),
+            Some((_, p)) => *p,
             None => Precedence::LOWEST,
         }
     }
 
     fn cur_precedence(&self) -> Precedence {
         match PRECEDENCES.iter().find(|(t, _)| t == &self.cur_token.type_) {
-            Some((_, p)) => p.clone(),
+            Some((_, p)) => *p,
             None => Precedence::LOWEST,
         }
     }

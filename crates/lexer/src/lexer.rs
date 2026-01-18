@@ -122,10 +122,7 @@ impl Lexer {
     }
 
     fn skip_whitespaces(&mut self) {
-        while self.ch.is_some_and(|c| c.is_whitespace())
-            || self.ch.is_some_and(|c| c == '\t')
-            || self.ch.is_some_and(|c| c == '\r')
-        {
+        while self.ch.is_some_and(|c| c.is_whitespace()) {
             self.read_char();
         }
     }
@@ -166,11 +163,7 @@ impl Lexer {
     fn new_token(&self, token_type: TokenType, ch: char) -> Token {
         Token {
             type_: token_type,
-            literal: if ch == ' ' {
-                "".to_string()
-            } else {
-                ch.to_string()
-            },
+            literal: ch.to_string(),
         }
     }
 

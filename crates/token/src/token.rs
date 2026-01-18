@@ -1,5 +1,7 @@
 //! Token for the Monkey programming language
 
+use std::fmt;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Token {
     pub type_: TokenType,
@@ -21,7 +23,7 @@ impl Default for Token {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TokenType {
     ILLEGAL,
     EOF,
@@ -57,6 +59,45 @@ pub enum TokenType {
     IF,
     ELSE,
     RETURN,
+}
+
+impl fmt::Display for TokenType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let out = match self {
+            TokenType::ILLEGAL => "ILLEGAL",
+            TokenType::EOF => "EOF",
+            TokenType::IDENT => "IDENT",
+            TokenType::INT => "INT",
+            TokenType::STRING => "STRING",
+            TokenType::ASSIGN => "=",
+            TokenType::PLUS => "+",
+            TokenType::MINUS => "-",
+            TokenType::BANG => "!",
+            TokenType::ASTERISK => "*",
+            TokenType::SLASH => "/",
+            TokenType::LT => "<",
+            TokenType::GT => ">",
+            TokenType::EQ => "==",
+            TokenType::NOTEQ => "!=",
+            TokenType::COMMA => ",",
+            TokenType::SEMICOLON => ";",
+            TokenType::COLON => ":",
+            TokenType::LPAREN => "(",
+            TokenType::RPAREN => ")",
+            TokenType::LBRACE => "{",
+            TokenType::RBRACE => "}",
+            TokenType::LBRACKET => "[",
+            TokenType::RBRACKET => "]",
+            TokenType::FUNCTION => "fn",
+            TokenType::LET => "let",
+            TokenType::TRUE => "true",
+            TokenType::FALSE => "false",
+            TokenType::IF => "if",
+            TokenType::ELSE => "else",
+            TokenType::RETURN => "return",
+        };
+        write!(f, "{}", out)
+    }
 }
 
 const KEYWORDS: [(&str, TokenType); 7] = [
