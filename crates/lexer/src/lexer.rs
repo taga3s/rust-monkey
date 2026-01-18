@@ -24,63 +24,78 @@ impl Lexer {
     pub fn next_token(&mut self) -> Token {
         self.skip_whitespaces();
 
-        let mut tok = Token::new();
-
-        match self.ch {
-            Some('=') => {
-                if self.peek_char().is_some_and(|c| c == '=') {
-                    let ch = self.ch.unwrap();
-                    self.read_char();
-                    tok.type_ = TokenType::EQ;
-                    tok.literal = format!("{}{}", ch, self.ch.unwrap());
-                } else {
-                    tok = self.new_token(TokenType::ASSIGN, self.ch.unwrap());
+        let tok = if let Some(current) = self.ch {
+            match current {
+                '=' => {
+                    if self.peek_char().is_some_and(|c| c == '=') {
+                        self.read_char();
+                        if let Some(next) = self.ch {
+                            Token {
+                                type_: TokenType::EQ,
+                                literal: format!("{}{}", current, next),
+                            }
+                        } else {
+                            self.new_token(TokenType::ILLEGAL, current)
+                        }
+                    } else {
+                        self.new_token(TokenType::ASSIGN, current)
+                    }
+                }
+                ';' => self.new_token(TokenType::SEMICOLON, current),
+                ':' => self.new_token(TokenType::COLON, current),
+                '(' => self.new_token(TokenType::LPAREN, current),
+                ')' => self.new_token(TokenType::RPAREN, current),
+                '[' => self.new_token(TokenType::LBRACKET, current),
+                ']' => self.new_token(TokenType::RBRACKET, current),
+                ',' => self.new_token(TokenType::COMMA, current),
+                '+' => self.new_token(TokenType::PLUS, current),
+                '-' => self.new_token(TokenType::MINUS, current),
+                '!' => {
+                    if self.peek_char().is_some_and(|c| c == '=') {
+                        self.read_char();
+                        if let Some(next) = self.ch {
+                            Token {
+                                type_: TokenType::NOTEQ,
+                                literal: format!("{}{}", current, next),
+                            }
+                        } else {
+                            self.new_token(TokenType::ILLEGAL, current)
+                        }
+                    } else {
+                        self.new_token(TokenType::BANG, current)
+                    }
+                }
+                '*' => self.new_token(TokenType::ASTERISK, current),
+                '<' => self.new_token(TokenType::LT, current),
+                '>' => self.new_token(TokenType::GT, current),
+                '/' => self.new_token(TokenType::SLASH, current),
+                '{' => self.new_token(TokenType::LBRACE, current),
+                '}' => self.new_token(TokenType::RBRACE, current),
+                '"' => Token {
+                    type_: TokenType::STRING,
+                    literal: self.read_string(),
+                },
+                _ => {
+                    if self.is_letter(current) {
+                        let literal = self.read_identifier();
+                        let type_ = lookup_ident(&literal);
+                        // Should early return because we have already read_char() in read_identifier()
+                        return Token { type_, literal };
+                    } else if self.is_digit(current) {
+                        // Should early return because we have already read_char() in read_number()
+                        return Token {
+                            type_: TokenType::INT,
+                            literal: self.read_number(),
+                        };
+                    } else {
+                        self.new_token(TokenType::ILLEGAL, current)
+                    }
                 }
             }
-            Some(';') => tok = self.new_token(TokenType::SEMICOLON, self.ch.unwrap()),
-            Some(':') => tok = self.new_token(TokenType::COLON, self.ch.unwrap()),
-            Some('(') => tok = self.new_token(TokenType::LPAREN, self.ch.unwrap()),
-            Some(')') => tok = self.new_token(TokenType::RPAREN, self.ch.unwrap()),
-            Some('[') => tok = self.new_token(TokenType::LBRACKET, self.ch.unwrap()),
-            Some(']') => tok = self.new_token(TokenType::RBRACKET, self.ch.unwrap()),
-            Some(',') => tok = self.new_token(TokenType::COMMA, self.ch.unwrap()),
-            Some('+') => tok = self.new_token(TokenType::PLUS, self.ch.unwrap()),
-            Some('-') => tok = self.new_token(TokenType::MINUS, self.ch.unwrap()),
-            Some('!') => {
-                if self.peek_char().is_some_and(|c| c == '=') {
-                    let ch = self.ch.unwrap();
-                    self.read_char();
-                    tok.type_ = TokenType::NOTEQ;
-                    tok.literal = format!("{}{}", ch, self.ch.unwrap());
-                } else {
-                    tok = self.new_token(TokenType::BANG, self.ch.unwrap());
-                }
-            }
-            Some('*') => tok = self.new_token(TokenType::ASTERISK, self.ch.unwrap()),
-            Some('<') => tok = self.new_token(TokenType::LT, self.ch.unwrap()),
-            Some('>') => tok = self.new_token(TokenType::GT, self.ch.unwrap()),
-            Some('/') => tok = self.new_token(TokenType::SLASH, self.ch.unwrap()),
-            Some('{') => tok = self.new_token(TokenType::LBRACE, self.ch.unwrap()),
-            Some('}') => tok = self.new_token(TokenType::RBRACE, self.ch.unwrap()),
-            Some('"') => {
-                tok.type_ = TokenType::STRING;
-                tok.literal = self.read_string();
-            }
-            None => {
-                tok.literal = "".to_string();
-                tok.type_ = TokenType::EOF;
-            }
-            _ => {
-                if self.is_letter(self.ch.unwrap()) {
-                    tok.literal = self.read_identifier();
-                    tok.type_ = lookup_ident(&tok.literal);
-                    return tok;
-                } else if self.is_digit(self.ch.unwrap()) {
-                    tok.type_ = TokenType::INT;
-                    tok.literal = self.read_number();
-                    return tok;
-                }
-                tok = self.new_token(TokenType::ILLEGAL, self.ch.unwrap());
+        } else {
+            Token {
+                type_: TokenType::EOF,
+                literal: "".to_string(),
             }
         };
 
@@ -107,9 +122,8 @@ impl Lexer {
     }
 
     fn skip_whitespaces(&mut self) {
-        while self.ch.is_some_and(|c| c == ' ')
+        while self.ch.is_some_and(|c| c.is_whitespace())
             || self.ch.is_some_and(|c| c == '\t')
-            || self.ch.is_some_and(|c| c == '\n')
             || self.ch.is_some_and(|c| c == '\r')
         {
             self.read_char();
@@ -149,10 +163,10 @@ impl Lexer {
         self.input[position..self.position].to_string()
     }
 
-    fn new_token(&self, tokentype_: TokenType, ch: char) -> Token {
+    fn new_token(&self, token_type: TokenType, ch: char) -> Token {
         Token {
-            type_: tokentype_,
-            literal: if ch.to_string() == " " {
+            type_: token_type,
+            literal: if ch == ' ' {
                 "".to_string()
             } else {
                 ch.to_string()

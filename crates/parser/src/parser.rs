@@ -3,9 +3,10 @@
 use std::{collections::HashMap, vec};
 
 use ast::ast::{
-    BlockStatement, Boolean, CallExpression, Expression, ExpressionStatement, FunctionLiteral,
-    Identifier, IfExpression, InfixExpression, IntegerLiteral, LetStatement, Node,
-    PrefixExpression, Program, ReturnStatement, Statement, StringLiteral,
+    ArrayLiteral, BlockStatement, Boolean, CallExpression, Expression, ExpressionStatement,
+    FunctionLiteral, HashLiteral, Identifier, IfExpression, IndexExpression, InfixExpression,
+    IntegerLiteral, LetStatement, Node, PrefixExpression, Program, ReturnStatement, Statement,
+    StringLiteral,
 };
 use lexer::lexer::Lexer;
 use token::token::{Token, TokenType};
@@ -45,8 +46,8 @@ pub struct Parser {
     cur_token: Token,
     peek_token: Token,
 
-    prefix_parsefns: HashMap<TokenType, PrefixParseFn>,
-    infix_parsefns: HashMap<TokenType, InfixParseFn>,
+    prefix_parse_fns: HashMap<TokenType, PrefixParseFn>,
+    infix_parse_fns: HashMap<TokenType, InfixParseFn>,
 }
 
 impl Parser {
@@ -56,8 +57,8 @@ impl Parser {
             errors: vec![],
             cur_token: Token::new(),
             peek_token: Token::new(),
-            prefix_parsefns: HashMap::new(),
-            infix_parsefns: HashMap::new(),
+            prefix_parse_fns: HashMap::new(),
+            infix_parse_fns: HashMap::new(),
         };
 
         parser.register_prefix(TokenType::IDENT, Self::parse_identifier);
@@ -108,16 +109,15 @@ impl Parser {
     }
 
     pub fn parse_program(&mut self) -> Node {
-        let mut program = Program { statements: vec![] };
-
+        let mut stmts = vec![];
         while self.cur_token.type_ != TokenType::EOF {
             let stmt = self.parse_statement();
             if let Some(s) = stmt {
-                program.statements.push(s);
+                stmts.push(s);
             }
             self.next_token();
         }
-        Node::Program(program)
+        Node::Program(Program { statements: stmts })
     }
 
     fn parse_statement(&mut self) -> Option<Node> {
@@ -191,36 +191,36 @@ impl Parser {
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Option<Box<Node>> {
-        let prefix_parsefn_ = match self.prefix_parsefns.get(&self.cur_token.type_) {
+        let prefix_parse_fn = match self.prefix_parse_fns.get(&self.cur_token.type_) {
             Some(p) => p,
             None => {
-                self.no_prefix_parse_fn_error(self.cur_token.type_.clone());
+                self.no_prefix_parse_fn_error(self.cur_token.type_);
                 return None;
             }
         };
 
-        let mut left_exp = prefix_parsefn_(self);
+        let mut left_expr = prefix_parse_fn(self);
 
-        // 右結合力が高い場合、 left_exp が次の演算子に関連づけられている infix_parsefn_ に渡されることはない。
+        // 右結合力が高い場合、 left_exp が次の演算子に関連づけられている infix_parse_fn に渡されることはない。
         while !self.peek_token_is(&TokenType::SEMICOLON) && precedence < self.peek_precedence() {
-            let infix_parsefn_ = match self.infix_parsefns.get(&self.peek_token.type_) {
+            let infix_parse_fn = match self.infix_parse_fns.get(&self.peek_token.type_) {
                 Some(f) => *f,
-                None => return left_exp,
+                None => return left_expr,
             };
 
             self.next_token();
 
-            left_exp = match left_exp {
-                Some(le) => infix_parsefn_(self, le),
+            left_expr = match left_expr {
+                Some(le) => infix_parse_fn(self, le),
                 None => return None,
             };
         }
 
-        left_exp
+        left_expr
     }
 
     fn register_prefix(&mut self, tok: TokenType, fn_: PrefixParseFn) {
-        self.prefix_parsefns.insert(tok, fn_);
+        self.prefix_parse_fns.insert(tok, fn_);
     }
 
     fn no_prefix_parse_fn_error(&mut self, tok: TokenType) {
@@ -291,19 +291,20 @@ impl Parser {
     fn parse_grouped_expression(&mut self) -> Option<Box<Node>> {
         self.next_token();
 
-        let exp = self.parse_expression(Precedence::LOWEST);
+        let expr = self.parse_expression(Precedence::LOWEST);
 
         if !self.expect_peek(&TokenType::RPAREN) {
             return None;
         }
 
-        exp
+        expr
     }
 
     fn parse_array_literal(&mut self) -> Option<Box<Node>> {
-        let array = ast::ast::ArrayLiteral {
+        let elements = self.parse_expression_list(TokenType::RBRACKET)?;
+        let array = ArrayLiteral {
             token: self.cur_token.clone(),
-            elements: self.parse_expression_list(TokenType::RBRACKET)?,
+            elements,
         };
         Some(Box::new(Node::Expression(Expression::ArrayLiteral(array))))
     }
@@ -317,12 +318,14 @@ impl Parser {
         }
 
         self.next_token();
-        list.push(self.parse_expression(Precedence::LOWEST)?);
+        let expr = self.parse_expression(Precedence::LOWEST)?;
+        list.push(expr);
 
         while self.peek_token_is(&TokenType::COMMA) {
             self.next_token();
             self.next_token();
-            list.push(self.parse_expression(Precedence::LOWEST)?);
+            let expr = self.parse_expression(Precedence::LOWEST)?;
+            list.push(expr);
         }
 
         if !self.expect_peek(&end) {
@@ -333,24 +336,26 @@ impl Parser {
     }
 
     fn parse_index_expression(&mut self, left: Box<Node>) -> Option<Box<Node>> {
-        let mut exp = ast::ast::IndexExpression {
+        let mut expr = IndexExpression {
             token: self.cur_token.clone(),
             left: Some(left),
             index: None,
         };
 
         self.next_token();
-        exp.index = self.parse_expression(Precedence::LOWEST);
+        expr.index = self.parse_expression(Precedence::LOWEST);
 
         if !self.expect_peek(&TokenType::RBRACKET) {
             return None;
         }
 
-        Some(Box::new(Node::Expression(Expression::IndexExpression(exp))))
+        Some(Box::new(Node::Expression(Expression::IndexExpression(
+            expr,
+        ))))
     }
 
     fn register_infix(&mut self, tok: TokenType, fn_: InfixParseFn) {
-        self.infix_parsefns.insert(tok, fn_);
+        self.infix_parse_fns.insert(tok, fn_);
     }
 
     fn parse_infix_expression(&mut self, left: Box<Node>) -> Option<Box<Node>> {
@@ -369,7 +374,7 @@ impl Parser {
     }
 
     fn parse_function_literal(&mut self) -> Option<Box<Node>> {
-        let mut lit = FunctionLiteral {
+        let mut literal = FunctionLiteral {
             token: self.cur_token.clone(),
             parameters: vec![],
             body: None,
@@ -379,7 +384,7 @@ impl Parser {
             return None;
         }
 
-        lit.parameters = match self.parse_function_parameters() {
+        literal.parameters = match self.parse_function_parameters() {
             Some(p) => p,
             None => return None,
         };
@@ -388,17 +393,19 @@ impl Parser {
             return None;
         }
 
-        lit.body = self.parse_block_statement();
+        literal.body = self.parse_block_statement();
 
-        Some(Box::new(Node::Expression(Expression::FunctionLiteral(lit))))
+        Some(Box::new(Node::Expression(Expression::FunctionLiteral(
+            literal,
+        ))))
     }
 
     fn parse_function_parameters(&mut self) -> Option<Vec<Node>> {
-        let mut identifiers: Vec<Node> = vec![];
+        let mut idents: Vec<Node> = vec![];
 
         if self.peek_token_is(&TokenType::RPAREN) {
             self.next_token();
-            return Some(identifiers);
+            return Some(idents);
         }
 
         self.next_token();
@@ -407,7 +414,7 @@ impl Parser {
             token: self.cur_token.clone(),
             value: self.cur_token.literal.clone(),
         };
-        identifiers.push(Node::Expression(Expression::Identifier(ident)));
+        idents.push(Node::Expression(Expression::Identifier(ident)));
 
         while self.peek_token_is(&TokenType::COMMA) {
             self.next_token();
@@ -416,14 +423,14 @@ impl Parser {
                 token: self.cur_token.clone(),
                 value: self.cur_token.literal.clone(),
             };
-            identifiers.push(Node::Expression(Expression::Identifier(ident)));
+            idents.push(Node::Expression(Expression::Identifier(ident)));
         }
 
         if !self.expect_peek(&TokenType::RPAREN) {
             return None;
         }
 
-        Some(identifiers)
+        Some(idents)
     }
 
     fn parse_if_expression(&mut self) -> Option<Box<Node>> {
@@ -485,16 +492,17 @@ impl Parser {
     }
 
     fn parse_call_expression(&mut self, function: Box<Node>) -> Option<Box<Node>> {
-        let exp = CallExpression {
+        let arguments = self.parse_expression_list(TokenType::RPAREN)?;
+        let expr = CallExpression {
             token: self.cur_token.clone(),
             function,
-            arguments: self.parse_expression_list(TokenType::RPAREN)?,
+            arguments,
         };
-        Some(Box::new(Node::Expression(Expression::CallExpression(exp))))
+        Some(Box::new(Node::Expression(Expression::CallExpression(expr))))
     }
 
     fn parse_hash_literal(&mut self) -> Option<Box<Node>> {
-        let mut hash = ast::ast::HashLiteral {
+        let mut hash = HashLiteral {
             token: self.cur_token.clone(),
             pairs: HashMap::new(),
         };
