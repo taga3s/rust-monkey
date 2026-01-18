@@ -1,5 +1,3 @@
-//! Token for the Monkey programming language
-
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

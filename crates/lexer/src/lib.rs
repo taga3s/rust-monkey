@@ -1,3 +1,4 @@
+//! Lexer for the Monkey language
 pub mod lexer;
 
 #[cfg(test)]

@@ -1,4 +1,3 @@
-//! AST for the Monkey programming language
 use std::{collections::HashMap, fmt};
 
 use token::token::Token;

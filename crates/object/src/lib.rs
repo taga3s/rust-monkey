@@ -1,3 +1,4 @@
+//! Object for the Monkey language
 pub mod environment;
 pub mod object;
 

@@ -1,3 +1,4 @@
+//! Parser for the Monkey language
 pub mod parser;
 
 #[cfg(test)]

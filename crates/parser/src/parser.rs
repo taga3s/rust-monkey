@@ -1,5 +1,3 @@
-//! Parser for the Monkey programming language
-
 use std::{collections::HashMap, vec};
 
 use ast::ast::{

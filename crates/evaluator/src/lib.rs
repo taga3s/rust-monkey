@@ -1,3 +1,4 @@
+//! Evaluator for the Monkey language
 mod builtins;
 pub mod evaluator;
 

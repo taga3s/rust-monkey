@@ -1,5 +1,3 @@
-//! Lexer for the Monkey programming language
-
 use ::token::token::{lookup_ident, Token, TokenType};
 
 pub struct Lexer {

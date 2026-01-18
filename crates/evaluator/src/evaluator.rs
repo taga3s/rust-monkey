@@ -1,5 +1,3 @@
-//! Evaluator for the Monkey programming language
-
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use ast::ast::{
