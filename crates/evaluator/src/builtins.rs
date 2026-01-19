@@ -1,15 +1,12 @@
 use object::object::{Builtin, ObjectTypes};
 
-pub const BUILTINS: [(&str, ObjectTypes); 6] = [
-    ("len", ObjectTypes::Builtin(Builtin { fn_: len_builtin })),
-    (
-        "first",
-        ObjectTypes::Builtin(Builtin { fn_: first_builtin }),
-    ),
-    ("last", ObjectTypes::Builtin(Builtin { fn_: last_builtin })),
-    ("rest", ObjectTypes::Builtin(Builtin { fn_: rest_builtin })),
-    ("push", ObjectTypes::Builtin(Builtin { fn_: push_builtin })),
-    ("log", ObjectTypes::Builtin(Builtin { fn_: puts_log })),
+pub static BUILTINS: [(&str, Builtin); 6] = [
+    ("len", Builtin { fn_: len_builtin }),
+    ("first", Builtin { fn_: first_builtin }),
+    ("last", Builtin { fn_: last_builtin }),
+    ("rest", Builtin { fn_: rest_builtin }),
+    ("push", Builtin { fn_: push_builtin }),
+    ("log", Builtin { fn_: puts_log }),
 ];
 
 fn len_builtin(args: &[ObjectTypes]) -> ObjectTypes {

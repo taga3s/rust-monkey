@@ -186,7 +186,7 @@ fn eval_identifier(node: &Identifier, env: Rc<RefCell<Environment>>) -> ObjectTy
     }
 
     if let Some((_, builtin)) = BUILTINS.iter().find(|(name, _)| *name == node.value) {
-        return builtin.clone();
+        return ObjectTypes::Builtin(builtin.clone());
     }
 
     new_error(&format!("identifier not found: {}", node.value))
