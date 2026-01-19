@@ -125,9 +125,9 @@ fn test_next_token() {
         let tok = lexer.next_token();
 
         assert_eq!(
-            &tok.type_, token_type,
+            &tok.ty, token_type,
             "tests[{}] - token type is wrong. expected={:?}, got={:?}",
-            i, token_type, tok.type_
+            i, token_type, tok.ty
         );
 
         assert_eq!(

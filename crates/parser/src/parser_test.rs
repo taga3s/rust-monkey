@@ -34,9 +34,9 @@ fn check_parsed_program_len(program: &Program, expected_len: usize) {
 
 fn test_literal_expression(exp: &Expression, expected: &TestLiteral) -> bool {
     match expected {
-        TestLiteral::Int(value) => return test_integer_literal(exp, value),
-        TestLiteral::Str(value) => return test_identifier(exp, value),
-        TestLiteral::Bool(value) => return test_boolean_literal(exp, value),
+        TestLiteral::Int(value) => test_integer_literal(exp, value),
+        TestLiteral::Str(value) => test_identifier(exp, value),
+        TestLiteral::Bool(value) => test_boolean_literal(exp, value),
         _ => {
             panic!("type of exp not handled. got={:?}", exp);
         }
@@ -373,7 +373,7 @@ fn test_boolean_expression() {
         if boolean.token_literal() != value.to_string() {
             panic!(
                 "boolean.token_literal() is not {}. got={}",
-                value.to_string(),
+                value,
                 boolean.token_literal()
             );
         };
@@ -756,9 +756,7 @@ fn test_if_else_expression() {
         _ => panic!("alternative.expression is not Identifier."),
     };
 
-    if !test_identifier(ident, "y") {
-        return;
-    }
+    if !test_identifier(ident, "y") {}
 }
 
 #[test]
@@ -831,9 +829,7 @@ fn test_function_literal_parsing() {
         _ => panic!("body_stmt.expression is not InfixExpression."),
     };
 
-    if !test_infix_expression(exp, TestLiteral::Str("x"), "+", TestLiteral::Str("y")) {
-        return;
-    }
+    if !test_infix_expression(exp, TestLiteral::Str("x"), "+", TestLiteral::Str("y")) {}
 }
 
 #[test]
@@ -953,9 +949,7 @@ fn test_call_expression_parsing() {
         }
     };
 
-    if !test_infix_expression(exp2, TestLiteral::Int(4), "+", TestLiteral::Int(5)) {
-        return;
-    }
+    if !test_infix_expression(exp2, TestLiteral::Int(4), "+", TestLiteral::Int(5)) {}
 }
 
 #[test]
@@ -992,7 +986,7 @@ fn test_parsing_hash_literals_string_keys() {
             TestLiteral::Str(s) => {
                 Box::new(Node::Expression(Expression::StringLiteral(StringLiteral {
                     token: Token {
-                        type_: TokenType::STRING,
+                        ty: TokenType::STRING,
                         literal: s.to_string(),
                     },
                     value: s.to_string(),
@@ -1089,7 +1083,7 @@ fn test_parsing_hash_literals_with_expressions() {
             TestLiteral::Str(s) => {
                 Box::new(Node::Expression(Expression::StringLiteral(StringLiteral {
                     token: Token {
-                        type_: TokenType::STRING,
+                        ty: TokenType::STRING,
                         literal: s.to_string(),
                     },
                     value: s.to_string(),

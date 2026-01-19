@@ -28,10 +28,7 @@ impl Lexer {
                     if self.peek_char().is_some_and(|c| c == '=') {
                         self.read_char();
                         if let Some(next) = self.ch {
-                            Token {
-                                type_: TokenType::EQ,
-                                literal: format!("{}{}", current, next),
-                            }
+                            self.new_token(TokenType::EQ, format!("{}{}", current, next))
                         } else {
                             self.new_token(TokenType::ILLEGAL, current)
                         }
@@ -52,10 +49,7 @@ impl Lexer {
                     if self.peek_char().is_some_and(|c| c == '=') {
                         self.read_char();
                         if let Some(next) = self.ch {
-                            Token {
-                                type_: TokenType::NOTEQ,
-                                literal: format!("{}{}", current, next),
-                            }
+                            self.new_token(TokenType::NOTEQ, format!("{}{}", current, next))
                         } else {
                             self.new_token(TokenType::ILLEGAL, current)
                         }
@@ -69,32 +63,27 @@ impl Lexer {
                 '/' => self.new_token(TokenType::SLASH, current),
                 '{' => self.new_token(TokenType::LBRACE, current),
                 '}' => self.new_token(TokenType::RBRACE, current),
-                '"' => Token {
-                    type_: TokenType::STRING,
-                    literal: self.read_string(),
-                },
+                '"' => {
+                    let literal = self.read_string();
+                    self.new_token(TokenType::STRING, literal)
+                }
                 _ => {
                     if self.is_letter(current) {
                         let literal = self.read_identifier();
-                        let type_ = lookup_ident(&literal);
+                        let token_type = lookup_ident(&literal);
                         // Should early return because we have already read_char() in read_identifier()
-                        return Token { type_, literal };
+                        return self.new_token(token_type, literal);
                     } else if self.is_digit(current) {
+                        let literal = self.read_number();
                         // Should early return because we have already read_char() in read_number()
-                        return Token {
-                            type_: TokenType::INT,
-                            literal: self.read_number(),
-                        };
+                        return self.new_token(TokenType::INT, literal);
                     } else {
                         self.new_token(TokenType::ILLEGAL, current)
                     }
                 }
             }
         } else {
-            Token {
-                type_: TokenType::EOF,
-                literal: "".to_string(),
-            }
+            self.new_token(TokenType::EOF, "")
         };
 
         self.read_char();
@@ -158,10 +147,10 @@ impl Lexer {
         self.input_chars[position..self.position].iter().collect()
     }
 
-    fn new_token(&self, token_type: TokenType, ch: char) -> Token {
+    fn new_token<T: Into<String>>(&self, token_type: TokenType, ch: T) -> Token {
         Token {
-            type_: token_type,
-            literal: ch.to_string(),
+            ty: token_type,
+            literal: ch.into(),
         }
     }
 

@@ -2,14 +2,14 @@ use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Token {
-    pub type_: TokenType,
+    pub ty: TokenType,
     pub literal: String,
 }
 
 impl Token {
     pub fn new() -> Self {
         Token {
-            type_: TokenType::ILLEGAL,
+            ty: TokenType::ILLEGAL,
             literal: String::new(),
         }
     }

@@ -40,10 +40,8 @@ const PRECEDENCES: [(TokenType, Precedence); 10] = [
 pub struct Parser {
     lexer: Lexer,
     errors: Vec<String>,
-
     cur_token: Token,
     peek_token: Token,
-
     prefix_parse_fns: HashMap<TokenType, PrefixParseFn>,
     infix_parse_fns: HashMap<TokenType, InfixParseFn>,
 }
@@ -96,7 +94,7 @@ impl Parser {
     fn peek_error(&mut self, tok: &TokenType) {
         let msg = format!(
             "expected next token to be \"{}\", got \"{}\" instead",
-            tok, self.peek_token.type_
+            tok, self.peek_token.ty
         );
         self.errors.push(msg);
     }
@@ -108,7 +106,7 @@ impl Parser {
 
     pub fn parse_program(&mut self) -> Node {
         let mut stmts = vec![];
-        while self.cur_token.type_ != TokenType::EOF {
+        while self.cur_token.ty != TokenType::EOF {
             let stmt = self.parse_statement();
             if let Some(s) = stmt {
                 stmts.push(s);
@@ -119,7 +117,7 @@ impl Parser {
     }
 
     fn parse_statement(&mut self) -> Option<Node> {
-        let stmt = match self.cur_token.type_ {
+        let stmt = match self.cur_token.ty {
             TokenType::LET => self.parse_let_statement(),
             TokenType::RETURN => self.parse_return_statement(),
             _ => self.parse_expression_statement(),
@@ -189,10 +187,10 @@ impl Parser {
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Option<Box<Node>> {
-        let prefix_parse_fn = match self.prefix_parse_fns.get(&self.cur_token.type_) {
+        let prefix_parse_fn = match self.prefix_parse_fns.get(&self.cur_token.ty) {
             Some(p) => p,
             None => {
-                self.no_prefix_parse_fn_error(self.cur_token.type_);
+                self.no_prefix_parse_fn_error(self.cur_token.ty);
                 return None;
             }
         };
@@ -201,7 +199,7 @@ impl Parser {
 
         // 右結合力が高い場合、 left_exp が次の演算子に関連づけられている infix_parse_fn に渡されることはない。
         while !self.peek_token_is(&TokenType::SEMICOLON) && precedence < self.peek_precedence() {
-            let infix_parse_fn = match self.infix_parse_fns.get(&self.peek_token.type_) {
+            let infix_parse_fn = match self.infix_parse_fns.get(&self.peek_token.ty) {
                 Some(f) => *f,
                 None => return left_expr,
             };
@@ -264,12 +262,10 @@ impl Parser {
     }
 
     fn parse_boolean(&mut self) -> Option<Box<Node>> {
-        let boolean = Boolean {
+        Some(Box::new(Node::Expression(Expression::Boolean(Boolean {
             token: self.cur_token.clone(),
             value: self.cur_token_is(TokenType::TRUE),
-        };
-
-        Some(Box::new(Node::Expression(Expression::Boolean(boolean))))
+        }))))
     }
 
     fn parse_prefix_expression(&mut self) -> Option<Box<Node>> {
@@ -539,11 +535,11 @@ impl Parser {
     }
 
     fn cur_token_is(&self, tok: TokenType) -> bool {
-        self.cur_token.type_ == tok
+        self.cur_token.ty == tok
     }
 
     fn peek_token_is(&self, tok: &TokenType) -> bool {
-        self.peek_token.type_ == *tok
+        self.peek_token.ty == *tok
     }
 
     fn expect_peek(&mut self, tok: &TokenType) -> bool {
@@ -557,17 +553,14 @@ impl Parser {
     }
 
     fn peek_precedence(&self) -> Precedence {
-        match PRECEDENCES
-            .iter()
-            .find(|(t, _)| *t == self.peek_token.type_)
-        {
+        match PRECEDENCES.iter().find(|(t, _)| *t == self.peek_token.ty) {
             Some((_, p)) => *p,
             None => Precedence::LOWEST,
         }
     }
 
     fn cur_precedence(&self) -> Precedence {
-        match PRECEDENCES.iter().find(|(t, _)| t == &self.cur_token.type_) {
+        match PRECEDENCES.iter().find(|(t, _)| t == &self.cur_token.ty) {
             Some((_, p)) => *p,
             None => Precedence::LOWEST,
         }
