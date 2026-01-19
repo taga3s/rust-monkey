@@ -147,7 +147,7 @@ fn eval_block_statement(bs: &BlockStatement, env: Rc<RefCell<Environment>>) -> O
 
     for stmt in &bs.statements {
         result = eval(stmt, env.clone());
-        if result.type_() == ObjectType::ReturnValueObj || result.type_() == ObjectType::ErrorObj {
+        if result.as_type(ObjectType::ReturnValueObj) || result.as_type(ObjectType::ErrorObj) {
             return result;
         }
     }
@@ -161,7 +161,7 @@ fn new_error(message: &str) -> ObjectTypes {
 }
 
 fn is_error(obj: &ObjectTypes) -> bool {
-    obj.type_() == ObjectType::ErrorObj
+    obj.as_type(ObjectType::ErrorObj)
 }
 
 fn native_bool_to_boolean_object(input: bool) -> ObjectTypes {
@@ -176,7 +176,7 @@ fn eval_prefix_expression(operator: &str, right: &ObjectTypes) -> ObjectTypes {
     match operator {
         "!" => eval_bang_operator_expression(right),
         "-" => eval_minus_prefix_operator_expression(right),
-        _ => new_error(&format!("unknown operator: {}{}", operator, right.type_())),
+        _ => new_error(&format!("unknown operator: {}{}", operator, right.ty())),
     }
 }
 
@@ -207,31 +207,31 @@ fn eval_bang_operator_expression(right: &ObjectTypes) -> ObjectTypes {
 }
 
 fn eval_minus_prefix_operator_expression(right: &ObjectTypes) -> ObjectTypes {
-    if right.type_() != ObjectType::IntegerObj {
-        return new_error(&format!("unknown operator: -{}", right.type_()));
+    if right.ty() != ObjectType::IntegerObj {
+        return new_error(&format!("unknown operator: -{}", right.ty()));
     }
 
     match right {
         ObjectTypes::Integer(integer) => ObjectTypes::Integer(Integer {
             value: -integer.value,
         }),
-        _ => new_error(&format!("unknown operator: -{}", right.type_())),
+        _ => new_error(&format!("unknown operator: -{}", right.ty())),
     }
 }
 
 fn eval_infix_expression(operator: &str, left: &ObjectTypes, right: &ObjectTypes) -> ObjectTypes {
-    if left.type_() == ObjectType::IntegerObj && right.type_() == ObjectType::IntegerObj {
+    if left.as_type(ObjectType::IntegerObj) && right.as_type(ObjectType::IntegerObj) {
         return eval_integer_infix_expression(operator, left, right);
     };
-    if left.type_() == ObjectType::StringObj && right.type_() == ObjectType::StringObj {
+    if left.as_type(ObjectType::StringObj) && right.as_type(ObjectType::StringObj) {
         return eval_string_infix_expression(operator, left, right);
     };
-    if left.type_() != right.type_() {
+    if left.ty() != right.ty() {
         return new_error(&format!(
             "type mismatch: {} {} {}",
-            left.type_(),
+            left.ty(),
             operator,
-            right.type_()
+            right.ty()
         ));
     }
     if operator == "==" {
@@ -243,9 +243,9 @@ fn eval_infix_expression(operator: &str, left: &ObjectTypes, right: &ObjectTypes
 
     new_error(&format!(
         "unknown operator: {} {} {}",
-        left.type_(),
+        left.ty(),
         operator,
-        right.type_()
+        right.ty()
     ))
 }
 
@@ -290,9 +290,9 @@ fn eval_integer_infix_expression(
         "!=" => native_bool_to_boolean_object(left_val != right_val),
         _ => new_error(&format!(
             "unknown operator: {} {} {}",
-            &left.type_(),
+            &left.ty(),
             operator,
-            &right.type_()
+            &right.ty()
         )),
     }
 }
@@ -317,9 +317,9 @@ fn eval_string_infix_expression(
         }),
         _ => new_error(&format!(
             "unknown operator: {} {} {}",
-            &left.type_(),
+            &left.ty(),
             operator,
-            &right.type_()
+            &right.ty()
         )),
     }
 }
@@ -370,7 +370,7 @@ fn apply_function(func: &ObjectTypes, args: &[ObjectTypes]) -> ObjectTypes {
         return (builtin.fn_)(args);
     }
 
-    new_error(&format!("not a function: {}", func.type_()))
+    new_error(&format!("not a function: {}", func.ty()))
 }
 
 fn extend_function_env(func: &Function, args: &[ObjectTypes]) -> Rc<RefCell<Environment>> {
@@ -384,7 +384,7 @@ fn extend_function_env(func: &Function, args: &[ObjectTypes]) -> Rc<RefCell<Envi
 }
 
 fn unwrap_return_value(obj: ObjectTypes) -> ObjectTypes {
-    if obj.type_() == ObjectType::ReturnValueObj {
+    if obj.as_type(ObjectType::ReturnValueObj) {
         if let ObjectTypes::ReturnValue(rv) = obj {
             return *rv.value;
         }
@@ -393,14 +393,14 @@ fn unwrap_return_value(obj: ObjectTypes) -> ObjectTypes {
 }
 
 fn eval_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {
-    if left.type_() == ObjectType::ArrayObj && index.type_() == ObjectType::IntegerObj {
+    if left.as_type(ObjectType::ArrayObj) && index.as_type(ObjectType::IntegerObj) {
         return eval_array_expression(left, index);
     }
-    if left.type_() == ObjectType::HashObj {
+    if left.as_type(ObjectType::HashObj) {
         return eval_hash_index_expression(left, index);
     }
 
-    new_error(&format!("index operator not supported: {}", left.type_()))
+    new_error(&format!("index operator not supported: {}", left.ty()))
 }
 
 fn eval_array_expression(left: &ObjectTypes, index: &ObjectTypes) -> ObjectTypes {
@@ -435,7 +435,7 @@ fn eval_hash_literal(hl: &HashLiteral, env: Rc<RefCell<Environment>>) -> ObjectT
             ObjectTypes::Integer(i) => i.hash_key(),
             ObjectTypes::Boolean(b) => b.hash_key(),
             _ => {
-                return new_error(&format!("unusable as hash key: {}", key.type_()));
+                return new_error(&format!("unusable as hash key: {}", key.ty()));
             }
         };
 
@@ -461,7 +461,7 @@ fn eval_hash_index_expression(left: &ObjectTypes, index: &ObjectTypes) -> Object
         ObjectTypes::Integer(i) => i.hash_key(),
         ObjectTypes::Boolean(b) => b.hash_key(),
         _ => {
-            return new_error(&format!("unusable as hash key: {}", index.type_()));
+            return new_error(&format!("unusable as hash key: {}", index.ty()));
         }
     };
 

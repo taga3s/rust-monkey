@@ -23,7 +23,7 @@ pub enum ObjectType {
 
 impl fmt::Display for ObjectType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let type_str = match self {
+        let ty: &str = match self {
             ObjectType::IntegerObj => "INTEGER",
             ObjectType::StringObj => "STRING",
             ObjectType::BooleanObj => "BOOLEAN",
@@ -35,7 +35,7 @@ impl fmt::Display for ObjectType {
             ObjectType::HashObj => "HASH",
             ObjectType::ErrorObj => "ERROR",
         };
-        write!(f, "{}", type_str)
+        write!(f, "{}", ty)
     }
 }
 
@@ -54,18 +54,33 @@ pub enum ObjectTypes {
 }
 
 impl ObjectTypes {
-    pub fn type_(&self) -> ObjectType {
+    pub fn ty(&self) -> ObjectType {
         match self {
-            ObjectTypes::Integer(integer) => integer.type_(),
-            ObjectTypes::StringLiteral(string) => string.type_(),
-            ObjectTypes::Boolean(boolean) => boolean.type_(),
-            ObjectTypes::Array(array) => array.type_(),
-            ObjectTypes::Null(null) => null.type_(),
-            ObjectTypes::ReturnValue(return_value) => return_value.type_(),
-            ObjectTypes::Error(error) => error.type_(),
-            ObjectTypes::Function(function) => function.type_(),
-            ObjectTypes::Builtin(builtin) => builtin.type_(),
-            ObjectTypes::Hash(hash) => hash.type_(),
+            ObjectTypes::Integer(integer) => integer.ty(),
+            ObjectTypes::StringLiteral(string) => string.ty(),
+            ObjectTypes::Boolean(boolean) => boolean.ty(),
+            ObjectTypes::Array(array) => array.ty(),
+            ObjectTypes::Null(null) => null.ty(),
+            ObjectTypes::ReturnValue(return_value) => return_value.ty(),
+            ObjectTypes::Error(error) => error.ty(),
+            ObjectTypes::Function(function) => function.ty(),
+            ObjectTypes::Builtin(builtin) => builtin.ty(),
+            ObjectTypes::Hash(hash) => hash.ty(),
+        }
+    }
+
+    pub fn as_type(&self, ty: ObjectType) -> bool {
+        match self {
+            ObjectTypes::Integer(integer) => integer.as_type(ty),
+            ObjectTypes::StringLiteral(string) => string.as_type(ty),
+            ObjectTypes::Boolean(boolean) => boolean.as_type(ty),
+            ObjectTypes::Array(array) => array.as_type(ty),
+            ObjectTypes::Null(null) => null.as_type(ty),
+            ObjectTypes::ReturnValue(return_value) => return_value.as_type(ty),
+            ObjectTypes::Error(error) => error.as_type(ty),
+            ObjectTypes::Function(function) => function.as_type(ty),
+            ObjectTypes::Builtin(builtin) => builtin.as_type(ty),
+            ObjectTypes::Hash(hash) => hash.as_type(ty),
         }
     }
 
@@ -86,13 +101,14 @@ impl ObjectTypes {
 }
 
 trait Object {
-    fn type_(&self) -> ObjectType;
+    fn ty(&self) -> ObjectType;
+    fn as_type(&self, ty: ObjectType) -> bool;
     fn inspect(&self) -> String;
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct HashKey {
-    type_: ObjectType,
+    ty: ObjectType,
     value: u64,
 }
 
@@ -102,8 +118,12 @@ pub struct Integer {
 }
 
 impl Object for Integer {
-    fn type_(&self) -> ObjectType {
+    fn ty(&self) -> ObjectType {
         ObjectType::IntegerObj
+    }
+
+    fn as_type(&self, ty: ObjectType) -> bool {
+        ty == ObjectType::IntegerObj
     }
 
     fn inspect(&self) -> String {
@@ -114,7 +134,7 @@ impl Object for Integer {
 impl Integer {
     pub fn hash_key(&self) -> HashKey {
         HashKey {
-            type_: self.type_(),
+            ty: self.ty(),
             value: self.value as u64,
         }
     }
@@ -126,8 +146,12 @@ pub struct StringLiteral {
 }
 
 impl Object for StringLiteral {
-    fn type_(&self) -> ObjectType {
+    fn ty(&self) -> ObjectType {
         ObjectType::StringObj
+    }
+
+    fn as_type(&self, ty: ObjectType) -> bool {
+        ty == ObjectType::StringObj
     }
 
     fn inspect(&self) -> String {
@@ -151,7 +175,7 @@ impl StringLiteral {
     pub fn hash_key(&self) -> HashKey {
         let hash = fnv1a_64(&self.value);
         HashKey {
-            type_: self.type_(),
+            ty: self.ty(),
             value: hash,
         }
     }
@@ -163,8 +187,12 @@ pub struct Boolean {
 }
 
 impl Object for Boolean {
-    fn type_(&self) -> ObjectType {
+    fn ty(&self) -> ObjectType {
         ObjectType::BooleanObj
+    }
+
+    fn as_type(&self, ty: ObjectType) -> bool {
+        ty == ObjectType::BooleanObj
     }
 
     fn inspect(&self) -> String {
@@ -176,7 +204,7 @@ impl Boolean {
     pub fn hash_key(&self) -> HashKey {
         let value = if self.value { 1 } else { 0 };
         HashKey {
-            type_: self.type_(),
+            ty: self.ty(),
             value,
         }
     }
@@ -188,8 +216,12 @@ pub struct Array {
 }
 
 impl Object for Array {
-    fn type_(&self) -> ObjectType {
+    fn ty(&self) -> ObjectType {
         ObjectType::ArrayObj
+    }
+
+    fn as_type(&self, ty: ObjectType) -> bool {
+        ty == ObjectType::ArrayObj
     }
 
     fn inspect(&self) -> String {
@@ -202,8 +234,12 @@ impl Object for Array {
 pub struct Null;
 
 impl Object for Null {
-    fn type_(&self) -> ObjectType {
+    fn ty(&self) -> ObjectType {
         ObjectType::NullObj
+    }
+
+    fn as_type(&self, ty: ObjectType) -> bool {
+        ty == ObjectType::NullObj
     }
 
     fn inspect(&self) -> String {
@@ -217,8 +253,12 @@ pub struct ReturnValue {
 }
 
 impl Object for ReturnValue {
-    fn type_(&self) -> ObjectType {
+    fn ty(&self) -> ObjectType {
         ObjectType::ReturnValueObj
+    }
+
+    fn as_type(&self, ty: ObjectType) -> bool {
+        ty == ObjectType::ReturnValueObj
     }
 
     fn inspect(&self) -> String {
@@ -232,8 +272,12 @@ pub struct Error {
 }
 
 impl Object for Error {
-    fn type_(&self) -> ObjectType {
+    fn ty(&self) -> ObjectType {
         ObjectType::ErrorObj
+    }
+
+    fn as_type(&self, ty: ObjectType) -> bool {
+        ty == ObjectType::ErrorObj
     }
 
     fn inspect(&self) -> String {
@@ -249,8 +293,12 @@ pub struct Function {
 }
 
 impl Object for Function {
-    fn type_(&self) -> ObjectType {
+    fn ty(&self) -> ObjectType {
         ObjectType::FunctionObj
+    }
+
+    fn as_type(&self, ty: ObjectType) -> bool {
+        ty == ObjectType::FunctionObj
     }
 
     fn inspect(&self) -> String {
@@ -267,8 +315,12 @@ pub struct Builtin {
 }
 
 impl Object for Builtin {
-    fn type_(&self) -> ObjectType {
+    fn ty(&self) -> ObjectType {
         ObjectType::BuiltinObj
+    }
+
+    fn as_type(&self, ty: ObjectType) -> bool {
+        ty == ObjectType::BuiltinObj
     }
 
     fn inspect(&self) -> String {
@@ -288,8 +340,12 @@ pub struct Hash {
 }
 
 impl Object for Hash {
-    fn type_(&self) -> ObjectType {
+    fn ty(&self) -> ObjectType {
         ObjectType::HashObj
+    }
+
+    fn as_type(&self, ty: ObjectType) -> bool {
+        ty == ObjectType::HashObj
     }
 
     fn inspect(&self) -> String {

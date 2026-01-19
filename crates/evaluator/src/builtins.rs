@@ -27,7 +27,7 @@ fn len_builtin(args: &[ObjectTypes]) -> ObjectTypes {
             value: array.elements.len() as i64,
         }),
         _ => ObjectTypes::Error(object::object::Error {
-            message: format!("argument to `len` not supported, got {}", args[0].type_()),
+            message: format!("argument to `len` not supported, got {}", args[0].ty()),
         }),
     }
 }
@@ -48,7 +48,7 @@ fn first_builtin(args: &[ObjectTypes]) -> ObjectTypes {
             }
         }
         _ => ObjectTypes::Error(object::object::Error {
-            message: format!("argument to `first` must be ARRAY, got {}", args[0].type_()),
+            message: format!("argument to `first` must be ARRAY, got {}", args[0].ty()),
         }),
     }
 }
@@ -69,7 +69,7 @@ fn last_builtin(args: &[ObjectTypes]) -> ObjectTypes {
             }
         }
         _ => ObjectTypes::Error(object::object::Error {
-            message: format!("argument to `last` must be ARRAY, got {}", args[0].type_()),
+            message: format!("argument to `last` must be ARRAY, got {}", args[0].ty()),
         }),
     }
 }
@@ -93,7 +93,7 @@ fn rest_builtin(args: &[ObjectTypes]) -> ObjectTypes {
             }
         }
         _ => ObjectTypes::Error(object::object::Error {
-            message: format!("argument to `rest` must be ARRAY, got {}", args[0].type_()),
+            message: format!("argument to `rest` must be ARRAY, got {}", args[0].ty()),
         }),
     }
 }
@@ -114,7 +114,7 @@ fn push_builtin(args: &[ObjectTypes]) -> ObjectTypes {
             })
         }
         _ => ObjectTypes::Error(object::object::Error {
-            message: format!("argument to `push` must be ARRAY, got {}", args[0].type_()),
+            message: format!("argument to `push` must be ARRAY, got {}", args[0].ty()),
         }),
     }
 }
