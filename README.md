@@ -8,7 +8,9 @@ Rust implementation of the Monkey language, based on the book *[Writing An Inter
 - No external dependencies
   - only uses Rust standard library
 
-## REPL
+## Usage
+
+### REPL
 1. Run the REPL with `just repl` command.
 
 ```bash
@@ -23,13 +25,13 @@ just repl
 25
 ```
 
-## Runner
+### Runner
 
 ```bash
-just run fixtures/sample1.monkey
+just run <file_path>
 ```
 
-## Convert to wasm
+### Convert to wasm
 
 ```bash
 just build-wasm
