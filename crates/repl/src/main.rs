@@ -58,7 +58,7 @@ fn print_parse_errors(errors: &[String]) {
 }
 
 fn main() {
-    println!("Welcome to rust-monkey REPL! Feel free to type in commands.\nType /quit to exit.");
+    println!("Welcome to monkey-rs REPL! Feel free to type in commands.\nType /quit to exit.");
 
     if let Err(e) = start() {
         panic!("Error: {}", e);

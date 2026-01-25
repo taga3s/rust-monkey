@@ -1,4 +1,4 @@
-# rust-monkey
+# monkey-rs
 
 Rust implementation of the Monkey language, based on the book *[Writing An Interpreter In Go](https://interpreterbook.com/)*.
 
