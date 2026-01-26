@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Editor } from "@monaco-editor/react";
 import styles from "./Code.module.css";
-import init, { run } from "../../scripts/pkg/runner";
+import init, { run } from "../../../scripts/pkg/runner";
 
 const DEFAULT_CODE = `let a = "hello";
 let b = "world!";
