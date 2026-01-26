@@ -1,0 +1,34 @@
+---
+import Header from "../components/Header.astro";
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>playground</title>
+	</head>
+	<Header />
+	<body>
+		<slot />
+	</body>
+</html>
+
+<style is:global>
+	:root {
+		--color-kachi: #08192D; /* KACHI - Dark blue background */
+		--color-haizakura: #D7C4BB; /* HAIZAKURA - Light beige text */
+	}
+</style>
+
+<style>
+	html,
+	body {
+		margin: 0;
+		width: 100%;
+		height: 100%;
+		background: var(--color-kachi);
+	}
+</style>
