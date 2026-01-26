@@ -14,9 +14,13 @@ export const Code = () => {
 	const [result, setResult] = useState<string>("");
 
 	const runCode = async (code: string) => {
-		const _ = await init();
-		const output = run(code) ?? "No output";
-		setResult(output);
+		try {
+			const _ = await init();
+			const output = run(code) ?? "No output";
+			setResult(output);
+		} catch (err) {
+			console.error(err);
+		}
 	};
 
 	return (
