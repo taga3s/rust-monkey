@@ -2,16 +2,14 @@
 
 Rust implementation of the Monkey language, based on the book *[Writing An Interpreter In Go](https://interpreterbook.com/)*.
 
-## features
-- Tree-Walking Interpreter
-  - interprets the AST on the fly
-- No external dependencies
-  - only uses Rust standard library
-
 ## Usage
 
-### REPL
-1. Run the REPL with `just repl` command.
+### Web playground
+
+The web playground is deployed on https://taga3s.github.io/monkey-rs/.
+
+### REPL (crates/repl)
+1. Run the REPL with following command.
 
 ```bash
 just repl
@@ -25,14 +23,8 @@ just repl
 25
 ```
 
-### Runner
+### Runner (crates/runner)
 
 ```bash
 just run <file_path>
-```
-
-### Convert to wasm
-
-```bash
-just build-wasm
 ```
