@@ -1,4 +1,5 @@
 ---
+import "../global.css";
 import Header from "../components/Header.astro";
 ---
 
@@ -15,13 +16,6 @@ import Header from "../components/Header.astro";
 		<slot />
 	</body>
 </html>
-
-<style is:global>
-	:root {
-		--color-kachi: #08192D; /* KACHI - Dark blue background */
-		--color-haizakura: #D7C4BB; /* HAIZAKURA - Light beige text */
-	}
-</style>
 
 <style>
 	html,
