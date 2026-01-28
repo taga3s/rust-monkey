@@ -1,12 +1,19 @@
+---
+import GithubIcon from "./icons/github.astro";
+---
+
 <header>
   <span class="title">taga3s/monkey-rs</span>
-  <a href="https://github.com/taga3s/monkey-rs" class="github">github</a>
+  <a href="https://github.com/taga3s/monkey-rs" class="github" target="_blank" rel="noopener noreferrer">
+    <GithubIcon />
+  </a>
 </header>
 
 <style>
   header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 20px 28px;
     background: var(--color-kachi);
   }
@@ -16,6 +23,13 @@
     font-weight: bold;
   }
   .github {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
     color: var(--color-haizakura);
+    transition: opacity 0.2s ease;
+  }
+  .github:hover {
+    opacity: 0.7;
   }
 </style>

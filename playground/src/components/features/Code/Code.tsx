@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Editor } from "@monaco-editor/react";
 import styles from "./Code.module.css";
-import init, { run } from "../../scripts/pkg/runner";
+import init, { run } from "../../../scripts/pkg/runner";
 
 const DEFAULT_CODE = `let a = "hello";
 let b = "world!";
@@ -14,9 +14,13 @@ export const Code = () => {
 	const [result, setResult] = useState<string>("");
 
 	const runCode = async (code: string) => {
-		const _ = await init();
-		const output = run(code) ?? "No output";
-		setResult(output);
+		try {
+			const _ = await init();
+			const output = run(code) ?? "No output";
+			setResult(output);
+		} catch (err) {
+			console.error(err);
+		}
 	};
 
 	return (
